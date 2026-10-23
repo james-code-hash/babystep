@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../core/clock.dart';
-import '../providers.dart';
+import 'bubu_inputs.dart';
 
 /// 步步的表情只有這六種（C10）。沒有難過、生病、虛弱。
 enum BubuExpression { happy, curious, caring, calm, surprised, relaxed }
@@ -21,7 +20,7 @@ class BubuView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(dressUpProvider);
+    ref.watch(bubuDressUpProvider);
     ref.watch(clockProvider);
     return SizedBox(
       width: size,
