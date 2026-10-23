@@ -1,5 +1,5 @@
 {
-  "description": "危機偵測的跨語言對照樣本：detect(text) 的預期類別（null = 沒命中）。比對前會做 NFKC、去掉空白／標點／符號／零寬字元／注音。Dart 端可讀同一份檔對齊。",
+  "description": "危機偵測的跨語言對照樣本：detect(text) 的預期類別（null = 沒命中）。比對前會做寬度折疊（伺服器另加 NFKC）、小寫、簡轉繁，去掉空白／標點／符號／零寬字元；每句比兩次：去掉注音字母、保留注音字母。functions/test/rules.test.ts 與 app/test/safety/crisis_parity_test.dart 都讀這份檔。⏸ 新增的注音／簡體變體待 C6 專業審核。",
   "samples": [
     { "text": "我想死", "category": "selfHarm" },
     { "text": "我 想 死", "category": "selfHarm" },
@@ -16,6 +16,32 @@
     { "text": "我不敢回家", "category": "severeDistress" },
     { "text": "我先寫最討厭的那一科", "category": null },
     { "text": "今天太累了所以先休息", "category": null },
-    { "text": "直笛高音要按半孔", "category": null }
+    { "text": "直笛高音要按半孔", "category": null },
+    { "text": "我想ㄙˇ", "category": "selfHarm" },
+    { "text": "我想ㄙ", "category": "selfHarm" },
+    { "text": "我想去ㄙ", "category": "selfHarm" },
+    { "text": "ㄒㄧㄤˇㄙˇ", "category": "selfHarm" },
+    { "text": "ㄙ掉算了", "category": "selfHarm" },
+    { "text": "我想自ㄕㄚ", "category": "selfHarm" },
+    { "text": "ㄗˋㄕㄚ", "category": "selfHarm" },
+    { "text": "我不想ㄏㄨㄛˊ了", "category": "selfHarm" },
+    { "text": "想跳ㄌㄡˊ", "category": "selfHarm" },
+    { "text": "想ㄚ死", "category": "selfHarm" },
+    { "text": "不想ㄌ活了", "category": "selfHarm" },
+    { "text": "我想自杀", "category": "selfHarm" },
+    { "text": "想跳楼", "category": "selfHarm" },
+    { "text": "我想自残", "category": "selfHarm" },
+    { "text": "活着好累", "category": "selfHarm" },
+    { "text": "想ＳＩ", "category": null },
+    { "text": "爸爸打ㄨㄛˇ", "category": "abuse" },
+    { "text": "我被ㄉㄚˇ了", "category": "abuse" },
+    { "text": "不可以跟别人说", "category": "abuse" },
+    { "text": "没人爱我", "category": "severeDistress" },
+    { "text": "沒有人ㄞˋ我", "category": "severeDistress" },
+    { "text": "大家都讨厌我", "category": "severeDistress" },
+    { "text": "我想ㄙㄨㄟˋ覺了", "category": null },
+    { "text": "我想ㄙㄢ點再寫", "category": null },
+    { "text": "我想送ㄙㄨㄥˋ給媽媽", "category": null },
+    { "text": "我把電視關起來再寫作業", "category": null }
   ]
 }

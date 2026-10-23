@@ -16,7 +16,7 @@ abstract final class PathCopy {
   );
 
   static const empty = Line(
-    '等你想好第一件小事，這裡就會冒出第一塊石頭喔。',
+    '你想好第一件小事的那天，這裡就會冒出第一塊石頭喔。',
     '你想好第一件事的那天，這裡會出現第一塊石頭。',
   );
 

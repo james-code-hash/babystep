@@ -38,7 +38,7 @@ abstract final class LessonCopy {
         LessonKind.method,
       ),
       LessonLine(
-        Line('原來心裡有一個想好的時間點，就會記得要做。這一招我也想學。', '原來有想好的時間點，就比較會記得要做。這招我記下來了。'),
+        Line('原來心裡有一個想好的時間點，就比較不會忘記。這一招我也想學。', '原來有想好的時間點，就比較不會忘記。這招我記下來了。'),
         LessonKind.selfKnowledge,
       ),
       LessonLine(
@@ -170,7 +170,7 @@ abstract final class LessonCopy {
 
   /// 平淡的一天（LLM 規格 §5.4）。沒有計畫可回顧時，或其他句子都帶不進去時用。
   static const plainDay = LessonLine(
-    Line.same('今天沒什麼特別要記的，就是普通的一天。這樣也不錯。'),
+    Line.same('今天沒什麼特別要記的，就是普通的一天。'),
     LessonKind.plainDay,
   );
 

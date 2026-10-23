@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import '../domain/models.dart';
+import 'text_match.dart';
 
 /// 文案規則（來源：`shared/copy_rules.json`，同步到 `assets/copy_rules.json`）。
 ///
 /// 純 Dart：App 執行期過濾、`tool/copy_lint.dart`、測試共用同一份實作。
 class CopyRules {
-  CopyRules._(this.maxChars, this.l1, this.l2, this.concise);
+  CopyRules._(this.maxChars, this.l1, this.l2, this.concise, this.variants);
 
   factory CopyRules.fromJsonString(String source) {
     final j = jsonDecode(source) as Map<String, Object?>;
@@ -21,6 +22,7 @@ class CopyRules {
       l1,
       compile((j['l2'] as Map<String, Object?>)['patterns']),
       compile((j['concise'] as Map<String, Object?>)['patterns']),
+      readVariants(j['simplifiedToTraditional']),
     );
   }
 
@@ -29,7 +31,13 @@ class CopyRules {
   final List<RegExp> l2;
   final List<RegExp> concise;
 
-  /// 檢查一句話。
+  /// 比對前逐字換成繁體的簡體字（`simplifiedToTraditional`）。
+  final Map<String, String> variants;
+
+  /// 比對用的文字：見 [normalizeForMatch]（與 Cloud Function 同一套）。
+  String normalize(String text) => normalizeForMatch(text, variants: variants);
+
+  /// 檢查一句話。比對的是 [normalize] 過的文字；字數用原文。
   ///
   /// - [tone] 是 concise 時，額外檢查幼稚詞。
   /// - [allowL2] 是靜態文案用 `// copy-allow:` 標記允許的 L2 詞；LLM 輸出永遠不傳。
@@ -41,7 +49,7 @@ class CopyRules {
     bool checkLength = false,
   }) {
     final out = <CopyViolation>[];
-    final normalized = text.replaceAll(RegExp(r'\s+'), '');
+    final normalized = normalize(text);
     void scan(String level, String id, List<RegExp> patterns) {
       for (final re in patterns) {
         for (final m in re.allMatches(normalized)) {

@@ -1,4 +1,5 @@
 import rulesJson from './copy_rules.json';
+import { normalizeForMatch } from './normalize';
 
 /** 年齡語氣，對應 Dart `AgeTone`。 */
 export type Tone = 'lively' | 'concise';
@@ -14,9 +15,8 @@ interface RulesSource {
   l1: { id: string; patterns: string[] }[];
   l2: { patterns: string[] };
   concise: { patterns: string[] };
+  simplifiedToTraditional?: Record<string, string>;
 }
-
-const WHITESPACE = /\s+/g;
 
 /** 以 code point 計的長度（等同 Dart `String.runes.length`）。 */
 export function codePointLength(text: string): number {
@@ -25,7 +25,8 @@ export function codePointLength(text: string): number {
 
 /**
  * 文案規則。語意與 `app/lib/core/copy_rules.dart` 的 `CopyRules` 相同：
- * 去掉空白後比對 L1 各組、L2、（concise 語氣時）幼稚詞；字數以 code point 計。
+ * 先正規化（`normalizeForMatch`：寬度折疊、小寫、簡轉繁、去掉空白／標點／符號／零寬／注音），
+ * 再比對 L1 各組、L2、（concise 語氣時）幼稚詞；字數用原文、以 code point 計。
  */
 export class CopyRules {
   private constructor(
@@ -33,13 +34,25 @@ export class CopyRules {
     private readonly l1: ReadonlyMap<string, RegExp[]>,
     private readonly l2: RegExp[],
     private readonly concise: RegExp[],
+    private readonly variants: Readonly<Record<string, string>>,
   ) {}
 
   static fromJson(source: RulesSource): CopyRules {
     const compile = (list: string[]) => list.map((p) => new RegExp(p, 'g'));
     const l1 = new Map<string, RegExp[]>();
     for (const group of source.l1) l1.set(group.id, compile(group.patterns));
-    return new CopyRules(source.maxChars, l1, compile(source.l2.patterns), compile(source.concise.patterns));
+    return new CopyRules(
+      source.maxChars,
+      l1,
+      compile(source.l2.patterns),
+      compile(source.concise.patterns),
+      source.simplifiedToTraditional ?? {},
+    );
+  }
+
+  /** 比對用的文字（與 Dart `CopyRules.normalize` 相同）。 */
+  normalize(text: string): string {
+    return normalizeForMatch(text, { variants: this.variants });
   }
 
   check(
@@ -47,7 +60,7 @@ export class CopyRules {
     opts: { tone?: Tone; allowL2?: ReadonlySet<string>; checkLength?: boolean } = {},
   ): CopyViolation[] {
     const out: CopyViolation[] = [];
-    const normalized = text.replace(WHITESPACE, '');
+    const normalized = this.normalize(text);
     const scan = (level: CopyViolation['level'], ruleId: string, patterns: RegExp[], allow?: ReadonlySet<string>) => {
       for (const re of patterns) {
         for (const m of normalized.matchAll(re)) {

@@ -59,6 +59,38 @@ void main() {
       '你比別人快',
       '快來做計畫',
       '你一定要做完',
+      // F1：更寬的規則
+      '我好想你喔',
+      '我會一直等你',
+      '你終於來了',
+      '你好幾天沒來耶',
+      '下次要記得來教我',
+      '唉，你今天沒做',
+      '我有點難過',
+      '步步好傷心',
+      '下次記得要做喔',
+      '明天要做完',
+      '你應該要早點開始',
+      '別忘了寫功課',
+      '原來你偷懶了',
+      '超棒的方法',
+      '真讚耶',
+      '你很乖',
+      '你好認真喔',
+      '你很努力耶',
+      '你很會想辦法',
+      '你真會安排時間',
+      '你做得真不錯',
+      '這樣不錯',
+      '三件事都做完了',
+      '全部都完成了',
+      // F2：正規化
+      '好～棒',
+      '好\u200b棒',
+      '你好聪明',
+      '你真厉害',
+      '还有２件',
+      '明天見！',
     ];
     for (final s in bad) {
       test(s, () {
@@ -83,6 +115,13 @@ void main() {
       '你試了兩種方法，步步看到你一直在找辦法。',
       '吃完晚飯就去練琴，這個順序你自己想的。',
       '原來心裡有點緊張的時候，深呼吸會有幫助。',
+      // 「會」本身不是讚美；「你會先⋯」是描述過程。
+      '你會先把書包整理好，再去玩。',
+      '原來你會先寫數學。',
+      // 孩子自己的感覺可以被重述；只有步步自己難過才擋。
+      '你說做之前很難過，做完就還好。',
+      '你說做得好累，所以先休息。',
+      '不想錯過卡通，所以先寫完一半。',
     ];
     for (final s in good) {
       test(s, () {
@@ -95,7 +134,7 @@ void main() {
 
   test('L2 is always rejected for generated text', () {
     final l2 = ((json['l2'] as Map<String, Object?>)['patterns'] as List).cast<String>();
-    expect(l2, containsAll(['沒關係', '可惜', '明天再', '很好']));
+    expect(l2, containsAll(['可惜', '明天再', '明天見', '很好', '下次要', '等你']));
     for (final w in l2) {
       final s = '步步覺得$w。';
       expect(rules.passesGenerated(s, AgeTone.lively), isFalse, reason: s);
@@ -113,6 +152,29 @@ void main() {
       expect(rules.passesGenerated(s, AgeTone.concise), isFalse, reason: s);
     }
     expect(rules.passesGenerated('小朋友你好', AgeTone.lively), isTrue);
+  });
+
+  test('normalize: punctuation, symbols, zero-width and zhuyin go; width folds; simplified maps', () {
+    expect(rules.normalize('好～棒！'), '好棒');
+    expect(rules.normalize('好\u200b\u2060棒'), '好棒');
+    expect(rules.normalize('还有２件'), '還有2件');
+    expect(rules.normalize('好ㄅ棒'), '好棒');
+  });
+
+  test('length is counted on the original text, not the normalized one', () {
+    final s = '${'步' * 55}${'！' * 10}';
+    expect(rules.check(s, checkLength: true).map((v) => v.level), ['length']);
+  });
+
+  test('every simplifiedToTraditional value is used by a pattern; no pattern contains a key', () {
+    final map = (json['simplifiedToTraditional'] as Map).cast<String, String>();
+    final joined = allPatterns.join();
+    expect(map, isNotEmpty);
+    map.forEach((k, v) {
+      expect(k.runes.length, 1, reason: k);
+      expect(joined.contains(v), isTrue, reason: '$k→$v is not used by any pattern');
+      expect(joined.contains(k), isFalse, reason: 'a pattern contains simplified $k and can never match');
+    });
   });
 
   test('longer than maxChars is rejected', () {

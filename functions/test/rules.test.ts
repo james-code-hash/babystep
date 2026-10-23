@@ -92,6 +92,6 @@ describe('CrisisDetector', () => {
   });
 
   it('normalizes full-width characters and punctuation', () => {
-    expect(normalizeForCrisis('Ａ，Ｂ！ c')).toBe('ABc');
+    expect(normalizeForCrisis('Ａ，Ｂ！ c')).toBe('abc');
   });
 });

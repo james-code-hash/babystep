@@ -58,7 +58,7 @@ abstract final class ParentCopy {
   static const llmTitle = Line.same('讓步步用 AI 想句子');
   static const llmOff = Line.same('關閉時：步步用內建的句子，完全離線。');
   static const llmOn =
-      Line.same('開啟時：只會送出孩子今晚說的那幾個字、當天的一件事和語氣，供應商不保留、不拿去訓練。連不上就自動改用內建句子。');
+      Line.same('開啟時：只會送出孩子今晚說的那幾個字、當天的一件事和語氣。我們的伺服器只負責轉送，不留存這些字，紀錄裡也不寫內容。AI 供應商會不會保留、會不會拿去訓練，設定還在確認中。連不上就自動改用內建句子。');
   static const llmDevOnly = Line.same('目前只在開發用的模擬環境能用。');
 
   // ---------------------------------------------------------------- 資料

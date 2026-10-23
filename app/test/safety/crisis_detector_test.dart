@@ -77,17 +77,47 @@ void main() {
     expect(detector.detect('他打我，我好想死'), CrisisCategory.selfHarm);
   });
 
-  group('normalize', () {
+  group('normalize (same as functions/src/crisis.ts normalizeForCrisis)', () {
     test('full-width ASCII → half-width, lower-case, no whitespace/punct', () {
-      expect(CrisisDetector.normalize('ＡＢＣ　１２３！'), 'abc123');
-      expect(CrisisDetector.normalize('Hello, World.'), 'helloworld');
+      expect(detector.normalize('ＡＢＣ　１２３！'), 'abc123');
+      expect(detector.normalize('Hello, World.'), 'helloworld');
+      expect(detector.normalize('Ａ，Ｂ！ c'), 'abc');
     });
 
-    test('strips CJK punctuation, emoji, zero-width and tone marks; keeps hanzi and zhuyin', () {
-      expect(CrisisDetector.normalize('想、死。「」『』（）～…⋯'), '想死');
-      expect(CrisisDetector.normalize('想😢​‍死️'), '想死');
-      expect(CrisisDetector.normalize('ㄒㄧㄤˇ'), 'ㄒㄧㄤ');
+    test('strips CJK punctuation, emoji, zero-width, tone marks and zhuyin letters', () {
+      expect(detector.normalize('想、死。「」『』（）～…⋯'), '想死');
+      expect(detector.normalize('想😢​‍死️'), '想死');
+      expect(detector.normalize('ㄒㄧㄤˇ'), '');
+      expect(detector.normalize('想ㄚ死'), '想死');
     });
+
+    test('the keep-zhuyin form keeps zhuyin letters but drops tone marks', () {
+      expect(detector.normalizeKeepingZhuyin('我想ㄙˇ！'), '我想ㄙ');
+      expect(detector.normalizeKeepingZhuyin('ㄒㄧㄤˇ'), 'ㄒㄧㄤ');
+    });
+
+    test('simplified characters used by the patterns are mapped to traditional', () {
+      expect(detector.normalize('我想自杀'), '我想自殺');
+      expect(detector.normalize('没人爱我'), '沒人愛我');
+    });
+  });
+
+  group('zhuyin standing in for a character is still detected (F4)', () {
+    const cases = {
+      '我想ㄙˇ': CrisisCategory.selfHarm,
+      '我想ㄙ': CrisisCategory.selfHarm,
+      '想去ㄙ。': CrisisCategory.selfHarm,
+      'ㄒㄧㄤˇ ㄙˇ': CrisisCategory.selfHarm,
+      '我想自ㄕㄚ': CrisisCategory.selfHarm,
+      '想ㄚ死': CrisisCategory.selfHarm,
+      '爸爸打ㄨㄛˇ': CrisisCategory.abuse,
+      '沒人ㄞˋ我': CrisisCategory.severeDistress,
+    };
+    cases.forEach((text, cat) => test('「$text」→ ${cat.name}', () => expect(detector.detect(text), cat)));
+
+    for (final text in ['我想ㄙㄨㄟˋ覺了', '我想ㄙㄢ點再寫', '我想送ㄙㄨㄥˋ給媽媽', 'ㄅㄆㄇ']) {
+      test('「$text」is not detected', () => expect(detector.detect(text), isNull));
+    }
   });
 
   test('helplines are loaded', () {

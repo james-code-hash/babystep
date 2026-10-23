@@ -70,7 +70,7 @@ void main() {
 
     test('plain day line', () {
       expect(LessonCopy.plainDay.kind, LessonKind.plainDay);
-      expect(LessonCopy.plainDay.line.lively, '今天沒什麼特別要記的，就是普通的一天。這樣也不錯。');
+      expect(LessonCopy.plainDay.line.lively, '今天沒什麼特別要記的，就是普通的一天。');
     });
 
     test('every template line, both tones, filled with sample tasks/quotes, passes rules and ≤ max chars', () {

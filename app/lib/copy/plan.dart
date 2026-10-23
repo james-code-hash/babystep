@@ -28,7 +28,7 @@ abstract final class PlanCopy {
   static const moodLow = Line.same('不太好');
   static const moodSkip = Line.same('先不說');
 
-  static const moodHappyReply = Line('開心的早上！來看看今天想做什麼。', '不錯。來看看今天想做什麼。');
+  static const moodHappyReply = Line('開心的早上！來看看今天想做什麼。', '開心的早上。來看看今天想做什麼。');
   static const moodOkayReply = Line('普普通通的一天也可以呀。', '普通的一天也可以。');
   static const moodTiredReply = Line('有點累了呀。今天要不要就先不排事情？', '有點累。今天要不要就先不排事情？');
   static const moodLowReply = Line('聽起來今天不太好過。今天要不要就先不排事情？', '聽起來今天不太好過。今天要不要先不排事情？');
@@ -41,7 +41,7 @@ abstract final class PlanCopy {
   // ------------------------------------------------------------ 2. 選 1–3 件事（§4.3）
 
   /// `{max}` 是每天最多幾件。
-  static const chooseAsk = Line('今天你想做哪幾件事？最多 {max} 件就好，貪心會累。', '今天想做哪幾件事？最多 {max} 件。');
+  static const chooseAsk = Line('今天你想做哪幾件事？最多 {max} 件就好，排太多會趕。', '今天想做哪幾件事？最多 {max} 件。');
   static const sectionMine = Line('你自己寫過的', '自己寫過的');
   static const sectionPreset = Line('常見的事', '常見的事');
   static const sectionParent = Line('家長的建議，可以不選', '家長的建議，可以不選');
