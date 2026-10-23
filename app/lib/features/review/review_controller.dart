@@ -132,12 +132,15 @@ class ReviewController extends Notifier<ReviewState> {
     return const ReviewState();
   }
 
-  String get _todayKey => ref.read(todayKeyProvider);
+  /// 這次回顧屬於哪一天：[start] 時定下來，聊到一半跨過午夜也還是同一天。
+  String? _day;
+  String get _todayKey => _day ??= ref.read<String>(todayKeyProvider);
 
   /// 讀今天的計畫與紀錄，決定從哪一步開始。
   Future<void> start() async {
     final repo = ref.read(repositoryProvider);
-    final key = _todayKey;
+    final key = ref.read(todayKeyProvider);
+    _day = key;
     final record = await repo.dayRecord(key);
     final plans = await repo.plans(key);
     if (!ref.mounted) return;

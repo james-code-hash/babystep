@@ -258,3 +258,12 @@
 ### G9 ✅ 從背景回來時重抽問候
 - **選擇**：首頁 `resumed` 時清掉快取的問候，下次 build 依現在的時段重抽；從別的畫面回首頁不重抽。
 - **理由**：早上打開、晚上才回來時還在說早安。問候只吃（語氣、時間、亂數），沒有碰到底線 2。
+
+### G10 ✅ 前景跨過午夜時自己換天；回顧中途不換
+- **選擇**：`todayKeyProvider` 在系統時鐘下排一個「下個午夜＋1 秒」的計時器，到時 `invalidateSelf`；`FixedClock`（測試）不排。回顧在 `start()` 時把日期定下來，聊到一半跨過午夜仍寫回同一天。
+- **替代**：只靠首頁的 `resumed`（前景跨夜會一直停在昨天）；每分鐘輪詢（多餘的喚醒）。
+- **理由**：前景跨夜後新的計畫不能寫到昨天；但 23:59 開始的回顧，計畫不應該在中途消失。
+
+### G11 ✅ emulator 模式的 Firebase 專案 ID 預設 `demo-little-steps`
+- **選擇**：`FIREBASE_PROJECT_ID` 預設改成 `demo-little-steps`，和 README 的 `emulators:start --project` 一致。
+- **理由**：專案 ID 不一樣時 Functions SDK 會打到別的路徑，呼叫失敗、默默退回範本。這個 client 只在 emulator 模式下建立，`demo-` 專案也保證碰不到真的雲端資源（呼應「不准部署」）。

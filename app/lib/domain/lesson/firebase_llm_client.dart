@@ -39,7 +39,7 @@ class FirebaseLessonLlmClient implements LessonLlmClient {
 /// | `LLM_AUTH_EMULATOR_PORT` | 9099 | Auth emulator 的埠（匿名登入用；0 = 不用 Auth emulator） |
 /// | `FIREBASE_API_KEY` | `demo-api-key` | FirebaseOptions.apiKey |
 /// | `FIREBASE_APP_ID` | `1:000000000000:android:0000000000000000` | FirebaseOptions.appId |
-/// | `FIREBASE_PROJECT_ID` | `little-steps-dev` | FirebaseOptions.projectId |
+/// | `FIREBASE_PROJECT_ID` | `demo-little-steps` | FirebaseOptions.projectId（要和 `emulators:start --project` 一樣；`demo-` 開頭的專案碰不到任何真的雲端資源） |
 /// | `FIREBASE_SENDER_ID` | `000000000000` | FirebaseOptions.messagingSenderId |
 ///
 /// 例：`fvm flutter run --dart-define=LLM_EMULATOR_HOST=localhost`
@@ -47,7 +47,7 @@ abstract final class FirebaseLlmEnv {
   static const apiKey = String.fromEnvironment('FIREBASE_API_KEY', defaultValue: 'demo-api-key');
   static const appId =
       String.fromEnvironment('FIREBASE_APP_ID', defaultValue: '1:000000000000:android:0000000000000000');
-  static const projectId = String.fromEnvironment('FIREBASE_PROJECT_ID', defaultValue: 'little-steps-dev');
+  static const projectId = String.fromEnvironment('FIREBASE_PROJECT_ID', defaultValue: 'demo-little-steps');
   static const senderId = String.fromEnvironment('FIREBASE_SENDER_ID', defaultValue: '000000000000');
 
 }

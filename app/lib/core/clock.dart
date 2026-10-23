@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 可替換的時鐘：測試用固定時間，App 用系統時間。
 class Clock {
   const Clock();
   DateTime now() => DateTime.now();
+
+  /// 時間會不會自己往前走。[FixedClock] 不會，所以不用排過午夜的計時器。
+  bool get ticks => true;
 }
 
 class FixedClock extends Clock {
@@ -11,6 +16,9 @@ class FixedClock extends Clock {
   DateTime fixed;
   @override
   DateTime now() => fixed;
+
+  @override
+  bool get ticks => false;
 }
 
 final clockProvider = Provider<Clock>((ref) => const Clock());
@@ -27,4 +35,15 @@ DateTime dateOfDayKey(String dayKey) {
 }
 
 /// 今天的 dayKey。
-final todayKeyProvider = Provider<String>((ref) => dayKeyOf(ref.watch(clockProvider).now()));
+///
+/// App 一直開在前景跨過午夜時，自己換成新的一天（從背景回來則由首頁 invalidate）。
+final todayKeyProvider = Provider<String>((ref) {
+  final clock = ref.watch(clockProvider);
+  final now = clock.now();
+  if (clock.ticks) {
+    final midnight = DateTime(now.year, now.month, now.day + 1);
+    final timer = Timer(midnight.difference(now) + const Duration(seconds: 1), ref.invalidateSelf);
+    ref.onDispose(timer.cancel);
+  }
+  return dayKeyOf(now);
+});
