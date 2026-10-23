@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "description": "小步 Little Steps 文案規則的唯一來源。App 執行期過濾、copy_lint、Cloud Function 共用。patterns 是 Dart RegExp 與 JavaScript RegExp 都能用的正規式（不用 lookbehind、不用 named group）。改這份檔之後要同步到 app/assets/copy_rules.json 與 functions/src/copy_rules.json（有測試檢查三份一致）。",
+  "maxChars": 60,
+  "l1": [
+    {
+      "id": "ability_praise",
+      "why": "能力讚美：評價人而不是描述過程（底線 5）",
+      "patterns": ["聰明", "天才", "好棒", "真棒", "很棒", "太棒", "厲害", "優秀", "完美", "了不起", "好強", "太強", "真乖", "好乖", "好孩子", "模範生"]
+    },
+    {
+      "id": "outcome_praise",
+      "why": "結果讚美（底線 5）",
+      "patterns": ["滿分", "全部完成", "完成率", "第一名"]
+    },
+    {
+      "id": "controlling",
+      "why": "控制性回饋（底線 5）",
+      "patterns": ["繼續保持", "加油", "我以你為榮", "我就知道你可以"]
+    },
+    {
+      "id": "command_pressure",
+      "why": "命令／施壓（底線 3、5）",
+      "patterns": ["未完成", "還有\\s*[0-9一二三四五六七八九十兩]+\\s*(項|件)", "快來", "來不及", "趕快", "限時", "必須", "一定要"]
+    },
+    {
+      "id": "reward_streak",
+      "why": "外部酬賞與 streak（底線 1）",
+      "patterns": ["連續", "解鎖", "升級", "等級", "點數", "金幣", "徽章", "排行", "排名", "獎勵", "集點"]
+    },
+    {
+      "id": "guilt_retention",
+      "why": "罪惡感與挽留（底線 3）",
+      "patterns": ["等你好久", "好久沒", "好久不見", "孤單", "不要走", "別走", "再一下下", "你答應過", "失望", "我好難過", "都不來"]
+    },
+    {
+      "id": "pet_state",
+      "why": "步步的狀態不取決於孩子（底線 2）",
+      "patterns": ["生病", "好餓", "沒精神", "虛弱", "死掉"]
+    },
+    {
+      "id": "social_comparison",
+      "why": "社會比較：只跟自己比（§4）",
+      "patterns": ["比別人", "同學都", "平均"]
+    }
+  ],
+  "l2": {
+    "why": "謹慎使用：預設了「需要被原諒」或帶評價。靜態文案要在同一行或上一行加 `// copy-allow: <詞>` 才能用；LLM 輸出一律拒絕。",
+    "patterns": ["沒關係", "可惜", "明天再", "很好"]
+  },
+  "concise": {
+    "why": "簡潔語氣（9–12 歲）額外禁用的幼稚詞",
+    "patterns": ["小朋友", "寶貝", "加油喔", "乖"]
+  }
+}
