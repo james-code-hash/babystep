@@ -180,3 +180,40 @@
 - **選擇**：`lib/core/layout.dart` 一組小工具：短邊 ≥ 600dp 算平板（`FormFactor`）；`AdaptiveFrame` 置中＋最大寬度（手機 560、平板 720）；可用寬度 ≥ 900dp（平板橫放）時 `AdaptiveTwoPane` 把步步＋泡泡放在旁邊一欄（主欄仍 ≤ 720），否則和手機一樣疊成一欄。筆記本在平板排成多欄（新的仍在最前，由左到右），步步在平板較大。數字都在 `LayoutConfig`。
 - **替代方案**：只把手機版置中放大（大螢幕兩側大片空白、步步太小）；用 `NavigationRail`／master-detail 重做導覽（改了動線，超出「只改排版」）。
 - **理由**：只動排版，不動行為與文案；回顧三顆按鈕沿用同一個元件，每個寬度都一樣大（底線 4）；沒有新增任何數量顯示。`test/layout/tablet_layout_test.dart` 在 iPad 直／橫、iPad Pro、Android 平板與手機上逐一檢查。
+
+## G. 稽核後的修正（App 行為與資料）
+
+### G1 ✅ 首頁步步的表情只看時段（取代 C8「聊完了步步放鬆」、E7 的首頁表情）
+- **選擇**：首頁表情改由 `lib/bubu` 的 `restingExpression(DateTime)` 決定（早上開心、白天與傍晚平靜、晚上放鬆），不再看「有沒有計畫」（原本有計畫才笑）與「聊完了沒」（原本聊完才放鬆）。唯一例外：探頭卡的問題正顯示、還沒回答時歪頭（對話中的反應）。計畫流程的心情／如果⋯／為什麼三步改用 `listeningExpression(answered:)`：還沒回答好奇、回答了一律「關心」，不分回答內容（心情的差別只留在步步說的話）。
+- **替代**：固定一個表情；保留「聊完了 → 放鬆」並寫成例外；心情低落時才「關心」。
+- **理由**：底線 2 寫的是外觀只因裝扮、時間、季節而變；「聊完了才放鬆」「排了計畫才笑」都是孩子做了什麼換來的表情，等於小小的酬賞（底線 1）。用時段的話，晚上每個孩子看到的都是放鬆的步步，C8 的「結束感」靠文字與沒有行動呼籲來給。
+
+### G2 ✅ 表情呼叫點的護欄
+- **選擇**：`test/guardrails/bubu_expression_callsite_test.dart` 用 analyzer 掃 `lib/features`、`lib/safety` 每一個 `expression:` 具名參數（BubuView 與 `_StepLayout`／`_SideBubu` 等包裝），識別字拆字後不得含 plan／outcome／lesson／record／ended／mood／done／review／cue／why／task 等；核可的 `restingExpression`、`listeningExpression` 整段略過，並另外檢查它們在 `lib/bubu` 的參數只有 `DateTime`／`bool`。允許清單目前是空的。附 fixture 自我測試。
+- **替代**：只靠 code review；把所有表情選擇搬進 `lib/bubu` 的單一函式。
+- **理由**：原本的護欄只掃 `lib/bubu`，而表情其實是在畫面裡挑的，首頁的「有計畫才笑」就這樣過了所有測試。
+
+### G3 ✅ 刪除全部＝刪檔重開（實作 A4 原本的設計）
+- **選擇**：開庫時 `PRAGMA secure_delete = ON`（`beforeOpen`）；`Repository.deleteAll` 刪完資料列後跑 `wal_checkpoint(TRUNCATE)` 與 `VACUUM`。裝置上另有 `DatabaseStore`：關閉資料庫、刪掉 `.sqlite` 與 `-wal`／`-shm`／`-journal`、在原位置開新庫並 seed，再 `ref.invalidate(databaseProvider)`（bootstrap 用 `overrideWith` 讓它每次拿 store 目前的庫），App 不用重開。家長區改呼叫 `deleteAllDataProvider`。測試用檔案型 NativeDatabase 讀原始位元組，確認孩子的句子不在磁碟上。
+- **替代**：只做 secure_delete＋VACUUM（不刪檔）；請家長重開 App。
+- **理由**：底線 8 的「可完整刪除」要連 SQLite 的空閒頁面一起清；兩層都做，測試環境（in-memory）也有同樣保證。
+
+### G4 ✅ 不進系統雲端備份
+- **選擇**：Android `<application android:allowBackup="false" android:fullBackupContent="false" android:dataExtractionRules="@xml/data_extraction_rules">`，規則檔在 cloud-backup 與 device-transfer 都排除所有 domain。iOS：資料庫改放 `Library/Application Support`（`getApplicationSupportDirectory`，原本是 Documents），AppDelegate 啟動時對整個資料夾設 `isExcludedFromBackup = true`。`test/guardrails/no_cloud_backup_test.dart` 檢查 manifest、規則檔與 AppDelegate。
+- **替代**：用 platform channel 只標資料庫檔（但 -wal／-journal 會一直重建）；只在說明裡告知家長。
+- **理由**：備份會把孩子的原話帶出裝置，刪除全部也刪不到雲端副本，重裝還會還原（底線 8）。⏸ iOS 的排除要在實機確認（設定 → iCloud → 備份看不到這個 App 的資料）。MVP 尚未發佈，所以舊位置（Documents）不做搬移。
+
+### G5 ✅ 伺服器端攔下危機訊號時走同一條安全路徑
+- **選擇**：回顧的反思改成「步步學到」回來、確定不是 safety 結果後才存。若結果是 `LessonSource.safety`（只有伺服器抓到），清掉這一天的反思（`saveReflection(day, null)`），顯示 `SafetyResponseScreen`（通用版、含專線），孩子關掉後道晚安並結束這一天，和本機攔下完全一樣。
+- **替代**：先存再刪（文字會短暫寫進磁碟／WAL）；只顯示一句卡片（原本的做法）。
+- **理由**：底線 9 與 C6 的「不存、給預寫的安全回應」不能因為是哪一層抓到而不同。
+
+### G6 ✅ 探頭卡在輸入改變時重新決定（修正 E7「每次進首頁只決定一次」）
+- **選擇**：首頁在這幾個時候重新決定一次：第一次載入、今天的計畫從無到有、App 從背景回來（`WidgetsBindingObserver`，同時重算今天的 dayKey）、從別的畫面 pop 回首頁。仍受記憶體裡的每日上限（`AppConfig.maxPeeksPerDay`）限制、每次最多一張；卡片正顯示且還沒回答時回到前景，不重抽也不多算。
+- **替代**：計時器每分鐘檢查；本機通知。
+- **理由**：App 通常留在背景而不是被關掉，原本「每個 State 只決定一次」讓家長設的提醒時段幾乎永遠不出現。沒有計時器、沒有推播，壓力不會變多（底線 3）。
+
+### G7 ✅ 家長與孩子範本的去重分開算
+- **選擇**：`addTaskTemplate`／`addCueTemplate` 只和「呼叫者看得到的來源」比：家長／預設只和家長／預設比，孩子可以重複使用任何來源。孩子挑選清單（`watchTaskChoices`／`watchCueChoices`）同一句只列一次，優先家長那筆（保留「爸媽建議」）；匯出仍含全部列。
+- **替代**：家長新增時提示「已經有了」（一樣會洩漏）；DB 加 unique(label)。
+- **理由**：原本家長新增孩子寫過的句子會「新增了卻沒出現」，家長能用猜的確認孩子的私人事情庫（底線 7）。

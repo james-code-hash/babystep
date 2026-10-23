@@ -103,6 +103,11 @@ class Repository {
 
   Future<List<TaskTemplate>> taskTemplates({Set<TemplateOrigin>? origins}) => _taskQuery(origins).get();
 
+  /// 孩子挑事情用：全部來源，但同一句話只出現一次（家長建議 > 預設 > 孩子自己的，
+  /// 所以「爸媽建議」的標記會留著）。
+  Stream<List<TaskTemplate>> watchTaskChoices() =>
+      _taskQuery(null).watch().map((all) => _dedupeByLabel(all, (t) => t.text, (t) => t.origin));
+
   Selectable<CueTemplate> _cueQuery(Set<TemplateOrigin>? origins) {
     final q = _db.select(_db.cueTemplates)
       ..orderBy([(t) => OrderingTerm(expression: t.sortOrder), (t) => OrderingTerm(expression: t.label)]);
@@ -114,17 +119,55 @@ class Repository {
 
   Future<List<CueTemplate>> cueTemplates({Set<TemplateOrigin>? origins}) => _cueQuery(origins).get();
 
+  /// 孩子挑時間點用：同一句話只出現一次（規則同 [watchTaskChoices]）。
+  Stream<List<CueTemplate>> watchCueChoices() =>
+      _cueQuery(null).watch().map((all) => _dedupeByLabel(all, (c) => c.text, (c) => c.origin));
+
+  /// 同一句話留優先的那一筆，位置照原本排序中第一次出現的地方。
+  static List<T> _dedupeByLabel<T>(List<T> all, String Function(T) label, TemplateOrigin Function(T) origin) {
+    final best = <String, T>{};
+    for (final t in all) {
+      final prev = best[label(t)];
+      if (prev == null || _originRank(origin(t)) < _originRank(origin(prev))) best[label(t)] = t;
+    }
+    final seen = <String>{};
+    return [
+      for (final t in all)
+        if (seen.add(label(t))) best[label(t)] as T,
+    ];
+  }
+
+  static int _originRank(TemplateOrigin o) => switch (o) {
+        TemplateOrigin.parent => 0,
+        TemplateOrigin.preset => 1,
+        TemplateOrigin.child => 2,
+      };
+
+  /// 新增時可以拿來重複使用的既有範本來源。
+  /// 家長／預設只和家長／預設比：孩子自己的事情庫對家長是看不見的，
+  /// 不能因為「新增了卻沒出現」讓家長猜出孩子寫過什麼（底線 7）。
+  /// 孩子新增時可以重複使用任何來源（家長建議、預設、自己寫過的）。
+  static Set<TemplateOrigin> _reusableOrigins(TemplateOrigin adding) => adding == TemplateOrigin.child
+      ? TemplateOrigin.values.toSet()
+      : {TemplateOrigin.preset, TemplateOrigin.parent};
+
   Future<int> _nextOrder(String table) async {
     final row = await _db.customSelect('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM $table').getSingle();
     return row.read<int>('n');
   }
 
   /// 新增事情範本。孩子自己寫的事情用 [TemplateOrigin.child]（孩子的事情庫）。
-  /// 同樣文字已經存在就直接回傳那一筆。
+  /// 同樣文字已經存在（而且是 [_reusableOrigins] 裡的來源）就直接回傳那一筆。
   Future<TaskTemplate> addTaskTemplate({required String emoji, required String text, required TemplateOrigin origin}) async {
     final clean = text.trim();
-    final existing = await (_db.select(_db.taskTemplates)..where((t) => t.label.equals(clean))).getSingleOrNull();
-    if (existing != null) return _task(existing);
+    final reusable = _reusableOrigins(origin).map((o) => o.name);
+    final matches = await (_db.select(_db.taskTemplates)
+          ..where((t) => t.label.equals(clean) & t.origin.isIn(reusable)))
+        .get();
+    if (matches.isNotEmpty) {
+      final rows = matches.map(_task).toList()..sort((a, b) => _originRank(a.origin) - _originRank(b.origin));
+      return rows.first;
+    }
     final id = _id();
     final order = await _nextOrder('task_templates');
     await _db.into(_db.taskTemplates).insert(TaskTemplatesCompanion.insert(
@@ -149,8 +192,14 @@ class Repository {
   /// 新增時間點範本；文字會補成「我⋯」開頭。
   Future<CueTemplate> addCueTemplate({required String text, required TemplateOrigin origin}) async {
     final clean = CueTemplate.normalize(text);
-    final existing = await (_db.select(_db.cueTemplates)..where((t) => t.label.equals(clean))).getSingleOrNull();
-    if (existing != null) return _cue(existing);
+    final reusable = _reusableOrigins(origin).map((o) => o.name);
+    final matches = await (_db.select(_db.cueTemplates)
+          ..where((t) => t.label.equals(clean) & t.origin.isIn(reusable)))
+        .get();
+    if (matches.isNotEmpty) {
+      final rows = matches.map(_cue).toList()..sort((a, b) => _originRank(a.origin) - _originRank(b.origin));
+      return rows.first;
+    }
     final id = _id();
     final order = await _nextOrder('cue_templates');
     await _db.into(_db.cueTemplates).insert(CueTemplatesCompanion.insert(
@@ -469,12 +518,18 @@ class Repository {
   }
 
   /// 刪除全部資料，回到剛安裝的狀態。
+  ///
+  /// 資料列刪掉之後（secure_delete 已在開庫時打開），再把 WAL 收回主檔並 VACUUM 重寫整個檔案，
+  /// 孩子寫過的字不會以空閒頁面的形式留在磁碟上（底線 8）。
+  /// 裝置上的 App 還會再整個刪掉資料庫檔、開一個新的（見 `DatabaseStore.reset`）。
   Future<void> deleteAll() async {
     await _db.transaction(() async {
       for (final table in _db.allTables) {
         await _db.delete(table).go();
       }
     });
+    await _db.customStatement('PRAGMA wal_checkpoint(TRUNCATE)');
+    await _db.customStatement('VACUUM');
     await seedIfEmpty();
   }
 }

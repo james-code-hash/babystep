@@ -94,5 +94,7 @@ class AppDatabase extends _$AppDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
+        // 刪掉的資料列要真的被覆寫成 0，不能只標成空閒頁面還留在檔案裡（底線 8）。
+        beforeOpen: (_) => customStatement('PRAGMA secure_delete = ON'),
       );
 }

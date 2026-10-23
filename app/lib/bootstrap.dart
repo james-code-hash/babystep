@@ -1,8 +1,8 @@
-import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart';
 
 import 'core/copy_rules.dart';
+import 'data/database_store.dart';
 import 'data/db.dart';
 import 'data/repository.dart';
 import 'domain/lesson/firebase_llm_client.dart';
@@ -15,11 +15,19 @@ import 'safety/crisis_detector.dart';
 Future<List<Override>> bootstrapOverrides({AppDatabase? database}) async {
   final rules = CopyRules.fromJsonString(await rootBundle.loadString('assets/copy_rules.json'));
   final crisis = CrisisDetector.fromJsonString(await rootBundle.loadString('assets/crisis_patterns.json'));
-  final db = database ?? AppDatabase(driftDatabase(name: 'little_steps'));
+  // 裝置上：資料庫檔放在 Application Support（不進備份），刪除全部時整個檔案刪掉重開（G3、G4）。
+  final store = database == null ? await DatabaseStore.onDevice() : null;
+  final db = database ?? store!.current;
   await Repository(db).seedIfEmpty();
   final llmClient = await createLessonLlmClient();
   return [
-    databaseProvider.overrideWithValue(db),
+    if (store == null)
+      databaseProvider.overrideWithValue(db)
+    else ...[
+      databaseStoreProvider.overrideWithValue(store),
+      // 每次被 invalidate 就拿 store 目前的資料庫（刪除全部之後是新的那個）。
+      databaseProvider.overrideWith((ref) => ref.watch(databaseStoreProvider)!.current),
+    ],
     copyRulesProvider.overrideWithValue(rules),
     crisisDetectorProvider.overrideWithValue(crisis),
     lessonLlmClientProvider.overrideWithValue(llmClient),
