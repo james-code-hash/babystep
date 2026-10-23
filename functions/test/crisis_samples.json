@@ -1,0 +1,21 @@
+{
+  "description": "危機偵測的跨語言對照樣本：detect(text) 的預期類別（null = 沒命中）。比對前會做 NFKC、去掉空白／標點／符號／零寬字元／注音。Dart 端可讀同一份檔對齊。",
+  "samples": [
+    { "text": "我想死", "category": "selfHarm" },
+    { "text": "我 想 死", "category": "selfHarm" },
+    { "text": "我想，死", "category": "selfHarm" },
+    { "text": "我想ㄙ死", "category": "selfHarm" },
+    { "text": "我想​死", "category": "selfHarm" },
+    { "text": "不想活了！！", "category": "selfHarm" },
+    { "text": "爸爸打我", "category": "abuse" },
+    { "text": "我被打了", "category": "abuse" },
+    { "text": "被打擾了一下", "category": null },
+    { "text": "今天被打針好痛", "category": null },
+    { "text": "他說是秘密不能說", "category": "abuse" },
+    { "text": "沒有人愛我", "category": "severeDistress" },
+    { "text": "我不敢回家", "category": "severeDistress" },
+    { "text": "我先寫最討厭的那一科", "category": null },
+    { "text": "今天太累了所以先休息", "category": null },
+    { "text": "直笛高音要按半孔", "category": null }
+  ]
+}

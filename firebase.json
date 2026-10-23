@@ -1,0 +1,17 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs22",
+      "ignore": ["node_modules", ".git", "test", "*.log", "tsconfig*.json"],
+      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
+    }
+  ],
+  "emulators": {
+    "singleProjectMode": true,
+    "functions": { "host": "127.0.0.1", "port": 5001 },
+    "auth": { "host": "127.0.0.1", "port": 9099 },
+    "ui": { "enabled": false }
+  }
+}
