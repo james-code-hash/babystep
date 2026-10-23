@@ -88,26 +88,31 @@ class Repository {
         sortOrder: r.sortOrder,
       );
 
-  /// 事情範本。[origins] 不給就是全部（含孩子的事情庫）。
-  Stream<List<TaskTemplate>> watchTaskTemplates({Set<TemplateOrigin>? origins}) {
+  // 每個查詢都有 watch（畫面用）與 get（一次性讀取）兩種。一次性讀取直接 get，
+  // 不用 watch().first：stream 的第一筆要等 timer，在 widget test 的 fake async 裡會卡住。
+
+  Selectable<TaskTemplate> _taskQuery(Set<TemplateOrigin>? origins) {
     final q = _db.select(_db.taskTemplates)
       ..orderBy([(t) => OrderingTerm(expression: t.sortOrder), (t) => OrderingTerm(expression: t.label)]);
     if (origins != null) q.where((t) => t.origin.isIn(origins.map((o) => o.name)));
-    return q.watch().map((rows) => rows.map(_task).toList());
+    return q.map(_task);
   }
 
-  Future<List<TaskTemplate>> taskTemplates({Set<TemplateOrigin>? origins}) =>
-      watchTaskTemplates(origins: origins).first;
+  /// 事情範本。[origins] 不給就是全部（含孩子的事情庫）。
+  Stream<List<TaskTemplate>> watchTaskTemplates({Set<TemplateOrigin>? origins}) => _taskQuery(origins).watch();
 
-  Stream<List<CueTemplate>> watchCueTemplates({Set<TemplateOrigin>? origins}) {
+  Future<List<TaskTemplate>> taskTemplates({Set<TemplateOrigin>? origins}) => _taskQuery(origins).get();
+
+  Selectable<CueTemplate> _cueQuery(Set<TemplateOrigin>? origins) {
     final q = _db.select(_db.cueTemplates)
       ..orderBy([(t) => OrderingTerm(expression: t.sortOrder), (t) => OrderingTerm(expression: t.label)]);
     if (origins != null) q.where((t) => t.origin.isIn(origins.map((o) => o.name)));
-    return q.watch().map((rows) => rows.map(_cue).toList());
+    return q.map(_cue);
   }
 
-  Future<List<CueTemplate>> cueTemplates({Set<TemplateOrigin>? origins}) =>
-      watchCueTemplates(origins: origins).first;
+  Stream<List<CueTemplate>> watchCueTemplates({Set<TemplateOrigin>? origins}) => _cueQuery(origins).watch();
+
+  Future<List<CueTemplate>> cueTemplates({Set<TemplateOrigin>? origins}) => _cueQuery(origins).get();
 
   Future<int> _nextOrder(String table) async {
     final row = await _db.customSelect('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM $table').getSingle();
@@ -186,18 +191,19 @@ class Repository {
         outcome: r.outcome == null ? null : enumByName(Outcome.values, r.outcome!, Outcome.notToday),
       );
 
-  Stream<List<Plan>> watchPlans(String dayKey) => (_db.select(_db.plans)
+  Selectable<Plan> _planQuery(String dayKey) => (_db.select(_db.plans)
         ..where((p) => p.dayKey.equals(dayKey))
         ..orderBy([(p) => OrderingTerm(expression: p.position)]))
-      .watch()
-      .map((rows) => rows.map(_plan).toList());
+      .map(_plan);
 
-  Future<List<Plan>> plans(String dayKey) => watchPlans(dayKey).first;
+  Stream<List<Plan>> watchPlans(String dayKey) => _planQuery(dayKey).watch();
+
+  Future<List<Plan>> plans(String dayKey) => _planQuery(dayKey).get();
 
   /// 存今天的計畫（覆蓋這一天原本的計畫）。最多 [AppConfig.maxPlansPerDay] 件。
   Future<List<Plan>> savePlans(String dayKey, List<PlanDraft> drafts) async {
     if (drafts.length < AppConfig.minPlansPerDay || drafts.length > AppConfig.maxPlansPerDay) {
-      throw ArgumentError('一天 ${AppConfig.minPlansPerDay}–${AppConfig.maxPlansPerDay} 件');
+      throw ArgumentError('plans per day must be ${AppConfig.minPlansPerDay}-${AppConfig.maxPlansPerDay}');
     }
     final saved = <Plan>[];
     await _db.transaction(() async {
@@ -236,7 +242,10 @@ class Repository {
   Stream<DayRecord?> watchDayRecord(String dayKey) =>
       (_db.select(_db.dayRecords)..where((d) => d.dayKey.equals(dayKey))).watchSingleOrNull().map((r) => r == null ? null : _day(r));
 
-  Future<DayRecord?> dayRecord(String dayKey) => watchDayRecord(dayKey).first;
+  Future<DayRecord?> dayRecord(String dayKey) async {
+    final r = await (_db.select(_db.dayRecords)..where((d) => d.dayKey.equals(dayKey))).getSingleOrNull();
+    return r == null ? null : _day(r);
+  }
 
   /// 存晚上歷程問題的原話（跳過就傳 null）。危機內容在呼叫前就要攔下，不會存進來。
   Future<void> saveReflection(String dayKey, String? reflection) async {
@@ -327,10 +336,14 @@ class Repository {
   // ---------------------------------------------------------------- 成長小路
 
   /// 只列出有計畫的日子（舊的在前）。不帶 outcome：小路的石頭不因完成度上色（C5）。
-  Stream<List<PlannedDay>> watchPlannedDays() => (_db.select(_db.plans)
-        ..orderBy([(p) => OrderingTerm(expression: p.dayKey), (p) => OrderingTerm(expression: p.position)]))
-      .watch()
-      .map((rows) {
+  SimpleSelectStatement<$PlansTable, PlanRow> _allPlansQuery() => _db.select(_db.plans)
+    ..orderBy([(p) => OrderingTerm(expression: p.dayKey), (p) => OrderingTerm(expression: p.position)]);
+
+  Stream<List<PlannedDay>> watchPlannedDays() => _allPlansQuery().watch().map(_groupDays);
+
+  Future<List<PlannedDay>> plannedDays() async => _groupDays(await _allPlansQuery().get());
+
+  static List<PlannedDay> _groupDays(List<PlanRow> rows) {
         final byDay = <String, List<PlanRow>>{};
         for (final r in rows) {
           byDay.putIfAbsent(r.dayKey, () => []).add(r);
@@ -344,9 +357,7 @@ class Repository {
               cues: [for (final r in e.value) r.cue],
             ),
         ];
-      });
-
-  Future<List<PlannedDay>> plannedDays() => watchPlannedDays().first;
+  }
 
   // ---------------------------------------------------------------- 設定
 
@@ -382,7 +393,10 @@ class Repository {
 
   Stream<AppSettings> watchSettings() => _watchSettingMap().map(_settingsFrom);
 
-  Future<AppSettings> settings() => watchSettings().first;
+  Future<Map<String, String>> _settingMap() async =>
+      {for (final r in await _db.select(_db.settings).get()) r.key: r.value};
+
+  Future<AppSettings> settings() async => _settingsFrom(await _settingMap());
 
   Future<void> setTone(AgeTone tone) => _setSetting(_kTone, tone.name);
   Future<void> setLlmEnabled(bool enabled) => _setSetting(_kLlm, '$enabled');
@@ -391,10 +405,12 @@ class Repository {
   Future<void> setParentPin(String pin) => _setSetting(_kPin, pin);
   Future<void> setOnboarded() => _setSetting(_kOnboarded, 'true');
 
-  Stream<DressUp> watchDressUp() => _watchSettingMap().map((m) =>
-      m[_kDressUp] == null ? DressUp.initial : DressUp.fromJson(jsonDecode(m[_kDressUp]!) as Map<String, Object?>));
+  static DressUp _dressUpFrom(Map<String, String> m) =>
+      m[_kDressUp] == null ? DressUp.initial : DressUp.fromJson(jsonDecode(m[_kDressUp]!) as Map<String, Object?>);
 
-  Future<DressUp> dressUp() => watchDressUp().first;
+  Stream<DressUp> watchDressUp() => _watchSettingMap().map(_dressUpFrom);
+
+  Future<DressUp> dressUp() async => _dressUpFrom(await _settingMap());
 
   /// 只有孩子主動裝扮時呼叫（底線 2）。
   Future<void> setDressUp(DressUp d) => _setSetting(_kDressUp, jsonEncode(d.toJson()));
@@ -402,7 +418,16 @@ class Repository {
   // ---------------------------------------------------------------- 家長端
 
   /// 家長端唯一能讀的資料（底線 7）。
-  Stream<ParentView> watchParentView() => _watchSettingMap().asyncMap((_) => parentView());
+  /// 範本、設定或筆記（分享狀態）有變就重新發一次。
+  Stream<ParentView> watchParentView() async* {
+    yield await parentView();
+    final updates = _db.tableUpdates(
+      TableUpdateQuery.onAllTables([_db.taskTemplates, _db.cueTemplates, _db.settings, _db.lessons]),
+    );
+    await for (final _ in updates) {
+      yield await parentView();
+    }
+  }
 
   Future<ParentView> parentView() async {
     final s = await settings();

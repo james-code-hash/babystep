@@ -1,7 +1,7 @@
 import 'dart:ui' show Color;
 
 import '../domain/models.dart' show DressUp;
-import 'bubu_config.dart';
+import '../core/config.dart';
 import 'catalog.dart';
 
 /// 季節（台灣，北半球）。

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:little_steps/safety/safety_response.dart';
 import 'package:little_steps/copy/plan.dart';
 import 'package:little_steps/core/clock.dart';
 import 'package:little_steps/core/config.dart';
@@ -200,6 +201,12 @@ void main() {
     await _tap(tester, 'cue-write-own');
     await _enter(tester, 'cue-custom-field', '我不想活了');
     await tester.tap(find.byKey(const ValueKey('cue-custom-use')));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    // 真的安全閘門會先蓋上預寫的安全回應，孩子關掉之後才回到計畫。
+    expect(find.byType(SafetyResponseScreen), findsOneWidget);
+    await tester.tap(find.byKey(const Key('safety-close')));
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

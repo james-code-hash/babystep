@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:drift/drift.dart' show DatabaseConnection, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,7 +23,12 @@ CopyRules loadCopyRules() => CopyRules.fromJsonString(File('assets/copy_rules.js
 CrisisDetector loadCrisisDetector() =>
     CrisisDetector.fromJsonString(File('assets/crisis_patterns.json').readAsStringSync());
 
-AppDatabase memoryDb() => AppDatabase(NativeDatabase.memory());
+/// in-memory 資料庫。closeStreamsSynchronously：畫面拆掉時 stream 立即關閉，
+/// widget test 不會留下 drift 的 0 秒 timer。
+AppDatabase memoryDb() {
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+  return AppDatabase(DatabaseConnection(NativeDatabase.memory(), closeStreamsSynchronously: true));
+}
 
 class TestEnv {
   TestEnv({DateTime? now, int seed = 1})
@@ -65,5 +71,21 @@ Future<void> pumpScreen(WidgetTester tester, TestEnv env, Widget child, {List<Ov
     overrides: [...env.overrides, ...extra],
     child: MaterialApp(home: child),
   ));
+  await tester.pumpAndSettle();
+}
+
+/// widget test 收尾：拆掉畫面、清掉 timer、在真實 async 裡關資料庫。
+Future<void> finishTest(WidgetTester tester, TestEnv env) async {
+  await tester.pumpWidget(const SizedBox());
+  await tester.pump(const Duration(milliseconds: 1));
+  await tester.runAsync(env.dispose);
+}
+
+/// 交替真實 async 與 pump，直到 drift 的查詢與畫面都穩定。
+Future<void> settleAll(WidgetTester tester, {int rounds = 6}) async {
+  for (var i = 0; i < rounds; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 5)));
+    await tester.pump();
+  }
   await tester.pumpAndSettle();
 }

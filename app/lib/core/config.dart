@@ -48,4 +48,55 @@ abstract final class AppConfig {
       String.fromEnvironment('LLM_EMULATOR_HOST');
   static const int functionsEmulatorPort =
       int.fromEnvironment('LLM_EMULATOR_PORT', defaultValue: 5001);
+  static const int authEmulatorPort =
+      int.fromEnvironment('LLM_AUTH_EMULATOR_PORT', defaultValue: 9099);
+
+  /// 範本引擎願意引用的孩子原話最短字數。
+  static const int minQuoteChars = 2;
+}
+
+/// 步步的時段、動畫節奏。
+abstract final class BubuConfig {
+  /// 一天的四個時段（含起始小時，24 小時制）。
+  static const int morningStartHour = 5;
+  static const int dayStartHour = 11;
+  static const int eveningStartHour = 17;
+  static const int nightStartHour = 20;
+
+  /// 問候時，抽到「季節句」而不是「時段句」的機率（0–1）。
+  static const double seasonalGreetingChance = 0.3;
+
+  /// 晚上的配色往夜色靠的比例（0–1），讓畫面柔和一點。
+  static const double nightSoftening = 0.18;
+
+  /// 「在想」三個點跑一輪的毫秒數。
+  static const int thinkingCycleMs = 1200;
+
+  /// 呼吸一輪的毫秒數（只在 `breathe: true` 時跑）。
+  static const int breatheCycleMs = 3400;
+}
+
+/// 成長小路的版面與洞察門檻。
+abstract final class PathConfig {
+  /// 一塊石頭的直徑（dp）。
+  static const double stoneSize = 72;
+
+  /// 兩塊石頭之間的垂直距離（dp）。
+  static const double stoneSpacing = 104;
+
+  /// 小路左右擺動的幅度（佔可用寬度的比例）。
+  static const double swayFraction = 0.26;
+
+  /// 每塊石頭在擺動曲線上前進多少（弧度）。
+  static const double swayStep = 1.1;
+
+  /// 「最常用」的洞察至少要出現幾次才說（只出現一次就說「最常」很奇怪）。
+  static const int insightMinRepeats = 2;
+}
+
+/// 家長區的預設值。
+abstract final class ParentConfig {
+  /// 新增提醒時段時預設的起訖（一天中的分鐘數）。
+  static const int newSlotStartMinute = 16 * 60;
+  static const int newSlotEndMinute = 17 * 60;
 }

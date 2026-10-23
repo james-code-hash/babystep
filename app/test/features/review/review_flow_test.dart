@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:little_steps/safety/safety_response.dart';
 import 'package:go_router/go_router.dart';
 import 'package:little_steps/copy/line.dart';
 import 'package:little_steps/copy/review.dart';
@@ -165,6 +166,9 @@ void main() {
     await tapKey(tester, 'review-write');
     await tester.enterText(find.byKey(const ValueKey('review-text')), '我今天好想死');
     await tapKey(tester, 'review-send');
+    // 真的安全閘門：先顯示預寫的安全回應，孩子關掉後才往下。
+    expect(find.byType(SafetyResponseScreen), findsOneWidget);
+    await tapKey(tester, 'safety-close');
 
     expect(service.calls, isEmpty);
     final record = await db(tester, () => env.repo.dayRecord(todayOf(env)));

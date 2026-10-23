@@ -26,7 +26,7 @@ class TemplateLessonService implements LessonService {
   final Random random;
 
   /// 引用原話時最少要幾個字，太短就不引用。
-  static const int minQuoteChars = 2;
+  static const int minQuoteChars = AppConfig.minQuoteChars;
 
   /// 平淡日（「今天沒什麼特別要記的」）。
   static LessonResult plainDay(AgeTone tone) => LessonResult(

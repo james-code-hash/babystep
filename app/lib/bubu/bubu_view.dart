@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../copy/bubu.dart';
 import '../copy/line.dart';
-import 'bubu_config.dart';
+import '../core/config.dart';
 import 'bubu_expression.dart';
 import 'bubu_inputs.dart';
 import 'bubu_painter.dart';

@@ -4,7 +4,6 @@ import '../../copy/line.dart';
 import '../../copy/parent.dart';
 import '../../core/config.dart';
 import '../../domain/models.dart';
-import 'parent_config.dart';
 
 String pt(Line l) => l.of(AgeTone.concise);
 

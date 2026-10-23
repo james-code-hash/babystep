@@ -26,22 +26,13 @@ final RegExp _allowComment = RegExp(r'//\s*copy-allow:\s*(.+)$');
 /// 每一筆都必須是「不是給孩子看的句子」或「Foundation 尚未搬進 copy/ 的字串（已列在 neededChanges）」。
 /// 要讓它越小越好；新增前先想能不能搬進 `lib/copy/`。
 const Map<String, Set<String>> locationAllowlist = {
-  // 開發者例外訊息（ArgumentError），不會出現在畫面上。
-  // TODO(integrator): 改成英文或搬進 copy/。
-  'lib/data/repository.dart': {
-    '一天 \${AppConfig.minPlansPerDay}–\${AppConfig.maxPlansPerDay} 件',
-  },
   // 「如果⋯我就⋯」的句型與時間點正規化的文字處理（資料格式的一部分，也被存進資料庫）。
-  // TODO(integrator): 句型骨架搬進 copy/（例如 PlanCopy.ifThen），normalize 的關鍵字也一起。
+  // 這是資料格式，不是步步說的話；畫面上的句子用 PlanCopy.ifThen。
   'lib/domain/models.dart': {
     '如果\$cue，我就\$task',
     '如果',
     '我',
     '我\$t',
-  },
-  // Foundation 的 stub（TODO(build-c) 會換成 copy/ 裡的句子池）。換掉後這筆會變成 stale，lint 會提醒刪掉。
-  'lib/domain/lesson/template_lesson_service.dart': {
-    '今天沒什麼特別要記的，就是普通的一天。',
   },
 };
 

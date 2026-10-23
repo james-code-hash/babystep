@@ -65,5 +65,10 @@ final lessonServiceProvider = Provider<LessonService>((ref) {
   final llmOn = ref.watch(settingsProvider).value?.llmEnabled ?? false;
   final client = ref.watch(lessonLlmClientProvider);
   if (!llmOn || client == null) return template;
-  return LlmLessonService(client: client, fallback: template, rules: ref.watch(copyRulesProvider));
+  return LlmLessonService(
+    client: client,
+    fallback: template,
+    rules: ref.watch(copyRulesProvider),
+    crisisDetector: ref.watch(crisisDetectorProvider),
+  );
 });

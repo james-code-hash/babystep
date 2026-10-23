@@ -50,8 +50,6 @@ abstract final class FirebaseLlmEnv {
   static const projectId = String.fromEnvironment('FIREBASE_PROJECT_ID', defaultValue: 'little-steps-dev');
   static const senderId = String.fromEnvironment('FIREBASE_SENDER_ID', defaultValue: '000000000000');
 
-  /// TODO(integrator): 搬進 `AppConfig`。
-  static const authEmulatorPort = int.fromEnvironment('LLM_AUTH_EMULATOR_PORT', defaultValue: 9099);
 }
 
 /// 有設定 emulator 才建立 client；其他情況（包含任何錯誤）回傳 null，App 維持範本模式。
@@ -75,8 +73,8 @@ Future<LessonLlmClient?> createLessonLlmClient() async {
     final functions = FirebaseFunctions.instanceFor(app: app, region: FirebaseLessonLlmClient.region)
       ..useFunctionsEmulator(host, AppConfig.functionsEmulatorPort);
     final auth = FirebaseAuth.instanceFor(app: app);
-    if (FirebaseLlmEnv.authEmulatorPort > 0) {
-      await auth.useAuthEmulator(host, FirebaseLlmEnv.authEmulatorPort);
+    if (AppConfig.authEmulatorPort > 0) {
+      await auth.useAuthEmulator(host, AppConfig.authEmulatorPort);
     }
     if (auth.currentUser == null) await auth.signInAnonymously().timeout(AppConfig.llmTimeout);
     return FirebaseLessonLlmClient(functions);

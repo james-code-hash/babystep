@@ -7,7 +7,7 @@ import '../../core/clock.dart';
 import '../../core/theme.dart';
 import '../../data/repository.dart';
 import '../../domain/models.dart';
-import 'path_config.dart';
+import '../../core/config.dart';
 
 /// 一條彎彎的小路：只畫有計畫的日子，一天一塊石頭（C5）。
 ///

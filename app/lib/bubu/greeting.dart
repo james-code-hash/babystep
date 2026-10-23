@@ -3,7 +3,7 @@ import 'dart:math';
 import '../copy/bubu.dart';
 import '../copy/line.dart';
 import '../domain/models.dart' show AgeTone;
-import 'bubu_config.dart';
+import '../core/config.dart';
 import 'look.dart' show DayPart, Season, dayPartOf, seasonOf;
 
 /// 首頁問候。只能吃（語氣、日期時間、隨機）——不讀計畫、回顧、上次開啟（底線 2、3）。

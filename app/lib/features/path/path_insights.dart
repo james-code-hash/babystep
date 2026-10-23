@@ -1,5 +1,5 @@
 import '../../data/repository.dart';
-import 'path_config.dart';
+import '../../core/config.dart';
 
 /// 小路下方的「只跟自己比」的發現（C5）。純函式、只吃 [PlannedDay]（本來就沒有 outcome）。
 ///
