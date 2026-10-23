@@ -47,9 +47,11 @@ void main() {
     await pumpScreen(tester, env, const NotebookScreen());
     await settle(tester);
 
-    final newest = tester.getTopLeft(find.text('原來喝完水是一個好開始的信號。')).dy;
-    final middle = tester.getTopLeft(find.text('原來累的時候可以先休息一下。')).dy;
-    expect(newest, lessThan(middle));
+    // 新的在前（閱讀順序）：手機是一欄往下；平板多欄時由左到右、再往下（E11）。
+    final newest = tester.getTopLeft(find.text('原來喝完水是一個好開始的信號。'));
+    final middle = tester.getTopLeft(find.text('原來累的時候可以先休息一下。'));
+    expect(newest.dy < middle.dy || (newest.dy == middle.dy && newest.dx < middle.dx), isTrue,
+        reason: 'newest page comes first in reading order');
     expect(find.text('10月23日'), findsOneWidget);
     expect(find.text('10月22日'), findsOneWidget);
 

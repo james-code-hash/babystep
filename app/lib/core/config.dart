@@ -100,3 +100,47 @@ abstract final class ParentConfig {
   static const int newSlotStartMinute = 16 * 60;
   static const int newSlotEndMinute = 17 * 60;
 }
+
+/// 平板版面（docs/decisions.md E11）。手機的數字維持原本的樣子。
+abstract final class LayoutConfig {
+  /// 螢幕短邊（dp）至少這麼寬就當平板。
+  static const double tabletMinShortestSide = 600;
+
+  /// 單欄內容的最大寬度。
+  static const double contentMaxWidthPhone = 560;
+  static const double contentMaxWidthTablet = 720;
+
+  /// 雙欄（步步在旁邊）或多欄筆記本整體的最大寬度。
+  static const double wideMaxWidth = 1100;
+
+  /// 可用寬度至少這麼寬才把步步放到旁邊（平板橫放）。
+  static const double twoPaneMinWidth = 900;
+
+  /// 雙欄時旁邊那一欄（步步＋對話泡泡）的寬度，與兩欄之間的距離。
+  static const double sidePaneWidth = 340;
+  static const double paneGap = 32;
+
+  /// 內容外側再留的左右邊距（手機為 0，維持原本版面）。
+  static const double frameGutterPhone = 0;
+  static const double frameGutterTablet = 24;
+
+  /// 步步的大小（手機／平板）。
+  static const double bubuHeroPhone = 160;
+  static const double bubuHeroTablet = 224;
+  static const double bubuStepPhone = 88;
+  static const double bubuStepTablet = 120;
+  static const double bubuReviewPhone = 120;
+  static const double bubuReviewTablet = 168;
+  static const double bubuEmptyPhone = 140;
+  static const double bubuEmptyTablet = 196;
+
+  /// 步步在旁邊那一欄時的大小。
+  static const double bubuSidePane = 200;
+
+  /// 筆記本：平板上一頁至少要這麼寬，最多排幾欄。
+  static const double notebookColumnMinWidth = 340;
+  static const int notebookMaxColumns = 3;
+
+  /// 家長 PIN 畫面的最大寬度（鍵盤置中，不撐滿大螢幕）。
+  static const double pinMaxWidth = 420;
+}

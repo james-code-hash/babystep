@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../copy/line.dart';
 import '../../copy/parent.dart';
 import '../../core/config.dart';
+import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../providers.dart';
@@ -105,25 +106,29 @@ class _ParentGateScreenState extends ConsumerState<ParentGateScreen> {
       body: SafeArea(
         child: !loaded
             ? const Center(child: CircularProgressIndicator())
-            : Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpace.m),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(title, key: const ValueKey('pin-title'), style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
-                      const SizedBox(height: AppSpace.s),
-                      SizedBox(
-                        height: 24,
-                        child: _message == null
-                            ? null
-                            : Text(t(_message!), key: const ValueKey('pin-message'), style: const TextStyle(color: AppColors.inkSoft)),
-                      ),
-                      const SizedBox(height: AppSpace.s),
-                      PinPad(entered: _entry.length, onDigit: (d) => _digit(d, savedPin), onBackspace: _backspace),
-                      const SizedBox(height: AppSpace.m),
-                      Text(t(ParentCopy.pinNote), style: const TextStyle(fontSize: 14, color: AppColors.inkSoft), textAlign: TextAlign.center),
-                    ],
+            // PIN 鍵盤置中、不撐滿大螢幕。
+            : AdaptiveFrame(
+                maxWidth: LayoutConfig.pinMaxWidth,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(AppSpace.m),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(title, key: const ValueKey('pin-title'), style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
+                        const SizedBox(height: AppSpace.s),
+                        SizedBox(
+                          height: 24,
+                          child: _message == null
+                              ? null
+                              : Text(t(_message!), key: const ValueKey('pin-message'), style: const TextStyle(color: AppColors.inkSoft)),
+                        ),
+                        const SizedBox(height: AppSpace.s),
+                        PinPad(entered: _entry.length, onDigit: (d) => _digit(d, savedPin), onBackspace: _backspace),
+                        const SizedBox(height: AppSpace.m),
+                        Text(t(ParentCopy.pinNote), style: const TextStyle(fontSize: 14, color: AppColors.inkSoft), textAlign: TextAlign.center),
+                      ],
+                    ),
                   ),
                 ),
               ),

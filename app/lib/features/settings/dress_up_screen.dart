@@ -5,6 +5,8 @@ import '../../bubu/bubu_view.dart';
 import '../../bubu/catalog.dart';
 import '../../copy/line.dart';
 import '../../copy/settings.dart';
+import '../../core/config.dart';
+import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../providers.dart';
@@ -22,51 +24,76 @@ class DressUpScreen extends ConsumerWidget {
 
     void choose(DressUp next) => ref.read(repositoryProvider).setDressUp(next);
 
+    final preview = BubuView(
+      expression: BubuExpression.happy,
+      size: Layout.isTwoPane(context) ? LayoutConfig.bubuSidePane : Layout.bubu(context, BubuSlot.hero),
+    );
+    final intro = Text(SettingsCopy.dressUpIntro.of(tone), style: text.bodyMedium, textAlign: TextAlign.center);
+    final list = ListView(
+      key: const ValueKey('dress-up-list'),
+      padding: const EdgeInsets.all(AppSpace.m),
+      children: [
+        _AccessoryGroup(
+          slot: 'hat',
+          title: SettingsCopy.hats,
+          items: BubuCatalog.hats,
+          selectedId: current.hat,
+          tone: tone,
+          onPick: (id) => choose(current.copyWith(hat: id)),
+        ),
+        _AccessoryGroup(
+          slot: 'neck',
+          title: SettingsCopy.necks,
+          items: BubuCatalog.necks,
+          selectedId: current.neck,
+          tone: tone,
+          onPick: (id) => choose(current.copyWith(neck: id)),
+        ),
+        _AccessoryGroup(
+          slot: 'color',
+          title: SettingsCopy.colors,
+          items: BubuCatalog.colors,
+          selectedId: current.color,
+          tone: tone,
+          onPick: (id) => choose(current.copyWith(color: id)),
+        ),
+      ],
+    );
+
     return Scaffold(
       appBar: AppBar(title: Text(SettingsCopy.dressUpTitle.of(tone))),
       body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: AppSpace.s),
-            const Center(child: BubuView(expression: BubuExpression.happy, size: 160)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpace.m, vertical: AppSpace.s),
-              child: Text(SettingsCopy.dressUpIntro.of(tone), style: text.bodyMedium, textAlign: TextAlign.center),
-            ),
-            Expanded(
-              child: ListView(
-                key: const ValueKey('dress-up-list'),
-                padding: const EdgeInsets.all(AppSpace.m),
-                children: [
-                  _AccessoryGroup(
-                    slot: 'hat',
-                    title: SettingsCopy.hats,
-                    items: BubuCatalog.hats,
-                    selectedId: current.hat,
-                    tone: tone,
-                    onPick: (id) => choose(current.copyWith(hat: id)),
+        // 寬螢幕（平板橫放）：預覽在旁邊、選項在右邊；其他寬度和原本一樣上下排。
+        child: Layout.isTwoPane(context)
+            ? TwoPaneRow(
+                side: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(AppSpace.m),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        preview,
+                        const SizedBox(height: AppSpace.m),
+                        intro,
+                      ],
+                    ),
                   ),
-                  _AccessoryGroup(
-                    slot: 'neck',
-                    title: SettingsCopy.necks,
-                    items: BubuCatalog.necks,
-                    selectedId: current.neck,
-                    tone: tone,
-                    onPick: (id) => choose(current.copyWith(neck: id)),
-                  ),
-                  _AccessoryGroup(
-                    slot: 'color',
-                    title: SettingsCopy.colors,
-                    items: BubuCatalog.colors,
-                    selectedId: current.color,
-                    tone: tone,
-                    onPick: (id) => choose(current.copyWith(color: id)),
-                  ),
-                ],
+                ),
+                main: list,
+              )
+            : AdaptiveFrame(
+                child: Column(
+                  children: [
+                    const SizedBox(height: AppSpace.s),
+                    Center(child: preview),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpace.m, vertical: AppSpace.s),
+                      child: intro,
+                    ),
+                    Expanded(child: list),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
       ),
     );
   }

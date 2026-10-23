@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../bubu/bubu_view.dart';
 import '../copy/safety.dart';
 import '../core/theme.dart';
+import '../core/layout.dart';
 import '../providers.dart';
 import 'crisis_detector.dart';
 
@@ -35,55 +36,51 @@ class SafetyResponseScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.paper,
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpace.l),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Center(child: BubuView(expression: BubuExpression.caring, size: 120)),
-                  const SizedBox(height: AppSpace.l),
-                  Text(SafetyCopy.opening(category).of(tone), style: text.titleMedium, textAlign: TextAlign.center),
-                  const SizedBox(height: AppSpace.m),
-                  Text(SafetyCopy.bridge(category).of(tone), style: text.bodyLarge, textAlign: TextAlign.center),
-                  const SizedBox(height: AppSpace.m),
-                  Text(SafetyCopy.trustedAdult.of(tone), style: text.bodyLarge, textAlign: TextAlign.center),
-                  const SizedBox(height: AppSpace.l),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpace.m),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(SafetyCopy.helplinesTitle.of(tone), style: text.titleMedium),
-                          const SizedBox(height: AppSpace.xs),
-                          Text(
-                            SafetyCopy.howToCall.of(tone),
-                            style: text.bodyMedium?.copyWith(color: AppColors.inkSoft),
-                          ),
-                          for (final h in helplines) _HelplineRow(helpline: h),
-                        ],
-                      ),
+        child: AdaptiveFrame(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpace.l),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: BubuView(expression: BubuExpression.caring, size: Layout.bubu(context, BubuSlot.review)),
+                ),
+                const SizedBox(height: AppSpace.l),
+                Text(SafetyCopy.opening(category).of(tone), style: text.titleMedium, textAlign: TextAlign.center),
+                const SizedBox(height: AppSpace.m),
+                Text(SafetyCopy.bridge(category).of(tone), style: text.bodyLarge, textAlign: TextAlign.center),
+                const SizedBox(height: AppSpace.m),
+                Text(SafetyCopy.trustedAdult.of(tone), style: text.bodyLarge, textAlign: TextAlign.center),
+                const SizedBox(height: AppSpace.l),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpace.m),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(SafetyCopy.helplinesTitle.of(tone), style: text.titleMedium),
+                        const SizedBox(height: AppSpace.xs),
+                        Text(SafetyCopy.howToCall.of(tone), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
+                        for (final h in helplines) _HelplineRow(helpline: h),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: AppSpace.m),
-                  Text(
-                    SafetyCopy.notSaved.of(tone),
-                    style: text.bodyMedium?.copyWith(color: AppColors.inkSoft),
-                    textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpace.m),
+                Text(
+                  SafetyCopy.notSaved.of(tone),
+                  style: text.bodyMedium?.copyWith(color: AppColors.inkSoft),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpace.l),
+                Center(
+                  child: FilledButton(
+                    key: const Key('safety-close'),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(SafetyCopy.close.of(tone)),
                   ),
-                  const SizedBox(height: AppSpace.l),
-                  Center(
-                    child: FilledButton(
-                      key: const Key('safety-close'),
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(SafetyCopy.close.of(tone)),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

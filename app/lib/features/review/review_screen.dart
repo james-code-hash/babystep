@@ -7,6 +7,7 @@ import '../../bubu/bubu_view.dart';
 import '../../copy/common.dart';
 import '../../copy/review.dart';
 import '../../core/config.dart';
+import '../../core/layout.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
@@ -83,24 +84,25 @@ class _ReviewFlowScreenState extends ConsumerState<ReviewFlowScreen> {
   }
 
   Widget _body(BuildContext context, AgeTone tone, ReviewState s) {
+    final hero = Layout.bubu(context, BubuSlot.hero);
     switch (s.stage) {
       case ReviewStage.loading:
         return const SizedBox.shrink();
       case ReviewStage.noPlans:
         return _Centered(
-          bubu: const BubuView(expression: BubuExpression.calm),
+          bubu: BubuView(expression: BubuExpression.calm, size: hero),
           line: ReviewCopy.noPlans.of(tone),
           actions: [_Primary(key: const ValueKey('review-back'), label: ReviewCopy.backHome.of(tone), onTap: _goHome)],
         );
       case ReviewStage.alreadyEnded:
         return _Centered(
-          bubu: const BubuView(expression: BubuExpression.relaxed),
+          bubu: BubuView(expression: BubuExpression.relaxed, size: hero),
           line: ReviewCopy.alreadyEnded.of(tone),
           actions: [_Primary(key: const ValueKey('review-back'), label: ReviewCopy.backHome.of(tone), onTap: _goHome)],
         );
       case ReviewStage.opening:
         return _Centered(
-          bubu: const BubuView(expression: BubuExpression.happy),
+          bubu: BubuView(expression: BubuExpression.happy, size: hero),
           line: s.opening!.of(tone),
           actions: [
             _Primary(key: const ValueKey('review-start'), label: ReviewCopy.start.of(tone), onTap: _ctrl.begin),
@@ -112,7 +114,7 @@ class _ReviewFlowScreenState extends ConsumerState<ReviewFlowScreen> {
         return _questionStep(context, tone, s);
       case ReviewStage.learning:
         return _Centered(
-          bubu: BubuView(expression: BubuExpression.curious, thinking: s.thinking),
+          bubu: BubuView(expression: BubuExpression.curious, size: hero, thinking: s.thinking),
           line: s.thinking ? ReviewCopy.thinking.of(tone) : null,
           lineKey: const ValueKey('review-thinking'),
           actions: const [],
@@ -121,7 +123,7 @@ class _ReviewFlowScreenState extends ConsumerState<ReviewFlowScreen> {
         return _lessonStep(context, tone, s);
       case ReviewStage.ending:
         return _Centered(
-          bubu: const BubuView(expression: BubuExpression.relaxed),
+          bubu: BubuView(expression: BubuExpression.relaxed, size: hero),
           line: (s.endedBySafety ? ReviewCopy.goodnight : ReviewCopy.ending).of(tone),
           lineKey: const ValueKey('review-ending'),
           actions: [_Primary(key: const ValueKey('review-end-ok'), label: ReviewCopy.endOk.of(tone), onTap: _goHome)],
@@ -133,12 +135,9 @@ class _ReviewFlowScreenState extends ConsumerState<ReviewFlowScreen> {
     final plan = s.currentPlan!;
     final text = Theme.of(context).textTheme;
     return _Scroll(
+      // 三種狀態的回應都用同一個表情、同一個大小（底線 4）。
+      side: (context, wide) => _SideBubu(expression: BubuExpression.curious, wide: wide),
       children: [
-        const Center(
-          // 三種狀態的回應都用同一個表情、同一個大小（底線 4）。
-          child: BubuView(expression: BubuExpression.curious, size: 120),
-        ),
-        const SizedBox(height: AppSpace.m),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(AppSpace.m),
@@ -171,12 +170,19 @@ class _ReviewFlowScreenState extends ConsumerState<ReviewFlowScreen> {
 
   Widget _questionStep(BuildContext context, AgeTone tone, ReviewState s) {
     final text = Theme.of(context).textTheme;
+    final question = _BubuSays(text: s.question!.of(tone), key: const ValueKey('review-question'));
     return _Scroll(
+      gap: AppSpace.l,
+      side: (context, wide) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SideBubu(expression: BubuExpression.curious, wide: wide),
+          const SizedBox(height: AppSpace.m),
+          question,
+        ],
+      ),
       children: [
-        const Center(child: BubuView(expression: BubuExpression.curious, size: 120)),
-        const SizedBox(height: AppSpace.m),
-        _BubuSays(text: s.question!.of(tone), key: const ValueKey('review-question')),
-        const SizedBox(height: AppSpace.l),
         Wrap(
           spacing: AppSpace.s,
           runSpacing: AppSpace.s,
@@ -238,9 +244,9 @@ class _ReviewFlowScreenState extends ConsumerState<ReviewFlowScreen> {
     final lesson = s.lesson!;
     final text = Theme.of(context).textTheme;
     return _Scroll(
+      side: (context, wide) => _SideBubu(expression: BubuExpression.happy, wide: wide),
+      gap: AppSpace.m,
       children: [
-        const Center(child: BubuView(expression: BubuExpression.happy, size: 120)),
-        const SizedBox(height: AppSpace.m),
         NotePaper(
           header: Text(ReviewCopy.learnedTitle.of(tone), style: text.titleMedium),
           child: Text(lesson.text, key: const ValueKey('review-lesson')),
@@ -291,18 +297,20 @@ class _Centered extends StatelessWidget {
   final List<Widget> actions;
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpace.l),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          bubu,
-          const SizedBox(height: AppSpace.l),
-          if (line != null) _BubuSays(text: line!, key: lineKey),
-          const SizedBox(height: AppSpace.l),
-          ...actions,
-        ],
+  Widget build(BuildContext context) => AdaptiveFrame(
+    child: Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpace.l),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            bubu,
+            const SizedBox(height: AppSpace.l),
+            if (line != null) _BubuSays(text: line!, key: lineKey),
+            const SizedBox(height: AppSpace.l),
+            ...actions,
+          ],
+        ),
       ),
     ),
   );
@@ -354,13 +362,29 @@ class _Choice extends StatelessWidget {
 }
 
 /// 回顧每一步的內容都不長：全部一次建好（不用 lazy ListView），按鈕永遠在樹上。
+/// 寬螢幕（平板橫放）時步步在旁邊一欄（[AdaptiveTwoPane]）。
 class _Scroll extends StatelessWidget {
-  const _Scroll({required this.children});
+  const _Scroll({required this.side, required this.children, this.gap = AppSpace.m});
+  final Widget Function(BuildContext context, bool wide) side;
   final List<Widget> children;
+  final double gap;
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    padding: const EdgeInsets.all(AppSpace.l),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+  Widget build(BuildContext context) =>
+      AdaptiveTwoPane(padding: const EdgeInsets.all(AppSpace.l), gap: gap, side: side, children: children);
+}
+
+/// 回顧各步驟上方（或旁邊）的步步：同一步驟裡大小固定，不因孩子的回答改變。
+class _SideBubu extends StatelessWidget {
+  const _SideBubu({required this.expression, required this.wide});
+  final BubuExpression expression;
+  final bool wide;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: BubuView(
+      expression: expression,
+      size: wide ? LayoutConfig.bubuSidePane : Layout.bubu(context, BubuSlot.review),
+    ),
   );
 }

@@ -7,6 +7,8 @@ import '../../bubu/greeting.dart';
 import '../../copy/home.dart';
 import '../../copy/plan.dart';
 import '../../core/clock.dart';
+import '../../core/config.dart';
+import '../../core/layout.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
@@ -93,13 +95,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       expression = plans.isEmpty ? BubuExpression.calm : BubuExpression.happy;
     }
 
-    final children = <Widget>[
-      const SizedBox(height: AppSpace.m),
-      Center(child: BubuView(expression: expression, size: 160)),
-      const SizedBox(height: AppSpace.m),
-      _Bubble(text: ended ? HomeCopy.dayEndedBubu.of(tone) : _greetingFor(tone)),
-      const SizedBox(height: AppSpace.l),
-    ];
+    final bubbleText = ended ? HomeCopy.dayEndedBubu.of(tone) : _greetingFor(tone);
+    // 窄版：和原本一樣在最上面；寬版（平板橫放）：自成一欄。
+    Widget side(BuildContext context, bool wide) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: wide
+              ? [
+                  Center(child: BubuView(expression: expression, size: LayoutConfig.bubuSidePane)),
+                  const SizedBox(height: AppSpace.m),
+                  _Bubble(text: bubbleText),
+                ]
+              : [
+                  const SizedBox(height: AppSpace.m),
+                  Center(child: BubuView(expression: expression, size: Layout.bubu(context, BubuSlot.hero))),
+                  const SizedBox(height: AppSpace.m),
+                  _Bubble(text: bubbleText),
+                  const SizedBox(height: AppSpace.l),
+                ],
+        );
+
+    final children = <Widget>[];
 
     if (loaded) {
       if (ended) {
@@ -167,15 +183,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpace.m, vertical: AppSpace.m),
-              children: children,
-            ),
-          ),
-        ),
+        child: AdaptiveTwoPane(gap: 0, side: side, children: children),
       ),
     );
   }

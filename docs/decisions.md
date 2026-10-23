@@ -175,3 +175,8 @@
 
 ### E10 ✅ 測試基礎設施
 - **選擇**：測試用的 drift 連線開 `closeStreamsSynchronously`；repository 的一次性讀取一律用 `get()` 而不是 `watch().first`（後者在 widget test 的 fake async 裡等不到第一筆）。`watchParentView()` 監聽範本、設定、筆記三張表。離線一整天的流程寫在 `integration_test/full_day_flow.dart`，裝置上跑 `integration_test/`，雲端（沒有裝置）由 `test/flow/` 以 widget test 跑同一份流程。
+
+### E11 ✅ 平板版面
+- **選擇**：`lib/core/layout.dart` 一組小工具：短邊 ≥ 600dp 算平板（`FormFactor`）；`AdaptiveFrame` 置中＋最大寬度（手機 560、平板 720）；可用寬度 ≥ 900dp（平板橫放）時 `AdaptiveTwoPane` 把步步＋泡泡放在旁邊一欄（主欄仍 ≤ 720），否則和手機一樣疊成一欄。筆記本在平板排成多欄（新的仍在最前，由左到右），步步在平板較大。數字都在 `LayoutConfig`。
+- **替代方案**：只把手機版置中放大（大螢幕兩側大片空白、步步太小）；用 `NavigationRail`／master-detail 重做導覽（改了動線，超出「只改排版」）。
+- **理由**：只動排版，不動行為與文案；回顧三顆按鈕沿用同一個元件，每個寬度都一樣大（底線 4）；沒有新增任何數量顯示。`test/layout/tablet_layout_test.dart` 在 iPad 直／橫、iPad Pro、Android 平板與手機上逐一檢查。

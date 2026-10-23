@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../bubu/bubu_view.dart';
 import '../../copy/path.dart';
 import '../../core/clock.dart';
+import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../data/repository.dart';
 import '../../domain/models.dart';
@@ -43,15 +44,15 @@ class _PathBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final insights = PathInsights.from(days, now);
     final text = Theme.of(context).textTheme;
-    return ListView(
-      key: const ValueKey('path-list'),
-      padding: const EdgeInsets.all(AppSpace.m),
+    // 窄版：洞察在小路下面（和原本一樣）；寬版（平板橫放）：洞察在小路旁邊。
+    return AdaptiveTwoPane(
+      scrollKey: const ValueKey('path-list'),
+      sideAtEnd: true,
+      side: (context, wide) => _InsightsCard(insights: insights, tone: tone),
       children: [
         Text(PathCopy.intro.of(tone), style: text.bodyLarge, textAlign: TextAlign.center),
         const SizedBox(height: AppSpace.m),
         PathTrail(days: days, tone: tone),
-        const SizedBox(height: AppSpace.l),
-        _InsightsCard(insights: insights, tone: tone),
       ],
     );
   }
@@ -114,7 +115,7 @@ class _EmptyPath extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const BubuView(expression: BubuExpression.curious, size: 140),
+              BubuView(expression: BubuExpression.curious, size: Layout.bubu(context, BubuSlot.empty)),
               const SizedBox(height: AppSpace.l),
               Text(
                 PathCopy.empty.of(tone),

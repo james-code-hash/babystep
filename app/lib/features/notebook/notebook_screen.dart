@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../../bubu/bubu_view.dart';
 import '../../copy/notebook.dart';
 import '../../core/clock.dart';
+import '../../core/config.dart';
+import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../providers.dart';
@@ -43,31 +45,62 @@ class NotebookScreen extends ConsumerWidget {
       body: SafeArea(
         child: lessons.isEmpty
             ? _Empty(text: NotebookCopy.empty.of(tone))
-            : ListView(
-                padding: const EdgeInsets.all(AppSpace.m),
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: FilterChip(
-                      key: const ValueKey('notebook-favorites-only'),
-                      avatar: const Icon(Icons.favorite, size: 18, color: AppColors.accent),
-                      label: Text(NotebookCopy.favoritesOnly.of(tone)),
-                      selected: favoritesOnly,
-                      onSelected: (_) => ref.read(_favoritesOnlyProvider.notifier).toggle(),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpace.m),
-                  if (shown.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: AppSpace.xl),
-                      child: Text(
-                        NotebookCopy.emptyFavorites.of(tone),
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ),
-                  for (final l in shown) ...[_LessonPage(lesson: l, tone: tone), const SizedBox(height: AppSpace.m)],
-                ],
+            : AdaptiveFrame(
+                // 平板：多欄排頁（新的仍在最前面，由左到右、由上到下）。只排版，不加任何數量。
+                maxWidth: Layout.isTablet(context) ? LayoutConfig.wideMaxWidth : null,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final columns = Layout.notebookColumns(context, constraints.maxWidth - 2 * AppSpace.m);
+                    return ListView(
+                      padding: const EdgeInsets.all(AppSpace.m),
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: FilterChip(
+                            key: const ValueKey('notebook-favorites-only'),
+                            avatar: const Icon(Icons.favorite, size: 18, color: AppColors.accent),
+                            label: Text(NotebookCopy.favoritesOnly.of(tone)),
+                            selected: favoritesOnly,
+                            onSelected: (_) => ref.read(_favoritesOnlyProvider.notifier).toggle(),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpace.m),
+                        if (shown.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: AppSpace.xl),
+                            child: Text(
+                              NotebookCopy.emptyFavorites.of(tone),
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ),
+                        if (columns == 1)
+                          for (final l in shown) ...[
+                            _LessonPage(lesson: l, tone: tone),
+                            const SizedBox(height: AppSpace.m),
+                          ]
+                        else
+                          for (var start = 0; start < shown.length; start += columns)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: AppSpace.m),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  for (var i = 0; i < columns; i++) ...[
+                                    if (i > 0) const SizedBox(width: AppSpace.m),
+                                    Expanded(
+                                      child: start + i < shown.length
+                                          ? _LessonPage(lesson: shown[start + i], tone: tone)
+                                          : const SizedBox.shrink(),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                      ],
+                    );
+                  },
+                ),
               ),
       ),
     );
@@ -85,7 +118,7 @@ class _Empty extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const BubuView(expression: BubuExpression.relaxed, size: 140),
+          BubuView(expression: BubuExpression.relaxed, size: Layout.bubu(context, BubuSlot.empty)),
           const SizedBox(height: AppSpace.l),
           Text(
             text,

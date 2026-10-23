@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../bubu/bubu_view.dart';
 import '../../copy/settings.dart';
 import '../../core/routes.dart';
+import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../providers.dart';
@@ -20,30 +21,32 @@ class ChildSettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(SettingsCopy.title.of(tone))),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpace.m),
-          children: [
-            Text(SettingsCopy.toneTitle.of(tone), style: text.titleMedium),
-            const SizedBox(height: AppSpace.xs),
-            Text(SettingsCopy.toneHint.of(tone), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
-            const SizedBox(height: AppSpace.m),
-            for (final option in AgeTone.values) ...[
-              _ToneOption(option: option, selected: option == tone),
-              const SizedBox(height: AppSpace.s),
-            ],
-            const SizedBox(height: AppSpace.l),
-            Card(
-              child: ListTile(
-                key: const ValueKey('open-dress-up'),
-                contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.m, vertical: AppSpace.s),
-                leading: const BubuView(size: 56),
-                title: Text(SettingsCopy.dressUpEntry.of(tone), style: text.titleMedium),
-                subtitle: Text(SettingsCopy.dressUpEntryHint.of(tone)),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push(Routes.dressUp),
+        child: AdaptiveFrame(
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpace.m),
+            children: [
+              Text(SettingsCopy.toneTitle.of(tone), style: text.titleMedium),
+              const SizedBox(height: AppSpace.xs),
+              Text(SettingsCopy.toneHint.of(tone), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
+              const SizedBox(height: AppSpace.m),
+              for (final option in AgeTone.values) ...[
+                _ToneOption(option: option, selected: option == tone),
+                const SizedBox(height: AppSpace.s),
+              ],
+              const SizedBox(height: AppSpace.l),
+              Card(
+                child: ListTile(
+                  key: const ValueKey('open-dress-up'),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.m, vertical: AppSpace.s),
+                  leading: const BubuView(size: 56),
+                  title: Text(SettingsCopy.dressUpEntry.of(tone), style: text.titleMedium),
+                  subtitle: Text(SettingsCopy.dressUpEntryHint.of(tone)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(Routes.dressUp),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

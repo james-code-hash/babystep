@@ -7,6 +7,7 @@ import '../../copy/line.dart';
 import '../../copy/plan.dart';
 import '../../core/clock.dart';
 import '../../core/config.dart';
+import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../providers.dart';
@@ -34,18 +35,26 @@ class _StepLayout extends StatelessWidget {
   final List<Widget> actions;
 
   @override
-  Widget build(BuildContext context) => ListView(
-        padding: const EdgeInsets.all(AppSpace.m),
+  Widget build(BuildContext context) => AdaptiveTwoPane(
+        // 窄版：小步步＋泡泡在最上面一列（和原本一樣）；寬版（平板橫放）：步步自成一欄。
+        side: (context, wide) => wide
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  BubuView(expression: expression, size: LayoutConfig.bubuSidePane),
+                  const SizedBox(height: AppSpace.m),
+                  _Bubble(text: bubuSays),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  BubuView(expression: expression, size: Layout.bubu(context, BubuSlot.step)),
+                  const SizedBox(width: AppSpace.m),
+                  Expanded(child: _Bubble(text: bubuSays)),
+                ],
+              ),
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              BubuView(expression: expression, size: 88),
-              const SizedBox(width: AppSpace.m),
-              Expanded(child: _Bubble(text: bubuSays)),
-            ],
-          ),
-          const SizedBox(height: AppSpace.l),
           ...content,
           if (actions.isNotEmpty) ...[
             const SizedBox(height: AppSpace.l),

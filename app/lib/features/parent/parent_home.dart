@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../copy/line.dart';
 import '../../copy/parent.dart';
 import '../../core/clock.dart';
+import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../domain/parent_view.dart';
@@ -49,20 +50,22 @@ class _ParentBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListView(
-      key: const ValueKey('parent-list'),
-      padding: const EdgeInsets.all(AppSpace.m),
-      children: [
-        Text(pt(ParentCopy.intro), style: const TextStyle(color: AppColors.inkSoft)),
-        const SizedBox(height: AppSpace.m),
-        _SharedLessonsSection(lessons: view.sharedLessons),
-        _TaskTemplatesSection(templates: view.taskTemplates),
-        _CueTemplatesSection(templates: view.cueTemplates),
-        _SlotsSection(slots: view.settings.reminderSlots),
-        _ToneSection(tone: view.settings.tone),
-        _LlmSection(enabled: view.settings.llmEnabled),
-        const _DataSection(),
-      ],
+    return AdaptiveFrame(
+      child: ListView(
+        key: const ValueKey('parent-list'),
+        padding: const EdgeInsets.all(AppSpace.m),
+        children: [
+          Text(pt(ParentCopy.intro), style: const TextStyle(color: AppColors.inkSoft)),
+          const SizedBox(height: AppSpace.m),
+          _SharedLessonsSection(lessons: view.sharedLessons),
+          _TaskTemplatesSection(templates: view.taskTemplates),
+          _CueTemplatesSection(templates: view.cueTemplates),
+          _SlotsSection(slots: view.settings.reminderSlots),
+          _ToneSection(tone: view.settings.tone),
+          _LlmSection(enabled: view.settings.llmEnabled),
+          const _DataSection(),
+        ],
+      ),
     );
   }
 }
