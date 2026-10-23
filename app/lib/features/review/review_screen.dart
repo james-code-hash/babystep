@@ -13,6 +13,7 @@ import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../providers.dart';
 import '../../safety/safety_gate.dart';
+import '../../safety/safety_response.dart';
 import '../notebook/note_paper.dart';
 import 'outcome_buttons.dart';
 import 'review_controller.dart';
@@ -71,8 +72,18 @@ class _ReviewFlowScreenState extends ConsumerState<ReviewFlowScreen> {
     }
   }
 
+  /// 伺服器端攔下危機訊號：和本機攔下一樣顯示預寫的安全回應，孩子關掉後道晚安（底線 9）。
+  Future<void> _showServerSafety() async {
+    await SafetyResponseScreen.show(context, null);
+    if (!mounted) return;
+    await _ctrl.finishAfterSafety();
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen<bool>(reviewControllerProvider.select((s) => s.awaitingSafetyScreen), (prev, next) {
+      if (next && !(prev ?? false)) _showServerSafety();
+    });
     final tone = ref.watch(toneProvider);
     final s = ref.watch(reviewControllerProvider);
     return Scaffold(

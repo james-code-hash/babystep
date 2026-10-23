@@ -48,9 +48,9 @@ final lessonsProvider = StreamProvider<List<Lesson>>((ref) => ref.watch(reposito
 final plannedDaysProvider = StreamProvider<List<PlannedDay>>((ref) => ref.watch(repositoryProvider).watchPlannedDays());
 
 /// 孩子挑事情用：預設、家長建議、孩子自己的事情庫。
-final taskChoicesProvider = StreamProvider<List<TaskTemplate>>((ref) => ref.watch(repositoryProvider).watchTaskTemplates());
+final taskChoicesProvider = StreamProvider<List<TaskTemplate>>((ref) => ref.watch(repositoryProvider).watchTaskChoices());
 
-final cueChoicesProvider = StreamProvider<List<CueTemplate>>((ref) => ref.watch(repositoryProvider).watchCueTemplates());
+final cueChoicesProvider = StreamProvider<List<CueTemplate>>((ref) => ref.watch(repositoryProvider).watchCueChoices());
 
 /// LLM 代理的 client。null = 沒有可用的 LLM（預設；沒設 emulator 也沒部署）。
 final lessonLlmClientProvider = Provider<LessonLlmClient?>((ref) => null);

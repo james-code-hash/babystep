@@ -211,17 +211,52 @@ void main() {
     expect(hasKey('review-lesson'), isTrue);
   });
 
-  dbTestWidgets('safety-source lesson is never offered for saving', (tester) async {
+  // 伺服器端那一層攔下（本機沒抓到）：和本機攔下走同一條安全路徑（底線 9、C6）。
+  dbTestWidgets('server-only safety hit → reflection never stored, safety screen, goodnight ending', (tester) async {
+    const safety = LessonResult(text: '我們先休息一下。', kind: LessonKind.plainDay, source: LessonSource.safety);
+    final service = CountingLessonService(result: safety);
+    await seedPlans(env, count: 1);
+    await pumpReview(tester, env, service);
+    await reviewOutcomes(tester, [Outcome.done], 1);
+    await tapKey(tester, 'review-write');
+    const words = '今天的事我不想說太多';
+    await tester.enterText(find.byKey(const ValueKey('review-text')), words);
+    await tapKey(tester, 'review-send');
+    expect(service.calls.single.childWords, words, reason: 'local check passed, so the server was asked');
+
+    // 預寫的安全回應，含求助專線。
+    expect(find.byType(SafetyResponseScreen), findsOneWidget);
+    final helplines = loadCrisisDetector().helplines;
+    expect(helplines, isNotEmpty);
+    for (final h in helplines) {
+      expect(find.byKey(Key('helpline-${h.id}')), findsOneWidget);
+    }
+    // 孩子還沒關掉之前，資料庫裡就沒有這段話。
+    expect((await db(tester, () => env.repo.dayRecord(todayOf(env))))?.reflection, isNull);
+
+    await tapKey(tester, 'safety-close');
+    final record = await db(tester, () => env.repo.dayRecord(todayOf(env)));
+    expect(record?.reflection, isNull);
+    expect(record?.ended, isTrue);
+    expect(await db(tester, () => env.repo.watchLessons().first), isEmpty);
+    expect(await db(tester, env.repo.exportJson), isNot(contains(words)));
+    expect(hasKey('review-lesson'), isFalse);
+    expect(hasKey('review-save-yes'), isFalse);
+    expect(find.text(ReviewCopy.goodnight.lively), findsOneWidget);
+  });
+
+  dbTestWidgets('server-only safety hit also clears a reflection saved earlier today', (tester) async {
     const safety = LessonResult(text: '我們先休息一下。', kind: LessonKind.plainDay, source: LessonSource.safety);
     await seedPlans(env, count: 1);
+    await db(tester, () => env.repo.saveReflection(todayOf(env), '早一點存的話'));
     await pumpReview(tester, env, CountingLessonService(result: safety));
     await reviewOutcomes(tester, [Outcome.done], 1);
-    await tapKey(tester, 'review-skip');
-    expect(hasKey('review-save-yes'), isFalse);
-    expect(hasKey('review-save-no'), isFalse);
-    await tapKey(tester, 'review-continue');
-    expect(hasKey('review-ending'), isTrue);
-    expect(await db(tester, () => env.repo.watchLessons().first), isEmpty);
+    await tapKey(tester, 'review-chip-0');
+    expect(find.byType(SafetyResponseScreen), findsOneWidget);
+    await tapKey(tester, 'safety-close');
+    final record = await db(tester, () => env.repo.dayRecord(todayOf(env)));
+    expect(record?.reflection, isNull);
+    expect(record?.ended, isTrue);
   });
 
   dbTestWidgets('changing an outcome before moving on keeps only the last choice', (tester) async {

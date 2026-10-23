@@ -51,6 +51,7 @@ class ReviewState {
     this.thinking = false,
     this.saved = false,
     this.endedBySafety = false,
+    this.awaitingSafetyScreen = false,
   });
 
   final ReviewStage stage;
@@ -76,6 +77,10 @@ class ReviewState {
   /// 反思命中危機訊號 → 不學、不存，只道晚安。
   final bool endedBySafety;
 
+  /// 伺服器端攔下危機訊號（本機沒抓到）：畫面要顯示安全回應，孩子關掉後再呼叫
+  /// [ReviewController.finishAfterSafety] 結束這一天。
+  final bool awaitingSafetyScreen;
+
   Plan? get currentPlan => index < plans.length ? plans[index] : null;
   Outcome? get currentOutcome => currentPlan == null ? null : outcomes[currentPlan!.id];
 
@@ -96,6 +101,7 @@ class ReviewState {
     bool? thinking,
     bool? saved,
     bool? endedBySafety,
+    bool? awaitingSafetyScreen,
   }) => ReviewState(
     stage: stage ?? this.stage,
     plans: plans ?? this.plans,
@@ -109,6 +115,7 @@ class ReviewState {
     thinking: thinking ?? this.thinking,
     saved: saved ?? this.saved,
     endedBySafety: endedBySafety ?? this.endedBySafety,
+    awaitingSafetyScreen: awaitingSafetyScreen ?? this.awaitingSafetyScreen,
   );
 }
 
@@ -192,14 +199,36 @@ class ReviewController extends Notifier<ReviewState> {
     );
   }
 
-  /// 孩子回答了（已經過安全檢查）或跳過（null）。
+  /// 孩子回答了（已經過本機安全檢查）或跳過（null）。
+  ///
+  /// 反思等「步步學到」回來、確定不是 safety 結果之後才存：伺服器那一層若攔下危機訊號，
+  /// 這段話從頭到尾不會寫進資料庫（C6、底線 9）。
   Future<void> answer(String? words) async {
     if (state.stage != ReviewStage.question) return;
     final clean = (words?.trim().isEmpty ?? true) ? null : words!.trim();
+    final repo = ref.read(repositoryProvider);
+    final day = _todayKey;
     state = state.copyWith(stage: ReviewStage.learning, thinking: false);
-    await ref.read(repositoryProvider).saveReflection(_todayKey, clean);
+    final result = await _learn(clean);
+    if (result.source == LessonSource.safety) {
+      // 保險：就算之前存過什麼，這一天的反思也清掉。
+      await repo.saveReflection(day, null);
+      if (!ref.mounted) return;
+      _cancelTimer();
+      state = state.copyWith(endedBySafety: true, awaitingSafetyScreen: true, thinking: false);
+      return;
+    }
+    // 孩子離開畫面也照樣存（repo 與 day 已先取好）。
+    await repo.saveReflection(day, clean);
     if (!ref.mounted) return;
-    await _learn(clean);
+    state = state.copyWith(stage: ReviewStage.lesson, lesson: result, thinking: false);
+  }
+
+  /// 伺服器端攔下之後，孩子看完安全回應：和本機攔下一樣，道晚安並結束這一天。
+  Future<void> finishAfterSafety() async {
+    if (!state.awaitingSafetyScreen) return;
+    state = state.copyWith(awaitingSafetyScreen: false);
+    await _end();
   }
 
   /// 反思命中危機訊號：不存反思、不學，直接道晚安並結束這一天。
@@ -209,7 +238,7 @@ class ReviewController extends Notifier<ReviewState> {
     await _end();
   }
 
-  Future<void> _learn(String? words) async {
+  Future<LessonResult> _learn(String? words) async {
     final request = LessonRequest(
       outcomes: [for (final p in state.plans) state.outcomes[p.id] ?? Outcome.notToday],
       tasks: [for (final p in state.plans) p.task],
@@ -220,16 +249,17 @@ class ReviewController extends Notifier<ReviewState> {
     _thinkingTimer = Timer(AppConfig.llmThinkingAfter, () {
       if (ref.mounted && state.stage == ReviewStage.learning) state = state.copyWith(thinking: true);
     });
+    final service = ref.read(lessonServiceProvider);
+    final fallback = ref.read(templateLessonServiceProvider);
     LessonResult result;
     try {
-      result = await ref.read(lessonServiceProvider).learn(request);
+      result = await service.learn(request);
     } catch (_) {
       // 約定上 learn 不丟例外；萬一丟了，退回離線範本。
-      result = await ref.read(templateLessonServiceProvider).learn(request);
+      result = await fallback.learn(request);
     }
     _cancelTimer();
-    if (!ref.mounted) return;
-    state = state.copyWith(stage: ReviewStage.lesson, lesson: result, thinking: false);
+    return result;
   }
 
   /// 「記下來」（true）或「不用」（false），然後結束。

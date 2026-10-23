@@ -224,7 +224,8 @@ class _MoodStepState extends ConsumerState<MoodStep> {
     final low = mood == _Mood.tired || mood == _Mood.low;
     final controller = ref.read(planFlowProvider.notifier);
     return _StepLayout(
-      expression: mood == null ? BubuExpression.curious : (low ? BubuExpression.caring : BubuExpression.happy),
+      // 不管選了哪個心情，步步都是同一個「聽到了」的表情（底線 2；心情只換步步說的話）。
+      expression: listeningExpression(answered: mood != null),
       bubuSays: mood == null ? PlanCopy.moodAsk.of(tone) : _reply(mood).of(tone),
       content: [
         Wrap(
@@ -432,7 +433,7 @@ class _IfThenStepState extends ConsumerState<IfThenStep> {
         );
 
     return _StepLayout(
-      expression: cue == null ? BubuExpression.curious : BubuExpression.happy,
+      expression: listeningExpression(answered: cue != null),
       bubuSays: cue == null ? ask.of(tone) : PlanCopy.cueChosen.of(tone),
       content: [
         slot(
@@ -554,7 +555,7 @@ class _WhyStepState extends ConsumerState<WhyStep> {
     }
 
     return _StepLayout(
-      expression: why == null ? BubuExpression.curious : BubuExpression.calm,
+      expression: listeningExpression(answered: why != null),
       bubuSays: says,
       content: [
         Wrap(

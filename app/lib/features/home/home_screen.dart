@@ -19,7 +19,13 @@ import 'peek_counter.dart';
 ///
 /// - 沒有計畫 → 邀請「想想今天要做什麼」（可以不理）。
 /// - 有計畫、還沒聊完 → 計畫卡＋「來聊聊今天」。
-/// - 聊完了 → 「今天聊完了」，步步放鬆，沒有任何行動呼籲（C8）。
+/// - 聊完了 → 「今天聊完了」，沒有任何行動呼籲（C8）。
+///
+/// 步步的表情只看時段（[restingExpression]），和上面三種狀態無關（底線 2）；
+/// 唯一的例外是探頭卡的問題正顯示著、還沒回答時，步步歪頭等回答（對話裡的反應）。
+///
+/// 探頭卡在這幾個時候重新決定一次（仍受每日上限限制，每次最多一張）：
+/// 第一次載入、今天的計畫從無到有、App 從背景回來、從別的畫面回到首頁。
 ///
 /// 刻意沒有：完成數、進度條、小紅點、「上次開啟」。
 class HomeScreen extends ConsumerStatefulWidget {
@@ -31,15 +37,50 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 enum _PeekReply { go, later, notToday }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   String? _greeting;
   AgeTone? _greetingTone;
 
-  /// 這次進到首頁時決定一次要不要探頭（每次掛上首頁最多一張卡）。
+  /// 這次進到首頁時決定一次要不要探頭（每次進來最多一張卡）。
   bool _peekDecided = false;
   bool _peekShown = false;
   _PeekReply? _peekReply;
   int _peekVariant = 0;
+
+  /// 上一次載入完成時今天有沒有計畫（null = 還沒載入過）。
+  bool? _hadPlans;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    // 可能跨過午夜：重新算今天是哪一天。
+    ref.invalidate(todayKeyProvider);
+    _newVisit();
+  }
+
+  /// 又一次「進到首頁」（從背景回來、從別的畫面回來）：重新決定要不要探頭。
+  /// 卡片正顯示著、還沒回答時就留著，不重抽也不多算一次。
+  void _newVisit() {
+    if (!mounted) return;
+    if (_peekShown && _peekReply == null) return;
+    setState(() {
+      _peekDecided = false;
+      _peekShown = false;
+      _peekReply = null;
+    });
+  }
 
   String _greetingFor(AgeTone tone) {
     if (_greeting == null || _greetingTone != tone) {
@@ -70,7 +111,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  void _open(String route) => GoRouter.of(context).push(route);
+  Future<void> _open(String route) async {
+    await GoRouter.of(context).push(route);
+    _newVisit();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,17 +127,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final plans = plansAsync.value ?? const <Plan>[];
     final record = recordAsync.value;
     final ended = record?.ended ?? false;
-    if (loaded) _decidePeek(settings.value!, plans, record);
-    final peekVisible = loaded && _peekShown && plans.isNotEmpty && !ended;
-
-    final BubuExpression expression;
-    if (ended) {
-      expression = BubuExpression.relaxed;
-    } else if (peekVisible && _peekReply == null) {
-      expression = BubuExpression.curious;
-    } else {
-      expression = plans.isEmpty ? BubuExpression.calm : BubuExpression.happy;
+    if (loaded) {
+      // 今天的計畫從無到有（例如在別的地方存好計畫）→ 這次還沒探頭過就重新決定。
+      if (_hadPlans == false && plans.isNotEmpty && !_peekShown) _peekDecided = false;
+      _hadPlans = plans.isNotEmpty;
+      _decidePeek(settings.value!, plans, record);
     }
+    final peekVisible = loaded && _peekShown && plans.isNotEmpty && !ended;
+    final peekAsking = peekVisible && _peekReply == null;
+
+    // 只看時段；探頭問題正顯示著時歪頭等回答（底線 2）。
+    final expression = peekAsking ? BubuExpression.curious : restingExpression(ref.watch(clockProvider).now());
 
     final bubbleText = ended ? HomeCopy.dayEndedBubu.of(tone) : _greetingFor(tone);
     // 窄版：和原本一樣在最上面；寬版（平板橫放）：自成一欄。

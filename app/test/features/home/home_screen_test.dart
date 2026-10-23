@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:little_steps/bubu/bubu_view.dart';
 import 'package:little_steps/copy/home.dart';
 import 'package:little_steps/core/clock.dart';
 import 'package:little_steps/core/config.dart';
@@ -224,5 +225,160 @@ void main() {
     expect(peek(record: DayRecord(dayKey: 'd', endedAt: now)), isFalse);
     expect(peek(under: false), isFalse);
     expect(peek(plans: const []), isFalse);
+  });
+
+  // 底線 2：首頁步步的表情只看時段，和今天有沒有計畫、有沒有聊完無關。
+  group('Bubu on Home does not depend on what the child did', () {
+    (BubuExpression, String) bubuOnHome(WidgetTester tester) {
+      final view = tester.widget<BubuView>(find.byType(BubuView));
+      final sem = tester.widget<Semantics>(find.descendant(of: find.byType(BubuView), matching: find.byType(Semantics)).first);
+      return (view.expression, sem.properties.label!);
+    }
+
+    for (final hour in [8, 13, 18, 21]) {
+      testWidgets('same face and label with 0 plans, with plans and after the day ended ($hour:00)', (tester) async {
+        tallScreen(tester);
+        final now = DateTime(2026, 10, 23, hour, 40); // 都不在預設提醒時段裡：沒有探頭卡
+        final seen = <String, (BubuExpression, String)>{};
+        for (final state in ['none', 'planned', 'ended']) {
+          env = TestEnv(now: now);
+          if (state != 'none') await _plan(env);
+          if (state == 'ended') await env.repo.endDay(dayKeyOf(now));
+          await pumpApp(tester, env);
+          expect(find.byKey(const ValueKey('home-peek')), findsNothing);
+          seen[state] = bubuOnHome(tester);
+          await finish(tester, env);
+        }
+        expect(seen.values.toSet(), hasLength(1), reason: '$seen');
+        expect(seen['none']!.$1, restingExpression(now));
+      });
+    }
+
+    test('restingExpression only looks at the time of day', () {
+      expect(restingExpression(DateTime(2026, 1, 1, 7)), BubuExpression.happy);
+      expect(restingExpression(DateTime(2026, 1, 1, 13)), BubuExpression.calm);
+      expect(restingExpression(DateTime(2026, 1, 1, 18)), BubuExpression.calm);
+      expect(restingExpression(DateTime(2026, 1, 1, 22)), BubuExpression.relaxed);
+      expect(restingExpression(DateTime(2026, 1, 1, 2)), BubuExpression.relaxed);
+    });
+
+    testWidgets('curious only while the peek question is showing, resting face after answering', (tester) async {
+      tallScreen(tester);
+      env = TestEnv(); // 19:30，提醒時段裡
+      await _plan(env);
+      await pumpApp(tester, env);
+      expect(find.byKey(const ValueKey('home-peek')), findsOneWidget);
+      expect(bubuOnHome(tester).$1, BubuExpression.curious);
+      await tester.tap(find.byKey(const ValueKey('peek-later')));
+      await tester.pumpAndSettle();
+      expect(bubuOnHome(tester).$1, restingExpression(env.clock.now()));
+      await finish(tester, env);
+    });
+  });
+
+  group('peek card is re-checked when its inputs change', () {
+    void resumeApp(WidgetTester tester) {
+      for (final s in const [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(s);
+      }
+    }
+
+    PeekCounter counterOf(WidgetTester tester) =>
+        ProviderScope.containerOf(tester.element(find.byType(HomeScreen))).read(peekCounterProvider.notifier);
+
+    testWidgets('mounted outside a slot → clock moves into a slot → app resumed → card appears', (tester) async {
+      tallScreen(tester);
+      env = TestEnv(now: DateTime(2026, 10, 23, 10, 0));
+      await _plan(env);
+      await pumpApp(tester, env);
+      expect(find.byKey(const ValueKey('home-peek')), findsNothing);
+
+      env.clock.fixed = DateTime(2026, 10, 23, 19, 30);
+      resumeApp(tester);
+      await settleAll(tester);
+      expect(find.byKey(const ValueKey('home-peek')), findsOneWidget);
+      expect(counterOf(tester).shownOn('2026-10-23'), 1);
+
+      // 卡片還開著時再從背景回來：還是同一張，不多算。
+      resumeApp(tester);
+      await settleAll(tester);
+      expect(find.byKey(const ValueKey('home-peek')), findsOneWidget);
+      expect(counterOf(tester).shownOn('2026-10-23'), 1);
+      await finish(tester, env);
+    });
+
+    testWidgets('resume still respects maxPeeksPerDay', (tester) async {
+      tallScreen(tester);
+      env = TestEnv(now: DateTime(2026, 10, 23, 10, 0));
+      await _plan(env);
+      await pumpApp(tester, env);
+      final counter = counterOf(tester);
+      for (var i = 0; i < AppConfig.maxPeeksPerDay; i++) {
+        counter.markShown('2026-10-23');
+      }
+      env.clock.fixed = DateTime(2026, 10, 23, 19, 30);
+      resumeApp(tester);
+      await settleAll(tester);
+      expect(find.byKey(const ValueKey('home-peek')), findsNothing);
+      expect(counter.shownOn('2026-10-23'), AppConfig.maxPeeksPerDay);
+      await finish(tester, env);
+    });
+
+    testWidgets('each resume is one visit: answered card, next resume can show again until the cap', (tester) async {
+      tallScreen(tester);
+      env = TestEnv();
+      await _plan(env);
+      await pumpApp(tester, env);
+      var shown = 0;
+      for (var i = 0; i < AppConfig.maxPeeksPerDay + 1; i++) {
+        if (find.byKey(const ValueKey('home-peek')).evaluate().isNotEmpty) {
+          shown++;
+          await tester.tap(find.byKey(const ValueKey('peek-later')));
+          await tester.pumpAndSettle();
+          expect(find.byKey(const ValueKey('home-peek')), findsNothing, reason: 'one card per visit');
+        }
+        resumeApp(tester);
+        await settleAll(tester);
+      }
+      expect(shown, AppConfig.maxPeeksPerDay);
+      expect(find.byKey(const ValueKey('home-peek')), findsNothing);
+      await finish(tester, env);
+    });
+
+    testWidgets('plans appear while Home is mounted inside a slot → card appears', (tester) async {
+      tallScreen(tester);
+      env = TestEnv(); // 19:30
+      await pumpApp(tester, env);
+      expect(find.byKey(const ValueKey('home-peek')), findsNothing);
+      await tester.runAsync(() => env.repo.savePlans(dayKeyOf(env.clock.now()), const [
+            PlanDraft(emoji: '✏️', task: '寫數學作業', cue: '我吃完晚飯'),
+          ]));
+      await settleAll(tester);
+      expect(find.byKey(const ValueKey('home-peek')), findsOneWidget);
+      await finish(tester, env);
+    });
+
+    testWidgets('returning to Home from another screen re-checks', (tester) async {
+      tallScreen(tester);
+      env = TestEnv(now: DateTime(2026, 10, 23, 10, 0));
+      await _plan(env);
+      await pumpApp(tester, env);
+      expect(find.byKey(const ValueKey('home-peek')), findsNothing);
+      await tester.ensureVisible(find.byKey(const ValueKey('nav-notebook')));
+      await tester.tap(find.byKey(const ValueKey('nav-notebook')));
+      await settleAll(tester);
+      env.clock.fixed = DateTime(2026, 10, 23, 19, 30);
+      GoRouter.of(tester.element(find.byType(HomeScreen, skipOffstage: false))).pop();
+      await settleAll(tester);
+      expect(find.byKey(const ValueKey('home-peek')), findsOneWidget);
+      await finish(tester, env);
+    });
   });
 }

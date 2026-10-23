@@ -2,7 +2,12 @@
     <application
         android:label="little_steps"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
+        <!-- 孩子的資料只留在這台裝置（底線 8、decisions.md G4）：
+             不做 Google 雲端備份，Android 12+ 的裝置轉移也全部排除。 -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

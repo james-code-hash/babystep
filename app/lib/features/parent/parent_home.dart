@@ -405,7 +405,7 @@ class _DataSection extends ConsumerWidget {
       if (!first || !context.mounted) return;
       final second = await confirmDeleteAllTyped(context);
       if (!second) return;
-      await repo.deleteAll();
+      await ref.read(deleteAllDataProvider)();
       ref.invalidate(parentViewProvider);
       if (!context.mounted) return;
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(pt(ParentCopy.deleted))));
