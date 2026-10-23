@@ -249,3 +249,12 @@
 - **選擇**：`addTaskTemplate`／`addCueTemplate` 只和「呼叫者看得到的來源」比：家長／預設只和家長／預設比，孩子可以重複使用任何來源。孩子挑選清單（`watchTaskChoices`／`watchCueChoices`）同一句只列一次，優先家長那筆（保留「爸媽建議」）；匯出仍含全部列。
 - **替代**：家長新增時提示「已經有了」（一樣會洩漏）；DB 加 unique(label)。
 - **理由**：原本家長新增孩子寫過的句子會「新增了卻沒出現」，家長能用猜的確認孩子的私人事情庫（底線 7）。
+
+### G8 ✅ debug 建置允許連本機 emulator 的 HTTP
+- **選擇**：只在 `android/app/src/debug/` 加 `network_security_config`，允許 10.0.2.2、localhost、127.0.0.1 的明文 HTTP；main（release）不變。
+- **替代**：在 main manifest 開 `usesCleartextTraffic`。
+- **理由**：Firebase emulator 只提供 HTTP，Android 9+ 預設擋明文，LLM 模式會一直默默退回範本。正式版不需要也不應該允許明文。
+
+### G9 ✅ 從背景回來時重抽問候
+- **選擇**：首頁 `resumed` 時清掉快取的問候，下次 build 依現在的時段重抽；從別的畫面回首頁不重抽。
+- **理由**：早上打開、晚上才回來時還在說早安。問候只吃（語氣、時間、亂數），沒有碰到底線 2。

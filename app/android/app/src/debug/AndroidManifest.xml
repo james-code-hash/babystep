@@ -4,4 +4,7 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 只有 debug：允許連本機 Firebase emulator 的 HTTP（10.0.2.2、localhost）。
+         release 沒有這個例外（decisions.md G8）。 -->
+    <application android:networkSecurityConfig="@xml/network_security_config"/>
 </manifest>

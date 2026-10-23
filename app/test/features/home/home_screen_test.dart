@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:little_steps/bubu/bubu_view.dart';
+import 'package:little_steps/bubu/greeting.dart';
+import 'package:little_steps/bubu/look.dart';
 import 'package:little_steps/copy/home.dart';
 import 'package:little_steps/core/clock.dart';
 import 'package:little_steps/core/config.dart';
@@ -311,6 +313,23 @@ void main() {
       await settleAll(tester);
       expect(find.byKey(const ValueKey('home-peek')), findsOneWidget);
       expect(counterOf(tester).shownOn('2026-10-23'), 1);
+      await finish(tester, env);
+    });
+
+    testWidgets('opened in the morning, resumed at night → greeting follows the new day part', (tester) async {
+      tallScreen(tester);
+      env = TestEnv(now: DateTime(2026, 10, 23, 8, 0));
+      await pumpApp(tester, env);
+      env.clock.fixed = DateTime(2026, 10, 23, 21, 30);
+      resumeApp(tester);
+      await settleAll(tester);
+      final now = env.clock.now();
+      final allowed = {
+        for (final l in [...dayPartGreetings(dayPartOf(now)).lines, ...seasonalGreetings(seasonOf(now)).lines])
+          l.of(AgeTone.lively),
+      };
+      final shown = tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).whereType<String>();
+      expect(shown.where(allowed.contains), isNotEmpty);
       await finish(tester, env);
     });
 

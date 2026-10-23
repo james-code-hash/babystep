@@ -67,6 +67,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     if (state != AppLifecycleState.resumed || !mounted) return;
     // 可能跨過午夜：重新算今天是哪一天。
     ref.invalidate(todayKeyProvider);
+    // 早上打開、晚上才回來：問候要跟著現在的時段重抽。
+    setState(() => _greeting = null);
     _newVisit();
   }
 
