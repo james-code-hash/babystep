@@ -1,0 +1,2495 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小步 Little Steps — 核心體驗互動原型</title>
+<style>
+/* ============================================================
+   小步 Little Steps · 核心體驗互動原型
+   Apple-inspired precision editorial system · product UI mode
+   對應產品：兒童內驅力成長 App（6–12 歲）· SDT 三需求
+   ============================================================ */
+:root {
+  /* ─── Surface (3 levels) ──────────────────────────────────────────
+   * Apple's binary section rhythm alternates pure white retail/hero
+   * canvases with pale Apple gray feature fields. We bind --bg to
+   * the white canvas (the most common default Apple page background)
+   * and --surface to the pale gray that cards and feature bands lift
+   * onto. --surface-warm is bound to a real third tier (#fbfbfd) —
+   * the near-white brightness shift that appears between hero and
+   * pale-gray bands on apple.com. Collapsing it to var(--surface)
+   * would erase a real brand feature, so we keep it independent. */
+  --bg: #ffffff;
+  --surface: #f5f5f7;
+  --surface-warm: #fbfbfd;
+
+  /* ─── Foreground ramp (4 levels) ─────────────────────────────────
+   * Apple's text neutrals are explicitly named in DESIGN.md §2:
+   * Near-Black Ink (primary), Utility Dark Gray (secondary text /
+   * dark-neutral surfaces in store contexts), Secondary Neutral Gray
+   * (helper copy / tertiary metadata), Mid Border Gray (the strongest
+   * neutral, used for stronger field outlines and the most-restrained
+   * caption tier). We bind all four — Apple genuinely walks the full
+   * ramp, so collapsing --fg-2 or --meta to siblings would flatten
+   * the brand.
+   *
+   * Note that none of these are pure black (#000000). #000000 is
+   * reserved for hero canvases and dark chapters; for body type on
+   * white, #1d1d1f gives the slight warmth that reads as Apple. */
+  --fg: #1d1d1f;
+  --fg-2: #424245;
+  --muted: #6e6e73;
+  --meta: #86868b;
+
+  /* ─── Border (2 levels) ──────────────────────────────────────────
+   * Soft Border Gray (#d2d2d7) is Apple's default divider weight and
+   * card-edge color. --border-soft is bound to a lighter near-neutral
+   * (#e8e8ed) for inner row separators in dense retail tables and
+   * configurator option lists, where the d2d2d7 hairline would
+   * over-compete with the option labels. */
+  --border: #d2d2d7;
+  --border-soft: #e8e8ed;
+
+  /* ─── Accent ──────────────────────────────────────────────────────
+   * Apple Action Blue — the system's only persistent chromatic move.
+   * DESIGN.md §7 ("Don't introduce broad secondary accent palettes
+   * that compete with Apple blue") makes this a one-color brand for
+   * action and link semantics; the schema's hard cap of ≤2 visible
+   * accent uses per screen aligns naturally. */
+  --accent: #0071e3;
+  --accent-on: #ffffff; /* white label on the blue fill */
+
+  /* ─── Accent states ───────────────────────────────────────────────
+   * Apple's live primary buttons LIGHTEN on hover (the blue gains
+   * luminance) and darken on press. The schema's default black-mix
+   * formula would fight that motion, so we hand-pick both values:
+   *   - hover: #0077ed (≈ 4% brighter than --accent)
+   *   - active: #0066cc (the documented Body Link Blue from DESIGN.md
+   *             §2, which doubles cleanly as the press tone)
+   *
+   * Schema rule: every brand provides --accent-hover and
+   * --accent-active. The binding strategy (formula / hand-picked /
+   * identity) is brand-decided. Default uses formulas; kami uses
+   * identity + hand-picked; Apple uses hand-picked in both
+   * directions. */
+  --accent-hover: #0077ed;
+  --accent-active: #0066cc;
+
+  /* ─── Semantic ────────────────────────────────────────────────────
+   * Apple's DESIGN.md §2 explicitly notes "no distinct semantic
+   * palette was consistently visible in the extracted surface set" —
+   * so we inherit the schema defaults verbatim. Apple artifacts
+   * almost never need success / warn / danger; when they do, the
+   * defaults are restrained enough not to fight the blue accent.
+   * Reserve under 5% of any surface area regardless. */
+  --success: #16a34a;
+  --warn:    #eab308;
+  --danger:  #dc2626;
+
+  /* ─── Typography ──────────────────────────────────────────────────
+   * Apple's documented split is two SF Pro families: SF Pro Display
+   * for hero / merchandising headings, SF Pro Text for navigation,
+   * controls, and dense commerce copy. We mirror the exact published
+   * fallback chain (SF Pro Icons → Helvetica Neue → Helvetica → Arial
+   * → sans-serif) so artifacts rendered on non-macOS clients land on
+   * the closest practical substitute.
+   *
+   * SF Mono leads the monospace stack — Apple's brand mono — with
+   * the schema fallbacks behind it for portability. */
+  --font-display:
+    "SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body:
+    "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono:
+    "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
+
+  /* Type scale (px) — derived from DESIGN.md §3 hierarchy table.
+   * Apple's body baseline is 17px (NOT the 16px web norm) because
+   * SF Pro Text was metrically tuned at 17 for Retina; rebinding
+   * --text-base to anything else collapses the brand's reading
+   * texture. The display ceiling is the 80px Hero Display XL. */
+  --text-xs:   12px;   /* Micro UI — fine print, micro labels */
+  --text-sm:   14px;   /* Control Label — buttons, helper labels */
+  --text-base: 17px;   /* Body Primary — Apple's reading baseline */
+  --text-lg:   21px;   /* Link/Action Heading — large promo links */
+  --text-xl:   28px;   /* Card/Product Title — tile-level naming */
+  --text-2xl:  40px;   /* Product Heading — campaign section titles */
+  --text-3xl:  56px;   /* Hero Display L — homepage hero moments */
+  --text-4xl:  80px;   /* Hero Display XL — Environment / store hero */
+
+  /* Apple's leading envelope is unusually tight at the top of the
+   * scale (display sizes ride at 1.00–1.10) and unusually airy in
+   * the body (1.47, well above the web 1.4 default). Both numbers
+   * come straight from DESIGN.md §3. */
+  --leading-body:  1.47;   /* SF Pro Text body, 17px */
+  --leading-tight: 1.05;   /* Hero Display XL ceiling */
+
+  /* Display tracking compresses to -0.015em — the famous Apple
+   * machined-headline feel. DESIGN.md §3 lists -1.2px on 80px
+   * (≈ -0.015em); we bind a single em-value so the same rule applies
+   * across the display tiers. Body type runs at 0 / -0.374px and is
+   * left to component-level rules so as not to hurt readability. */
+  --tracking-display: -0.015em;
+
+  /* ─── Spacing ─────────────────────────────────────────────────────
+   * Apple's underlying grid is 8px (DESIGN.md §5), with utility
+   * micro-steps (2/4/6/7/8/9/10) for precision alignment. The shared
+   * schema's 4-8-12-16-20-24-32-48 scale fits cleanly — we inherit
+   * the defaults. Component-internal values that don't match a token
+   * (Apple's 14px or 17px utility intervals) stay inline at the
+   * call site rather than spawning extra spacing tokens. */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-12: 48px;
+
+  /* ─── Section rhythm ──────────────────────────────────────────────
+   * Apple's billboard chapters lean noticeably more generous than the
+   * schema default of 80px — broad top/bottom breathing room is what
+   * lets product imagery dominate the page. We bind 100/64/40, a
+   * slightly wider envelope than default's 80/48/32. */
+  --section-y-desktop: 100px;
+  --section-y-tablet:  64px;
+  --section-y-phone:   40px;
+
+  /* ─── Radius ──────────────────────────────────────────────────────
+   * Apple uses purposeful radius tiers (DESIGN.md §5 §7 — "don't
+   * flatten all corners to a single radius"). The mapping:
+   *   --radius-sm   → 8px   compact controls and fields
+   *   --radius-md   → 12px  standard buttons, configurator chips
+   *   --radius-lg   → 18px  cards, module frames, commerce panels
+   *   --radius-pill → 980px Apple's signature capsule CTA — we keep
+   *                          the literal value rather than collapse
+   *                          to 9999px because the number itself is
+   *                          a brand-recognisable detail in Apple's
+   *                          published CSS.
+   *
+   * The 28-36px spotlight tier and the 56px capsule sub-tier are
+   * component-internal one-offs and stay inline — they do not earn
+   * their own tokens until a second use appears. */
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   18px;
+  --radius-pill: 980px;
+
+  /* ─── Elevation (3 levels) ────────────────────────────────────────
+   * Apple uses depth sparingly (DESIGN.md §6 — "depth is intentionally
+   * restrained"). Three sanctioned levels:
+   *   - flat   → none (the default; tonal contrast does the work)
+   *   - ring   → 0 0 0 1px var(--border) (border-led containment in
+   *              dense retail contexts)
+   *   - raised → 0 12px 32px rgba(0,0,0,0.08) (the soft Apple card
+   *              shadow; rgba 0.08 is the lower bound from DESIGN.md
+   *              §6's "0.08 → 0.22" range, which keeps cards from
+   *              feeling Material-flavoured)
+   *
+   * No fourth level — that would be the Material/neumorphism stack
+   * Apple consciously avoids. */
+  --elev-flat:   none;
+  --elev-ring:   0 0 0 1px var(--border);
+  --elev-raised: 0 12px 32px rgba(0, 0, 0, 0.08);
+
+  /* ─── Focus ring ──────────────────────────────────────────────────
+   * Apple's keyboard-focus signal is a soft blue glow at the action
+   * accent (DESIGN.md §6 — "Blue focus signal (#0071e3) for keyboard
+   * and selection emphasis"). We use a 4px ring at ~35% accent
+   * opacity, slightly larger than the schema's 3px default so it
+   * reads as the deliberate Apple halo rather than a generic outline.
+   * Implemented as a box-shadow so it layers outside the element
+   * without affecting layout. */
+  --focus-ring: 0 0 0 4px color-mix(in oklab, var(--accent), transparent 65%);
+
+  /* ─── Motion ──────────────────────────────────────────────────────
+   * Apple transitions decelerate hard and settle — never bounce,
+   * never spring past the target. We override the schema default
+   * easing with cubic-bezier(0.28, 0, 0.22, 1), the curve Apple
+   * uses on apple.com for hover and section reveals; --motion-base
+   * is bumped from 200ms → 220ms because Apple's micro-interactions
+   * carry slightly more cinematic weight than the web default.
+   * --motion-fast stays at 150ms for true micro-states (hover tints,
+   * focus, kbd press feedback). */
+  --motion-fast:   150ms;
+  --motion-base:   220ms;
+  --ease-standard: cubic-bezier(0.28, 0, 0.22, 1);
+
+  /* ─── Layout ──────────────────────────────────────────────────────
+   * Apple's marketing core is a constrained readable column with
+   * generous outer margins (DESIGN.md §5). 1024px max keeps lines
+   * inside the SF Pro Text comfortable-measure ceiling (~80ch at
+   * 17px) while leaving the chapter band full-bleed. Gutters step
+   * 22 → 18 → 16 across desktop / tablet / phone — slightly tighter
+   * than default to honor Apple's "broad horizontal breathing room
+   * but column-disciplined content" balance. */
+  --container-max:            1024px;
+  --container-gutter-desktop: 22px;
+  --container-gutter-tablet:  18px;
+  --container-gutter-phone:   16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font-body);
+  color:var(--fg);background:var(--surface);
+  -webkit-font-smoothing:antialiased;
+  line-height:var(--leading-body);
+  padding:28px 20px 64px;
+}
+::selection{background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm))}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+img{max-width:100%}
+h1,h2,h3,h4{font-family:var(--font-display);letter-spacing:var(--tracking-display);text-wrap:balance}
+p{overflow-wrap:anywhere;text-wrap:pretty}
+button,a,input,textarea,select,[role="switch"]{min-height:44px}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,[role="switch"]:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+
+/* ---------- 頁首（原型說明，不屬於 App） ---------- */
+.proto-head{max-width:var(--container-max);margin:0 auto 18px;padding:26px 28px;background:var(--bg);border-radius:28px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;box-shadow:var(--elev-ring)}
+.proto-head .ph-left{max-width:640px}
+.proto-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;font-weight:700;color:var(--accent);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.proto-eyebrow::before{content:"";width:18px;height:2px;border-radius:2px;background:var(--accent)}
+.proto-head h1{font-family:var(--font-display);font-size:clamp(28px,3vw,40px);font-weight:600;letter-spacing:var(--tracking-display);line-height:1.08;margin:10px 0 8px}
+.proto-head p{color:var(--muted);font-size:14.5px;max-width:56ch}
+.proto-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toggle-bp{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-pill);padding:8px 14px;font-size:13.5px;font-weight:600;color:var(--muted);transition:all var(--motion-base) var(--ease-standard);user-select:none;cursor:pointer}
+.toggle-bp:hover{border-color:var(--muted);color:var(--fg);background:var(--bg)}
+.toggle-bp .dot{width:34px;height:20px;border-radius:var(--radius-pill);background:var(--border);position:relative;transition:background var(--motion-base) var(--ease-standard)}
+.toggle-bp .dot::after{content:"";position:absolute;top:2.5px;left:3px;width:15px;height:15px;border-radius:50%;background:var(--accent-on);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform var(--motion-base) var(--ease-standard)}
+.toggle-bp.on .dot{background:var(--accent)}
+.toggle-bp.on .dot::after{transform:translateX(13px)}
+.chip-btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-pill);padding:8px 14px;font-size:13.5px;font-weight:600;color:var(--muted);transition:all var(--motion-base) var(--ease-standard)}
+.chip-btn:hover{border-color:var(--muted);background:var(--bg);color:var(--fg);transform:translateY(-1px)}
+.chip-btn:active{transform:translateY(0)}
+
+/* ---------- 核心循環捷徑 ---------- */
+.flow-rail{max-width:var(--container-max);margin:0 auto 22px;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border-soft);border:1px solid var(--border-soft);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--elev-ring)}
+.flow-step{min-width:0;background:var(--bg);padding:14px 16px;text-align:left;display:grid;grid-template-columns:28px 1fr;align-items:center;gap:10px;color:var(--muted);transition:background var(--motion-fast) var(--ease-standard),color var(--motion-fast) var(--ease-standard)}
+.flow-step:hover{background:var(--surface-warm);color:var(--fg)}
+.flow-step.on{background:var(--fg);color:var(--accent-on)}
+.flow-step .flow-num{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-mono);font-size:11px;border:1px solid currentColor;opacity:.8}
+.flow-step strong{display:block;font-size:13.5px;font-weight:600;white-space:nowrap}
+.flow-step small{display:block;margin-top:1px;font-size:11.5px;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- 舞台：手機 + 藍圖欄 ---------- */
+.stage{max-width:var(--container-max);margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:28px;align-items:start}
+@media (max-width:1000px){.stage{grid-template-columns:1fr;justify-items:center}}
+
+/* ---------- 手機框 ---------- */
+.phone-col{display:flex;flex-direction:column;align-items:center;gap:14px;position:sticky;top:24px}
+.phone{
+  width:392px;height:820px;max-width:calc(100vw - 40px);
+  background:var(--fg);border-radius:56px;padding:11px;
+  box-shadow:0 40px 90px rgba(51,49,43,.28), 0 4px 14px rgba(51,49,43,.2), inset 0 0 0 2px var(--fg-2);
+  position:relative;
+}
+.phone::after{content:"";position:absolute;right:-2.5px;top:150px;width:3px;height:74px;background:var(--fg-2);border-radius:0 3px 3px 0}
+.phone::before{content:"";position:absolute;left:-2.5px;top:130px;width:3px;height:44px;background:var(--fg-2);border-radius:3px 0 0 3px}
+.screen{
+  width:100%;height:100%;border-radius:46px;overflow:hidden;position:relative;
+  background:var(--bg);display:flex;flex-direction:column;
+}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:30px;background:var(--fg);border-radius:20px;z-index:60}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:130px;height:5px;border-radius:3px;background:rgba(51,49,43,.35);z-index:60}
+
+/* 狀態列 */
+.statusbar{height:52px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 6px;font-size:14px;font-weight:700;position:relative;z-index:40;color:var(--fg);transition:background 300ms var(--ease-standard),color 300ms var(--ease-standard)}
+.statusbar .sicons{display:flex;gap:6px;align-items:center}
+/* 夜晚:狀態列接續頁面漸層頂色,消除瀏海下淺色斷層 */
+.screen.night .statusbar{background:var(--fg);color:var(--surface-warm)}
+
+/* ---------- 螢幕容器（各頁全程 absolute 疊放,不互相推擠） ---------- */
+.screens{flex:1;position:relative;overflow:hidden;min-height:0}
+.page{
+  position:absolute;inset:0;display:flex;flex-direction:column;min-height:0;
+  background:var(--bg);
+  opacity:0;visibility:hidden;transform:translateX(40px) scale(.99);pointer-events:none;
+  transition:opacity 300ms var(--ease-standard), transform 300ms var(--ease-standard), visibility 0s linear 300ms;
+}
+.page.active{
+  opacity:1;visibility:visible;transform:none;pointer-events:auto;
+  transition:opacity 300ms var(--ease-standard), transform 300ms var(--ease-standard), visibility 0s;
+}
+/* 分層捲動:頁頭/CTA/頁尾固定,只有內容區捲動 */
+.page-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;scrollbar-width:none}
+.page-scroll::-webkit-scrollbar{display:none}
+.tabbar{flex:none}
+.page-head{flex:none}
+.page-cta{flex:none;padding:2px 22px calc(14px + env(safe-area-inset-bottom))}
+
+/* ---------- 通用元件 ---------- */
+.pet-stage{position:relative;flex:none}
+.bubble{
+  background:var(--bg);border-radius:var(--radius-lg);border-bottom-left-radius:6px;
+  padding:13px 16px;font-size:16px;line-height:1.55;box-shadow:var(--elev-ring);
+  border:1.5px solid var(--border-soft);color:var(--fg);position:relative;
+}
+.bubble .who{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.05em;display:block;margin-bottom:2px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-weight:700;font-size:17px;border-radius:var(--radius-pill);
+  padding:15px 26px;transition:transform var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+  box-shadow:var(--elev-ring), var(--elev-ring);user-select:none;
+}
+.btn:active{transform:translateY(3px) scale(.985);box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.btn:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.btn-primary{background:var(--accent);color:var(--accent-on)}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-ghost{background:var(--surface);color:var(--muted);border:1.5px solid var(--border-soft);box-shadow:var(--elev-ring)}
+.btn-ghost:hover{border-color:var(--muted);color:var(--fg)}
+.btn-soft{background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm));color:var(--accent-active)}
+.btn-soft:hover{background:color-mix(in oklch, var(--accent) 18%, var(--surface-warm));color:var(--fg)}
+.btn-block{display:flex;width:100%}
+.btn-sm{padding:10px 18px;font-size:14.5px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.linkish{background:none;border:none;color:var(--muted);font-size:14px;font-weight:600;text-decoration:none;padding:8px;border-radius:8px}
+.linkish:hover{color:var(--muted)}
+.linkish:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+/* 家長設定入口 — 清楚可見的圓角鈕,不藏在正文裡 */
+.settings-entry{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);color:var(--muted);font-size:13.5px;font-weight:600;padding:8px 14px;border-radius:var(--radius-pill);line-height:1}
+.settings-entry:hover{color:var(--fg);border-color:var(--muted);transform:translateY(-1px)}
+.settings-entry:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+
+.card{background:var(--surface);border-radius:var(--radius-md);border:1.5px solid var(--border-soft);box-shadow:var(--elev-ring)}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;font-size:14.5px;font-weight:600;
+  padding:10px 16px;border-radius:var(--radius-pill);background:var(--surface);
+  border:1.5px solid var(--border-soft);color:var(--muted);transition:all var(--motion-fast) var(--ease-standard);user-select:none;
+}
+.chip:hover{border-color:var(--accent);color:var(--fg);transform:translateY(-1px)}
+.chip:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.chip.sel,.chip.sel-peach{background:var(--bg);border-color:var(--fg);color:var(--fg);box-shadow:0 0 0 1px var(--fg)}
+.chip:active{transform:scale(.96)}
+
+.step-dots{display:flex;gap:7px;justify-content:center;padding:6px 0}
+.step-dots i{width:8px;height:8px;border-radius:50%;background:var(--border);transition:all var(--motion-base) var(--ease-standard)}
+.step-dots i.on{background:var(--fg);width:24px;border-radius:5px}
+
+.field-label{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.03em;display:block;margin-bottom:8px}
+.input{
+  width:100%;font-family:inherit;font-size:16.5px;color:var(--fg);
+  background:var(--surface);border:1.5px solid var(--border-soft);border-radius:var(--radius-sm);
+  padding:13px 15px;transition:border var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard);
+}
+.input::placeholder{color:var(--muted)}
+.page.night .input::placeholder{color:rgba(243,240,251,.5)}
+.chip[disabled]{opacity:.45;pointer-events:none}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in oklch, var(--accent) 12%, var(--surface-warm))}
+textarea.input{resize:none;min-height:56px;line-height:1.5}
+
+/* 底部導覽（常駐） */
+.tabbar{
+  display:flex;background:var(--bg);border-top:1px solid var(--border-soft);
+  padding:6px 8px calc(10px + env(safe-area-inset-bottom));position:relative;z-index:30;
+}
+.tabbar button{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;
+  font-size:11px;font-weight:700;color:var(--muted);border-radius:14px;transition:color var(--motion-fast) var(--ease-standard);
+}
+.tabbar button svg{width:25px;height:25px}
+.tabbar button:hover{color:var(--fg);background:var(--surface)}
+.tabbar button.on{color:var(--fg)}
+.tabbar button:active{transform:scale(.94)}
+/* 夜晚頁的 tabbar:深色玻璃 */
+.page.night .tabbar{background:rgba(255,255,255,.06);border-top-color:rgba(255,255,255,.14)}
+.page.night .tabbar button{color:rgba(243,240,251,.6)}
+.page.night .tabbar button:hover{color:var(--accent-on);background:color-mix(in oklch,var(--bg) 12%,transparent)}
+.page.night .tabbar button.on{color:var(--accent-on)}
+
+/* 分段進度 */
+.page-head{padding:8px 22px 4px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:color-mix(in oklch,var(--bg) 88%,transparent);backdrop-filter:blur(12px)}
+.page-head .p-title{font-size:13.5px;font-weight:700;color:var(--muted)}
+.page-body{padding:6px 22px 18px;display:flex;flex-direction:column;gap:16px}
+
+/* ============================================================
+   各畫面
+   ============================================================ */
+
+/* --- 首頁 / 今天的我 --- */
+.home-hero{position:relative;padding:2px 22px 0}
+.sun-scene{position:relative;height:188px;display:flex;align-items:flex-end;justify-content:center}
+.bubu-wrap{position:relative;width:170px;height:170px;display:flex;align-items:flex-end;justify-content:center}
+.bubu{width:150px;height:auto;filter:drop-shadow(0 10px 14px rgba(242,130,76,.28));animation:breathe 3.4s var(--ease-standard) infinite}
+@keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-7px) scale(1.012)}}
+.bubu-shadow{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:120px;height:20px;border-radius:50%;background:radial-gradient(closest-side, rgba(51,49,43,.18), transparent);animation:shdw 3.4s var(--ease-standard) infinite}
+@keyframes shdw{0%,100%{transform:translateX(-50%) scale(1);opacity:.8}50%{transform:translateX(-50%) scale(.85);opacity:.55}}
+.sun{position:absolute;top:6px;right:18px;width:56px;height:56px;animation:spin 26s linear infinite;pointer-events:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bubu,.bubu-wrap,.bubu-shadow{pointer-events:none}
+.home-greet{padding:14px 22px 0}
+.plan-list{display:flex;flex-direction:column;gap:12px}
+.plan-card{
+  background:var(--surface);border-radius:var(--radius-md);border:1.5px solid var(--border-soft);
+  padding:15px 16px;box-shadow:var(--elev-ring);display:flex;gap:13px;align-items:flex-start;
+  position:relative;overflow:hidden;transition:transform var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard);
+}
+.plan-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--accent)}
+.plan-card.t-leaf::before{background:var(--accent)}
+.plan-card.t-peach::before{background:var(--accent)}
+.plan-card:active{transform:scale(.985)}
+.plan-card .pc-ic{flex:none;width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.plan-card .pc-body{flex:1;min-width:0}
+.plan-card .pc-task{font-size:16.5px;font-weight:700;letter-spacing:-.01em}
+.plan-card .pc-ifthen{font-size:13.5px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.plan-card .pc-ifthen .k{font-size:11px;font-weight:800;padding:2px 7px;border-radius:6px;letter-spacing:.02em}
+.plan-card .k-if{background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm));color:var(--accent-active)}
+.plan-card .k-then{background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm));color:var(--accent-active)}
+.plan-card .pc-state{flex:none;font-size:12px;font-weight:700;color:var(--muted);align-self:center}
+.plan-empty{
+  border:2px dashed var(--border);border-radius:var(--radius-md);padding:22px;text-align:center;
+  color:var(--muted);font-size:14.5px;background:var(--surface);
+}
+
+/* 心情選擇 */
+.mood-row{display:flex;gap:12px;justify-content:center;padding:6px 0}
+.mood-btn{
+  width:64px;height:64px;border-radius:22px;background:var(--surface);border:1.5px solid var(--border-soft);
+  font-size:30px;display:flex;align-items:center;justify-content:center;box-shadow:var(--elev-ring);
+  transition:all var(--motion-fast) var(--ease-standard);
+}
+.mood-btn:hover{transform:translateY(-3px)}
+.mood-btn:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.mood-btn.sel{background:var(--bg);border-color:var(--fg);box-shadow:0 0 0 1px var(--fg);transform:scale(1.08)}
+.mood-btn:active{transform:scale(.94)}
+.mood-btn::after{content:attr(aria-label);position:absolute;left:50%;bottom:-25px;transform:translateX(-50%);font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;opacity:0;transition:opacity var(--motion-fast) var(--ease-standard)}
+.mood-btn{position:relative}
+.mood-btn:hover::after,.mood-btn:focus-visible::after,.mood-btn.sel::after{opacity:1}
+
+/* --- 計畫室 if-then --- */
+.ifthen-builder{background:var(--surface);border-radius:var(--radius-lg);border:1.5px solid var(--border-soft);box-shadow:var(--elev-ring);padding:18px}
+.ifthen-line{display:flex;flex-direction:column;gap:10px}
+.ifthen-seg{display:flex;align-items:flex-start;gap:10px}
+.ifthen-k{flex:none;width:52px;text-align:center;font-size:12.5px;font-weight:800;padding:5px 0;border-radius:9px;margin-top:2px;letter-spacing:.02em}
+.ifthen-k.if{background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm));color:var(--accent-active)}
+.ifthen-k.then{background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm));color:var(--accent-active)}
+.ifthen-slot{flex:1;min-height:52px;background:var(--surface-warm);border:1.5px dashed var(--border);border-radius:12px;padding:11px 13px;font-size:16px;color:var(--fg);display:flex;align-items:center}
+.ifthen-slot.filled{border-style:solid;border-color:var(--fg);background:var(--bg)}
+.ifthen-slot.filled.then-f{border-color:var(--fg);background:var(--bg)}
+.ifthen-slot .ph{color:var(--muted);font-size:14.5px}
+.suggest-label{font-size:12.5px;font-weight:700;color:var(--muted);margin:14px 0 8px;display:flex;align-items:center;gap:7px}
+.suggest-label::after{content:"";flex:1;height:1.5px;background:var(--border-soft)}
+.suggest-chips{display:flex;flex-wrap:wrap;gap:9px}
+
+/* --- 夜晚回顧 --- */
+.night .page, .page.night{background:linear-gradient(180deg,var(--fg) 0%,var(--fg-2) 60%,var(--fg) 100%);color:var(--surface-warm)}
+.page.night .bubble{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12);color:var(--surface-warm);backdrop-filter:blur(4px)}
+.page.night .bubble .who{color:var(--surface-warm)}
+.page.night .p-title{color:rgba(243,240,251,.6)}
+.state-row{display:flex;flex-direction:column;gap:11px}
+.state-btn{
+  display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.06);
+  border:1.5px solid rgba(255,255,255,.14);border-radius:var(--radius-md);padding:15px 16px;
+  color:var(--surface-warm);text-align:left;transition:all var(--motion-fast) var(--ease-standard);backdrop-filter:blur(4px);
+}
+.state-btn:hover{background:rgba(255,255,255,.1)}
+.state-btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(255,197,61,.4)}
+.state-btn.sel,.state-btn.sel-leaf,.state-btn.sel-sky{border-color:var(--accent);background:color-mix(in oklch,var(--accent) 18%,transparent)}
+.state-btn:active{transform:scale(.98)}
+.state-btn .sb-ic{flex:none;width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(255,255,255,.1)}
+.state-btn .sb-t{flex:1}
+.state-btn .sb-t b{font-size:16.5px;font-weight:700;display:block}
+.state-btn .sb-t span{font-size:13px;opacity:.72}
+.stars{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.stars i{position:absolute;background:var(--accent-on);border-radius:50%;opacity:.5;animation:tw 3s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.15}50%{opacity:.7}}
+
+/* --- 步步學習 --- */
+.learn-card{
+  background:linear-gradient(135deg,var(--surface-warm),var(--surface-warm));border:1.5px solid var(--border-soft);
+  border-radius:var(--radius-lg);padding:20px;box-shadow:var(--elev-ring);position:relative;overflow:hidden;
+}
+.learn-card::after{content:"";position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,197,61,.25),transparent)}
+.learn-badge{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--accent-active);background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm));padding:5px 11px;border-radius:var(--radius-pill);letter-spacing:.03em}
+.learn-quote{font-size:18px;font-weight:700;line-height:1.55;letter-spacing:-.01em;margin:12px 0 8px;color:var(--fg)}
+.learn-src{font-size:13px;color:var(--muted);background:rgba(255,255,255,.6);border-radius:10px;padding:9px 12px;border:1px dashed var(--border)}
+.learn-src b{color:var(--accent-active)}
+.thinking{display:flex;align-items:center;gap:5px;padding:6px 2px}
+.thinking i{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:tp 1.1s ease-in-out infinite}
+.thinking i:nth-child(2){animation-delay:.15s}.thinking i:nth-child(3){animation-delay:.3s}
+@keyframes tp{0%,100%{transform:translateY(0);opacity:.5}40%{transform:translateY(-7px);opacity:1}}
+
+/* --- 學習筆記本 --- */
+.nb-wrap{position:relative;padding-left:12px}
+.nb-spine{position:absolute;left:0;top:10px;bottom:10px;width:12px;border-radius:8px 0 0 8px;background:linear-gradient(180deg,var(--accent) 0%,var(--accent) 55%,var(--accent) 100%);box-shadow:inset -2px 0 3px rgba(0,0,0,.18)}
+.nb-spine::after{content:"";position:absolute;left:0;right:0;top:0;bottom:0;background:repeating-linear-gradient(180deg,transparent 0 26px,rgba(255,255,255,.4) 26px 28px)}
+.notebook{background:var(--surface-warm);border-radius:4px 14px 14px 4px;border:1.5px solid var(--border-soft);border-left:none;box-shadow:var(--elev-raised);overflow:hidden;position:relative}
+.notebook::before{content:"";position:absolute;left:38px;top:0;bottom:0;width:1.5px;background:var(--border)}
+.nb-pages{height:5px;background:repeating-linear-gradient(90deg,var(--fg) 0 3px,var(--surface-warm) 3px 5px);border-top:1px solid var(--border-soft)}
+.nb-head{padding:16px 18px 12px 52px;border-bottom:1.5px dashed var(--border);background:linear-gradient(180deg,var(--surface-warm),transparent)}
+.nb-head h3{font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:.01em;transform:rotate(-.6deg)}
+.nb-head p{font-size:12.5px;color:var(--muted);margin-top:2px}
+.nb-entry{padding:13px 18px 13px 52px;position:relative;border-bottom:1.5px dashed var(--border-soft)}
+.nb-entry:last-child{border-bottom:none}
+.nb-entry .nb-date{font-family:var(--font-display);font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.03em;transform:rotate(-.4deg);display:inline-block}
+.nb-entry .nb-text{font-family:var(--font-display);font-size:17px;line-height:30px;color:var(--fg-2);font-weight:600;letter-spacing:.01em}
+.nb-entry .nb-tag{font-family:var(--font-display);display:inline-block;font-size:12px;font-weight:700;margin-top:5px;letter-spacing:.03em;transform:rotate(-1deg)}
+.nb-scribble{position:absolute;right:12px;bottom:8px;font-size:14px;opacity:.75;transform:rotate(8deg)}
+.nb-tape{position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-2deg);width:74px;height:22px;background:rgba(255,197,61,.55);border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.08);z-index:3}
+.nb-heart{position:absolute;right:14px;top:12px;font-size:16px;opacity:.9;transform:rotate(-8deg)}
+.nb-heart{position:absolute;right:14px;top:14px;font-size:16px;opacity:.9}
+
+/* --- 藍圖註記（點選高亮對應註解） ---------- */
+.bp-note{
+  background:var(--bg);border:1px solid var(--border-soft);border-radius:var(--radius-md);
+  padding:15px 17px;position:relative;transition:all var(--motion-base) var(--ease-standard);
+  cursor:pointer;
+}
+.bp-note:hover{border-color:var(--muted);transform:translateX(2px)}
+.bp-note.flash{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in oklch, var(--accent) 12%, var(--surface-warm)), var(--elev-raised);transform:translateX(5px)}
+.bp-note .bp-num{
+  position:absolute;top:-11px;left:14px;width:26px;height:26px;border-radius:50%;
+  background:var(--fg);color:var(--accent-on);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;
+}
+.bp-note h4{font-size:14px;font-weight:800;margin:6px 0 4px;letter-spacing:-.005em}
+.bp-note p{font-size:12.8px;color:var(--muted);line-height:1.55}
+.bp-note .bp-tagline{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:6px;margin-top:8px;letter-spacing:.03em}
+.tag-aut,.tag-com,.tag-rel{background:var(--surface);color:var(--muted)}
+.tag-red{background:color-mix(in oklch, var(--danger) 8%, var(--surface-warm));color:var(--danger)}
+
+/* 可註記元件上的錨點標記 */
+[data-bp]{position:relative}
+.bp-pin{
+  position:absolute;top:-9px;right:-9px;width:24px;height:24px;border-radius:50%;
+  background:var(--fg);color:var(--accent-on);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:5;box-shadow:0 2px 6px rgba(0,0,0,.3);border:2px solid var(--accent-on);
+  transition:transform var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+}
+.bp-pin:hover{transform:scale(1.2);background:var(--accent)}
+body:not(.show-bp) .bp-pin{display:none}
+body:not(.show-bp) .bp-col{display:none}
+.stage.bp-on{grid-template-columns:1fr auto}
+.bp-col{display:flex;flex-direction:column;gap:14px;width:318px;position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto;padding:20px 4px 4px 14px;border-left:1px solid var(--border)}
+.bp-col::-webkit-scrollbar{width:5px}.bp-col::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.bp-col-head{position:sticky;top:-21px;background:var(--surface);padding:12px 2px 14px;z-index:5}
+.bp-col-head .t{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
+.bp-col-head .s{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* 提示氣泡（toast） */
+.toast{
+  position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--fg);color:var(--surface-warm);font-size:13.5px;font-weight:600;padding:11px 18px;border-radius:var(--radius-pill);
+  box-shadow:var(--elev-raised);opacity:0;pointer-events:none;transition:all var(--motion-base) var(--ease-standard);z-index:200;max-width:80vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* footer note */
+.proto-foot{max-width:var(--container-max);margin:34px auto 0;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+.proto-foot b{color:var(--muted)}
+
+@media (max-width:640px){
+  body{padding:16px 12px 48px}
+  .proto-head{padding:22px 20px;border-radius:var(--radius-lg)}
+  .proto-controls{width:100%}
+  .toggle-bp,.chip-btn{flex:1;justify-content:center}
+  .flow-rail{grid-template-columns:1fr 1fr}
+  .flow-step strong{white-space:normal}
+  .flow-step small{display:none}
+  .phone{height:min(760px,calc(100dvh - 32px));border-radius:48px;max-width:100%}
+  .bp-col{width:100%;position:static;max-height:none}
+  .phone-col{position:static}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
+}
+
+/* ============================================================
+   成長軌跡 · 自我參照,不跟別人比(企劃模組三)
+   ============================================================ */
+.trail-scene{position:relative;background:linear-gradient(180deg,var(--surface-warm) 0%,var(--surface) 55%,var(--surface) 100%);border-radius:var(--radius-lg);border:1.5px solid var(--border-soft);box-shadow:var(--elev-ring);overflow:hidden}
+.trail-svg{width:100%;height:auto;display:block}
+.trail-bubu{position:absolute;top:2px;left:50%;transform:translateX(-50%);width:60px;filter:drop-shadow(0 5px 6px rgba(242,130,76,.3));animation:breathe 3.4s var(--ease-standard) infinite;pointer-events:none;z-index:3}
+.fp-date{font-size:9.5px;font-weight:700;letter-spacing:.02em}
+.gstat{display:flex;flex-direction:column;gap:11px}
+.gstat-card{background:var(--surface);border-radius:var(--radius-md);border:1.5px solid var(--border-soft);box-shadow:var(--elev-ring);padding:13px 15px;display:flex;gap:12px;align-items:center}
+.gstat-card .gs-ic{flex:none;width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.gstat-card .gs-body{flex:1;min-width:0}
+.gstat-card .gs-n{font-family:var(--font-display);font-size:21px;font-weight:800;letter-spacing:-.01em;line-height:1.15}
+.gstat-card .gs-l{font-size:12.8px;color:var(--muted);margin-top:1px;line-height:1.4}
+.gstat-foot{font-size:12.8px;color:var(--muted);line-height:1.55;background:var(--surface-warm);border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:11px 14px;text-align:center}
+
+/* ============================================================
+   探索角 · 好奇 / 驚喜 / 創造(內生樂趣,企劃模組五)
+   ============================================================ */
+.explore-card{background:var(--surface);border-radius:var(--radius-lg);border:1.5px solid var(--border-soft);box-shadow:var(--elev-ring);padding:18px 17px;position:relative;overflow:hidden}
+.explore-card.curio{background:linear-gradient(135deg,var(--surface),var(--surface-warm));border-color:var(--border-soft)}
+.explore-card.surprise{background:linear-gradient(135deg,var(--surface-warm),var(--surface-warm));border-color:var(--border-soft)}
+.explore-card.dress{background:linear-gradient(135deg,var(--surface),var(--surface-warm));border-color:var(--border-soft)}
+.ec-badge{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:800;letter-spacing:.04em;padding:5px 11px;border-radius:var(--radius-pill)}
+.curio .ec-badge{color:var(--accent-active);background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm))}
+.surprise .ec-badge{color:var(--warn);background:color-mix(in oklch, var(--accent) 10%, var(--surface-warm))}
+.dress .ec-badge{color:var(--accent-active);background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm))}
+.ec-q{font-size:18px;font-weight:700;line-height:1.5;letter-spacing:-.01em;margin:11px 0 4px;color:var(--fg)}
+.ec-reveal{margin-top:12px;background:rgba(255,255,255,.72);border:1.5px dashed rgba(0,0,0,.09);border-radius:var(--radius-md);padding:13px 14px;font-size:15px;line-height:1.55;color:var(--fg);display:none}
+.ec-reveal.show{display:block;animation:ecpop .4s var(--ease-standard)}
+@keyframes ecpop{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:none}}
+.ec-src{font-size:12px;color:var(--muted);margin-top:9px;display:flex;align-items:center;gap:6px}
+.ec-src b{color:var(--accent-active)}
+.surprise-box{width:104px;height:104px;border-radius:26px;margin:10px auto 4px;display:flex;align-items:center;justify-content:center;font-size:52px;background:linear-gradient(160deg,var(--warn),var(--warn));box-shadow:0 8px 0 var(--warn), var(--elev-ring);cursor:pointer;transition:transform var(--motion-fast) var(--ease-standard);user-select:none}
+.surprise-box:hover{transform:translateY(-2px) rotate(-3deg)}
+.surprise-box:active{transform:translateY(4px);box-shadow:0 3px 0 var(--warn), var(--elev-ring)}
+.surprise-box.shake{animation:shk .5s var(--ease-standard)}
+@keyframes shk{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.surprise-out{margin-top:12px;display:none}
+.surprise-out.show{display:block;animation:ecpop .45s var(--ease-standard)}
+.surprise-out .so-bubu{display:flex;justify-content:center;margin-bottom:10px}
+.surprise-out .so-text{background:var(--surface);border:1.5px solid var(--border-soft);border-radius:18px;border-bottom-left-radius:6px;padding:12px 14px;font-size:15px;line-height:1.55;box-shadow:var(--elev-ring);color:var(--fg)}
+.dress-stage{position:relative;height:172px;display:flex;align-items:flex-end;justify-content:center;margin:4px 0 6px}
+.dress-stage .bubu{width:130px;animation:none}
+.acc-overlay{position:absolute;font-size:30px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.18));pointer-events:none;z-index:4}
+.acc-chips{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:8px}
+.acc-chip{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;padding:9px 14px;border-radius:var(--radius-pill);background:var(--surface);border:1.5px solid var(--border-soft);color:var(--muted);transition:all var(--motion-fast) var(--ease-standard)}
+.acc-chip.on{background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm));border-color:var(--accent);color:var(--accent-active)}
+.acc-chip:active{transform:scale(.95)}
+.dress-note{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5}
+
+/* ============================================================
+   家長設定 · 範本編輯(事情 / 時間點)
+   ============================================================ */
+.set-list{display:flex;flex-direction:column;gap:9px}
+.set-row{display:flex;align-items:center;gap:11px;background:var(--surface);border:1.5px solid var(--border-soft);border-radius:var(--radius-md);padding:11px 14px;box-shadow:var(--elev-ring)}
+.set-row .sr-emoji{font-size:20px;flex:none;line-height:1}
+.set-row .sr-text{flex:1;font-size:16px;font-weight:600;color:var(--fg);min-width:0}
+.set-row .sr-del{flex:none;width:44px;height:44px;border-radius:50%;background:var(--surface-warm);color:var(--muted);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all var(--motion-fast) var(--ease-standard)}
+.set-row .sr-del:hover{background:color-mix(in oklch, var(--danger) 10%, var(--surface-warm));color:var(--danger)}
+.set-row .sr-del:active{transform:scale(.88)}
+.set-add{background:var(--surface-warm);border:1.5px dashed var(--border);border-radius:var(--radius-md);padding:13px;margin-top:11px}
+.set-emoji{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px}
+.set-emoji button{width:44px;height:44px;border-radius:11px;background:var(--surface);border:1.5px solid var(--border-soft);font-size:18px;display:flex;align-items:center;justify-content:center;transition:all var(--motion-fast) var(--ease-standard)}
+.set-emoji button:hover{border-color:var(--accent);transform:translateY(-1px)}
+.set-emoji button.sel{background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm));border-color:var(--accent);transform:scale(1.08)}
+
+/* ═══ ① 白天提醒卡(家長決定要不要出現) ═══ */
+.day-card{display:none;background:linear-gradient(135deg,var(--surface-warm),var(--surface-warm));border:1.5px solid var(--border-soft);border-radius:var(--radius-md);padding:14px 15px;box-shadow:var(--elev-ring);cursor:pointer;transition:transform var(--motion-fast) var(--ease-standard)}
+.day-card.show{display:block;animation:ecpop .4s var(--ease-standard)}
+.day-card:hover{transform:translateY(-1px)}
+.day-card.acked{cursor:default;opacity:.82}
+.dc-head{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:var(--fg)}
+.dc-head .dc-sun{font-size:20px;line-height:1}
+.dc-sub{font-size:13px;color:var(--muted);margin-top:3px;padding-left:30px}
+.day-cue{display:none;margin-top:13px}
+.day-cue.show{display:block;animation:ecpop .4s var(--ease-standard)}
+.day-cue .dc-bubble{background:var(--surface);border:1.5px solid var(--border-soft);border-radius:18px;border-bottom-left-radius:6px;padding:12px 14px;font-size:14.5px;line-height:1.55;color:var(--fg);box-shadow:var(--elev-ring)}
+.day-opts{display:flex;gap:9px;margin-top:12px}
+.day-opts button{flex:1;padding:11px 6px;border-radius:var(--radius-sm);font-size:13.5px;font-weight:600;border:1.5px solid var(--border-soft);background:var(--surface);color:var(--muted);transition:all var(--motion-fast) var(--ease-standard)}
+.day-opts button:hover{border-color:var(--accent);color:var(--accent-active);transform:translateY(-1px)}
+
+/* ═══ ③ 步步成長型思維小故事(角色自我示範 §7.5) ═══ */
+.gm-story{background:linear-gradient(135deg,var(--surface),var(--surface-warm));border:1.5px solid var(--border-soft);border-radius:var(--radius-md);padding:14px 15px;box-shadow:var(--elev-ring);position:relative}
+.gm-story .gs-bubble{background:var(--surface);border:1.5px solid var(--border-soft);border-radius:18px;border-bottom-left-radius:6px;padding:12px 14px;font-size:14.5px;line-height:1.6;color:var(--fg);box-shadow:var(--elev-ring)}
+.gm-story .gs-tag{font-size:12px;color:var(--accent-active);font-weight:700;margin:10px 0 8px;text-align:center}
+.gm-story .gs-refresh{text-align:center}
+
+/* ═══ ⑤ 今天不想計畫 · 無條件陪伴(紅線一示範) ═══ */
+.rest-row{display:flex;justify-content:center;margin-top:2px}
+.rest-link{background:none;border:none;font-size:13px;color:var(--muted);font-weight:600;padding:8px 12px;cursor:pointer}
+.rest-link:hover{color:var(--muted)}
+.breath-stage{display:none;flex-direction:column;align-items:center;gap:10px;padding:8px 0 2px}
+.breath-stage.show{display:flex;animation:ecpop .4s var(--ease-standard)}
+.breath{width:86px;height:86px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--surface-warm),color-mix(in oklch, var(--accent) 12%, var(--surface-warm)));box-shadow:var(--elev-ring);animation:breath 7s ease-in-out infinite}
+@keyframes breath{0%,100%{transform:scale(.76)}50%{transform:scale(1.14)}}
+.br-txt{font-size:13px;color:var(--muted);font-weight:600;text-align:center}
+
+/* ═══ ④ 塗鴉牆(創作區 · 模組五) ═══ */
+.explore-card.doodle{background:linear-gradient(135deg,var(--surface),var(--surface-warm));border-color:var(--border-soft)}
+.doodle-canvas{display:block;width:100%;height:200px;background:var(--surface);border:1.5px solid var(--border-soft);border-radius:var(--radius-sm);box-shadow:inset 0 1px 3px rgba(51,49,43,.05);touch-action:none;cursor:crosshair}
+.doodle-tools{display:flex;align-items:center;gap:8px;margin-top:11px;flex-wrap:wrap}
+.dcolor{width:44px;height:44px;border-radius:50%;border:2.5px solid var(--surface);box-shadow:0 0 0 1.5px var(--border-soft);cursor:pointer;transition:transform var(--motion-fast) var(--ease-standard)}
+.dcolor:hover{transform:scale(1.12)}
+.dcolor.sel{box-shadow:0 0 0 2.5px var(--fg)}
+.dcolor.eraser{background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
+.doodle-gallery{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+.doodle-gallery img{width:58px;height:58px;object-fit:cover;border-radius:10px;border:1.5px solid var(--border-soft);box-shadow:var(--elev-ring);cursor:pointer}
+
+/* ═══ ② 月回顧(模組七 · 敘事自我認同,非數據) ═══ */
+/* ═══ 月回顧 · 成長故事書(敘事頁,非流水帳) ═══ */
+.book{position:relative;background:var(--surface-warm);border:1.5px solid var(--border);border-radius:6px 18px 18px 6px;box-shadow:var(--elev-ring);padding:20px 20px 16px;overflow:hidden}
+.book::before{content:"";position:absolute;left:0;top:0;bottom:0;width:13px;background:linear-gradient(90deg,var(--border),rgba(0,0,0,.04));border-right:1.5px solid var(--border)}
+.book::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:2px 2px 0 var(--border-soft),4px 4px 0 var(--border-soft);pointer-events:none}
+.book>*{position:relative;z-index:1;margin-left:7px}
+.bp-kicker{font-size:11.5px;font-weight:800;color:var(--accent-active);letter-spacing:.1em}
+.bp-month{font-family:var(--font-display);font-size:23px;font-weight:800;color:var(--fg);letter-spacing:-.01em;margin-top:2px}
+.bp-narr{font-family:var(--font-display);font-size:17.5px;line-height:1.9;color:var(--fg-2);margin:15px 0 4px;white-space:pre-line}
+.bp-narr b{color:var(--accent-active);font-weight:800}
+.letters{display:flex;gap:11px;margin-top:16px}
+.letter{flex:1;background:var(--surface-warm);border:1.5px solid var(--border);border-radius:8px;padding:14px 12px 11px;position:relative;box-shadow:var(--elev-ring);transform:rotate(-1deg)}
+.letter.parent{transform:rotate(1.2deg);background:var(--surface);border-color:var(--border-soft)}
+.letter::before{content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%) rotate(-4deg);width:46px;height:16px;background:rgba(255,220,180,.55);border-radius:2px}
+.letter.parent::before{background:rgba(180,215,255,.55)}
+.lt-from{font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.06em;margin-bottom:6px}
+.lt-txt{font-family:var(--font-display);font-size:14.5px;line-height:1.6;color:var(--fg-2)}
+.lt-empty{font-family:var(--font-display);font-size:13.5px;color:var(--muted);font-style:italic}
+.book-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px}
+.bnav-btn{flex:none;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border-soft);color:var(--muted);font-size:14px;cursor:pointer;box-shadow:var(--elev-ring);transition:all var(--motion-fast) var(--ease-standard)}
+.bnav-btn:hover{border-color:var(--accent);color:var(--accent-active);transform:scale(1.07)}
+.bnav-btn[disabled]{opacity:.32;pointer-events:none}
+.bnav-mid{flex:1;text-align:center}
+.bnav-page{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:7px}
+.book-dots{display:flex;justify-content:center;gap:6px}
+.book-dots i{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:all var(--motion-fast) var(--ease-standard)}
+.book-dots i.on{background:var(--accent);width:16px;border-radius:3px}
+/* 寫進這一頁 */
+.book-write{background:var(--surface);border:1.5px solid var(--border-soft);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--elev-ring)}
+.bw-label{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.book-write textarea{width:100%;min-height:60px;border:1.5px solid var(--border-soft);border-radius:var(--radius-sm);padding:11px 12px;font-family:inherit;font-size:15px;color:var(--fg);resize:vertical;background:var(--bg)}
+.book-write textarea:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus-ring)}
+.mr-sec-label{font-size:13px;font-weight:700;color:var(--muted);margin:4px 0 9px;display:flex;align-items:center;gap:6px}
+.set-toggle{display:flex;align-items:center;justify-content:space-between;gap:11px;background:var(--surface);border:1.5px solid var(--border-soft);border-radius:var(--radius-md);padding:12px 14px;box-shadow:var(--elev-ring)}
+.set-toggle .st-txt{font-size:14.5px;font-weight:600;color:var(--fg)}
+.set-toggle .st-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.switch{position:relative;width:46px;height:26px;flex:none;border-radius:var(--radius-pill);background:var(--border);transition:background var(--motion-base) var(--ease-standard);cursor:pointer}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--accent-on);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform var(--motion-base) var(--ease-standard)}
+.switch.on{background:var(--accent)}
+.switch.on::after{transform:translateX(20px)}
+.set-select{width:100%;border:1.5px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 12px;font-family:inherit;font-size:14.5px;color:var(--fg);background:var(--surface)}
+.set-select:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus-ring)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ 原型頁首 ═══════════ -->
+<header class="proto-head" data-od-id="prototype-header">
+  <div class="ph-left">
+    <div class="proto-eyebrow">核心體驗互動原型 · 精修版 v2</div>
+    <h1>小步 Little Steps — 每日成長循環</h1>
+    <p>讓孩子自己決定、自己行動，也把學到的事教給步步。完整體驗維持無集點、無連續打卡、無完成率，「沒做」完全沒有懲罰。</p>
+  </div>
+  <div class="proto-controls">
+    <div class="toggle-bp" id="bpToggle" role="switch" aria-checked="false" tabindex="0" data-od-id="blueprint-toggle">
+      <span class="dot"></span><span>施工註記</span>
+    </div>
+    <button class="chip-btn" id="resetBtn" data-od-id="reset-day">重置這一天</button>
+  </div>
+</header>
+
+<nav class="flow-rail" aria-label="每日成長循環" data-od-id="core-loop-navigation">
+  <button class="flow-step on" data-flow="home" data-flow-goto="home">
+    <span class="flow-num">01</span><span><strong>今天</strong><small>先聽聽自己的狀態</small></span>
+  </button>
+  <button class="flow-step" data-flow="plan" data-flow-goto="plan1">
+    <span class="flow-num">02</span><span><strong>想一想</strong><small>把想做的事排清楚</small></span>
+  </button>
+  <button class="flow-step" data-flow="review" data-flow-goto="review">
+    <span class="flow-num">03</span><span><strong>回頭看</strong><small>如實說今天怎麼了</small></span>
+  </button>
+  <button class="flow-step" data-flow="learn" data-flow-goto="learn">
+    <span class="flow-num">04</span><span><strong>教步步</strong><small>把經驗變成一頁筆記</small></span>
+  </button>
+</nav>
+
+<!-- ═══════════ 舞台 ═══════════ -->
+<main class="stage" id="stage" data-od-id="prototype-stage">
+
+  <!-- 手機 -->
+  <div class="phone-col">
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="statusbar">
+          <span id="clock">7:42</span>
+          <span class="sicons">
+            <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+            <svg width="22" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="20" height="11" rx="3" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="13" height="7" rx="1.5" fill="currentColor"/><path d="M23 4v4c1.2-.3 2-1 2-2s-.8-1.7-2-2z" fill="currentColor" opacity=".5"/></svg>
+          </span>
+        </div>
+
+        <div class="screens" id="screens">
+
+          <!-- ═══ 頁 1:首頁 · 今天的我 ═══ -->
+          <section class="page active" id="pg-home" data-page="home" data-od-id="screen-home">
+            <div class="page-scroll">
+              <div class="home-hero">
+                <div class="sun-scene">
+                  <svg class="sun" viewBox="0 0 56 56" fill="none">
+                    <circle cx="28" cy="28" r="11" fill="var(--warn)"/>
+                    <g stroke="var(--warn)" stroke-width="3" stroke-linecap="round">
+                      <path d="M28 4v6M28 46v6M4 28h6M46 28h6M10 10l4 4M42 42l4 4M46 10l-4 4M14 42l-4 4"/>
+                    </g>
+                  </svg>
+                  <div class="bubu-wrap">
+                    <div class="bubu-shadow"></div>
+                    <svg class="bubu" id="bubuHome" viewBox="0 0 200 190" fill="none" aria-label="步步,一隻圓滾滾的小生物"></svg>
+                  </div>
+                </div>
+              </div>
+
+              <div class="home-greet">
+                <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
+                  <button class="settings-entry" data-goto="settings">⚙ 家長設定</button>
+                </div>
+                <div class="bubble" id="homeBubble" data-bp="1">
+                  <span class="who">步步</span>
+                  <span id="homeBubbleText">早安!今天過得怎麼樣?有什麼想做的事嗎?</span>
+                  <span class="bp-pin" data-pin="1">1</span>
+                </div>
+              </div>
+
+              <div class="page-body" style="padding-top:14px;gap:14px">
+                <div>
+                  <span class="field-label" id="planListLabel" style="display:none">今天的計畫</span>
+                  <div class="plan-list" id="planList">
+                    <div class="plan-empty" id="planEmpty">
+                      今天還沒有計畫。<br>想想要做哪 1–3 件事?
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ① 白天提醒(家長設定開啟才出現) -->
+                <div class="day-card" id="dayCard" data-bp="18">
+                  <div class="dc-head"><span class="dc-sun">☀️</span> 白天到了,早上想的還在嗎?</div>
+                  <div class="dc-sub">點開看步步的提醒 —— 不想做也完全沒關係</div>
+                  <div class="day-cue" id="dayCue">
+                    <div class="dc-bubble" id="dayCueText"></div>
+                    <div class="day-opts" id="dayOpts">
+                      <button data-opt="done">去做 ✓</button>
+                      <button data-opt="later">等一下</button>
+                      <button data-opt="skip">今天算了</button>
+                    </div>
+                  </div>
+                  <span class="bp-pin" data-pin="18">18</span>
+                </div>
+
+                <!-- ③ 步步成長型思維自我示範 -->
+                <div class="gm-story" data-bp="19">
+                  <div class="gs-bubble" id="gmStoryText"></div>
+                  <div class="gs-tag">步步也想跟你說</div>
+                  <div class="gs-refresh"><button class="linkish" id="gmStoryNext">換一個小故事 →</button></div>
+                  <span class="bp-pin" data-pin="19">19</span>
+                </div>
+
+                <button class="chip" id="goNight" style="justify-content:center;align-self:stretch">🌙 晚上了,去回顧</button>
+
+                <!-- ⑤ 今天不想計畫 · 無條件陪伴 -->
+                <div class="rest-row"><button class="rest-link" id="restToday">今天不想計畫,只想跟步步待一下</button></div>
+                <div class="breath-stage" id="breathStage">
+                  <div class="breath"></div>
+                  <div class="br-txt" id="breathTxt">跟著步步,慢慢吸⋯慢慢吐⋯</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="page-cta" data-bp="2">
+              <button class="btn btn-primary btn-block" id="ctaPlan" data-od-id="start-plan-cta">
+                <span id="ctaPlanText">來想想今天要做什麼</span>
+              </button>
+              <span class="bp-pin" data-pin="2">2</span>
+            </div>
+
+            <nav class="tabbar" data-nav>
+              <button class="on" data-goto="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>今天</button>
+              <button data-goto="growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11.5A7 7 0 0 1 19 9.5C19 15.3 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>成長</button>
+              <button data-goto="explore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2 5.2-5.2 2 2-5.2z" fill="currentColor" stroke="none"/></svg>探索</button>
+              <button data-goto="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>回顧</button>
+              <button data-goto="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>筆記</button>
+            </nav>
+          </section>
+
+          <!-- ═══ 頁 2:計畫室 step1 — 心情 + 選任務 ═══ -->
+          <section class="page" id="pg-plan1" data-page="plan1" data-od-id="screen-plan-choose">
+            <div class="page-head">
+              <button class="linkish" data-goto="home">‹ 先回去</button>
+              <span class="p-title">今天的我</span>
+              <span style="width:54px"></span>
+            </div>
+            <div class="step-dots" style="flex:none"><i class="on"></i><i></i><i></i></div>
+
+            <div class="page-scroll">
+              <div class="page-body">
+                <div class="bubble" data-bp="3">
+                  <span class="who">步步</span>
+                  你來了!現在心裡是什麼感覺?
+                  <span class="bp-pin" data-pin="3">3</span>
+                </div>
+
+                <div class="mood-row" id="moodRow">
+                  <button class="mood-btn" data-mood="開心" aria-label="開心">😄</button>
+                  <button class="mood-btn" data-mood="平靜" aria-label="平靜">🙂</button>
+                  <button class="mood-btn" data-mood="有點累" aria-label="有點累">😪</button>
+                  <button class="mood-btn" data-mood="悶悶的" aria-label="悶悶的">😔</button>
+                </div>
+
+                <div class="bubble" style="margin-top:2px" data-bp="4">
+                  <span class="who">步步</span>
+                  那今天你想做哪幾件事?最多三件就好,貪心會累。
+                  <span class="bp-pin" data-pin="4">4</span>
+                </div>
+
+                <div>
+                  <div class="suggest-label" style="margin-top:0">我的事情庫</div>
+                  <div class="suggest-chips" id="taskChips"><!-- 由家長設定渲染 --></div>
+                </div>
+
+                <div>
+                  <label class="field-label" for="customTask">或自己寫一件</label>
+                  <div style="display:flex;gap:9px">
+                    <input class="input" id="customTask" placeholder="例如:整理書桌一角" maxlength="20">
+                    <button class="btn btn-soft btn-sm" id="addCustom" style="flex:none">加入</button>
+                  </div>
+                </div>
+
+                <div id="selTasksWrap" style="display:none">
+                  <div class="suggest-label">今天選的(最多 3 件)</div>
+                  <div class="suggest-chips" id="selTasks"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="page-cta">
+              <button class="btn btn-primary btn-block" id="toPlan2" disabled>下一步:定個時間 →</button>
+              <div style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:8px" id="taskCount">選 1–3 件,一件也很好</div>
+            </div>
+          </section>
+
+          <!-- ═══ 頁 3:計畫室 step2 — if-then ═══ -->
+          <section class="page" id="pg-plan2" data-page="plan2" data-od-id="screen-plan-if-then">
+            <div class="page-head">
+              <button class="linkish" data-goto="plan1">‹ 重選</button>
+              <span class="p-title">如果⋯就⋯</span>
+              <span style="width:54px"></span>
+            </div>
+            <div class="step-dots" style="flex:none"><i class="on"></i><i class="on"></i><i></i></div>
+
+            <div class="page-scroll">
+              <div class="page-body">
+                <div class="bubble" data-bp="5">
+                  <span class="who">步步</span>
+                  <span id="ifthenQ">我們把「<b id="curTaskName">寫數學那兩頁</b>」變成一個「如果⋯就⋯」吧!你想在什麼時候做?</span>
+                  <span class="bp-pin" data-pin="5">5</span>
+                </div>
+
+                <div class="ifthen-builder" data-bp="6">
+                  <div class="ifthen-line">
+                    <div class="ifthen-seg">
+                      <div class="ifthen-k if">如果</div>
+                      <div class="ifthen-slot" id="slotIf"><span class="ph">點下面的情境⋯</span></div>
+                    </div>
+                    <div class="ifthen-seg">
+                      <div class="ifthen-k then">我就</div>
+                      <div class="ifthen-slot then-f filled" id="slotThen"><span id="thenText">寫數學那兩頁</span></div>
+                    </div>
+                  </div>
+                  <span class="bp-pin" data-pin="6">6</span>
+                </div>
+
+                <div>
+                  <div class="suggest-label" style="margin-top:0">每天都會發生的事,可以當信號</div>
+                  <div class="suggest-chips" id="ifChips"><!-- 由家長設定渲染 --></div>
+                </div>
+
+                <div>
+                  <label class="field-label" for="customIf">或自己寫一個時間點</label>
+                  <input class="input" id="customIf" placeholder="如果我⋯" maxlength="20">
+                </div>
+              </div>
+            </div>
+
+            <div class="page-cta">
+              <button class="btn btn-primary btn-block" id="toPlan3" disabled>好,寫下來 →</button>
+              <div style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:8px">越具體,到時候越記得</div>
+            </div>
+          </section>
+
+          <!-- ═══ 頁 4:計畫室 step3 — 為什麼(可跳過) ═══ -->
+          <section class="page" id="pg-plan3" data-page="plan3" data-od-id="screen-plan-meaning">
+            <div class="page-head">
+              <button class="linkish" data-goto="plan2">‹ 改時間</button>
+              <span class="p-title">最後一步</span>
+              <span style="width:54px"></span>
+            </div>
+            <div class="step-dots" style="flex:none"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+
+            <div class="page-scroll">
+              <div class="page-body">
+                <div id="finalCardWrap"></div>
+
+                <div class="bubble" data-bp="7">
+                  <span class="who">步步</span>
+                  很清楚耶!為什麼想做這些?(不想說也可以)
+                  <span class="bp-pin" data-pin="7">7</span>
+                </div>
+
+                <div>
+                  <textarea class="input" id="whyInput" placeholder="想寫就寫,不想寫可以直接按下面⋯" rows="2" maxlength="60"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="page-cta">
+              <button class="btn btn-primary btn-block" id="finishPlan">就這樣,今天開始!☀️</button>
+              <button class="linkish" id="skipWhy" style="align-self:center;margin-top:6px">先不說,直接開始</button>
+            </div>
+          </section>
+
+          <!-- ═══ 頁 5:夜晚回顧 ═══ -->
+          <section class="page night" id="pg-review" data-page="review" data-od-id="screen-review">
+            <div class="stars" id="starField"></div>
+            <div class="page-head">
+              <button class="linkish" data-goto="home" style="color:rgba(243,240,251,.6)">‹ 回首頁</button>
+              <span class="p-title">今天回顧</span>
+              <span style="width:54px"></span>
+            </div>
+
+            <div class="page-scroll" style="position:relative">
+              <div class="page-body">
+                <div style="display:flex;justify-content:center;padding:2px 0 0">
+                  <svg class="bubu" id="bubuNight" viewBox="0 0 200 190" style="width:104px;animation-duration:4.5s" aria-label="步步(夜晚)"></svg>
+                </div>
+
+                <div class="bubble">
+                  <span class="who">步步</span>
+                  <span id="reviewQ">來看看今天吧。「<b id="reviewTaskName">寫數學那兩頁</b>」後來怎麼樣了?</span>
+                </div>
+
+                <div class="state-row" id="stateRow" data-bp="8">
+                  <button class="state-btn" data-state="done">
+                    <span class="sb-ic">🌟</span>
+                    <span class="sb-t"><b>做到了</b><span>照著計畫完成了</span></span>
+                  </button>
+                  <button class="state-btn" data-state="part">
+                    <span class="sb-ic">🌗</span>
+                    <span class="sb-t"><b>做了一部分</b><span>有開始,但沒做完</span></span>
+                  </button>
+                  <button class="state-btn" data-state="none">
+                    <span class="sb-ic">🌙</span>
+                    <span class="sb-t"><b>今天沒做</b><span>完全沒關係,說實話就好</span></span>
+                  </button>
+                  <span class="bp-pin" data-pin="8">8</span>
+                </div>
+
+                <div style="text-align:center;margin-top:8px"><button class="linkish" data-goto="monthly">📖 看看這個月的我 →</button></div>
+              </div>
+            </div>
+
+            <div class="page-cta" style="position:relative">
+              <button class="btn btn-block" id="toReflect" disabled style="background:var(--accent);color:var(--fg)">繼續 →</button>
+            </div>
+
+            <nav class="tabbar" data-nav>
+              <button data-goto="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>今天</button>
+              <button data-goto="growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11.5A7 7 0 0 1 19 9.5C19 15.3 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>成長</button>
+              <button data-goto="explore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2 5.2-5.2 2 2-5.2z" fill="currentColor" stroke="none"/></svg>探索</button>
+              <button class="on" data-goto="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>回顧</button>
+              <button data-goto="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>筆記</button>
+            </nav>
+          </section>
+
+          <!-- ═══ 頁 6:歷程問題 + 步步學到 ═══ -->
+          <section class="page night" id="pg-learn" data-page="learn" data-od-id="screen-learn">
+            <div class="stars"></div>
+            <div class="page-head">
+              <span style="width:54px"></span>
+              <span class="p-title">今天回顧</span>
+              <span style="width:54px"></span>
+            </div>
+
+            <div class="page-scroll" style="position:relative">
+              <div class="page-body">
+                <!-- 歷程問題 -->
+                <div id="reflectBlock" style="display:flex;flex-direction:column;gap:14px">
+                  <div class="bubble">
+                    <span class="who">步步</span>
+                    <span id="processQ">今天有哪個地方,本來以為會卡住,結果沒有?</span>
+                  </div>
+                  <div>
+                    <textarea class="input" id="reflectInput" placeholder="想說就說,步步在聽⋯" rows="2" maxlength="80"
+                      style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:var(--surface-warm)"></textarea>
+                  </div>
+                  <div style="display:flex;gap:10px;align-items:center">
+                    <button class="btn" id="shareReflect" style="background:var(--accent);color:var(--fg);flex:1">告訴步步</button>
+                    <button class="linkish" id="skipReflect" style="color:rgba(243,240,251,.65);flex:none">先不說</button>
+                  </div>
+                </div>
+
+                <!-- 步步學到(LLM 回應) -->
+                <div id="learnBlock" style="display:none;flex-direction:column;gap:16px">
+                  <div style="display:flex;justify-content:center">
+                    <svg class="bubu" id="bubuLearn" viewBox="0 0 200 190" style="width:92px" aria-label="步步"></svg>
+                  </div>
+                  <div class="learn-card" data-bp="9">
+                    <span class="learn-badge">✦ 步步今天學到一件事</span>
+                    <div class="learn-quote" id="learnQuote">…</div>
+                    <div class="learn-src" id="learnSrc"></div>
+                    <span class="bp-pin" data-pin="9">9</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:9px">
+                    <button class="btn btn-block" id="saveNote" style="background:var(--accent);color:var(--accent-on)">記進學習筆記本 📖</button>
+                    <button class="linkish" id="toSleep" style="color:rgba(243,240,251,.7);align-self:center">不記了,直接說晚安</button>
+                  </div>
+                </div>
+
+                <!-- 晚安 -->
+                <div id="sleepBlock" style="display:none;text-align:center;padding-top:14px">
+                  <div style="display:flex;justify-content:center;margin-bottom:14px">
+                    <svg class="bubu" id="bubuSleep" viewBox="0 0 200 190" style="width:120px;animation:none" aria-label="步步(晚安)"></svg>
+                  </div>
+                  <div class="bubble" style="text-align:left" data-bp="10">
+                    <span class="who">步步</span>
+                    今天就到這裡囉,掰掰!明天見。
+                    <span class="bp-pin" data-pin="10">10</span>
+                  </div>
+                  <button class="btn btn-ghost btn-block" id="backHomeNight" style="margin-top:16px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:var(--surface-warm)">回到首頁</button>
+                </div>
+              </div>
+            </div>
+
+            <nav class="tabbar" data-nav>
+              <button data-goto="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>今天</button>
+              <button data-goto="growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11.5A7 7 0 0 1 19 9.5C19 15.3 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>成長</button>
+              <button data-goto="explore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2 5.2-5.2 2 2-5.2z" fill="currentColor" stroke="none"/></svg>探索</button>
+              <button class="on" data-goto="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>回顧</button>
+              <button data-goto="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>筆記</button>
+            </nav>
+          </section>
+
+          <!-- ═══ 頁 7:學習筆記本 ═══ -->
+          <section class="page" id="pg-notes" data-page="notes" data-od-id="screen-notes">
+            <div class="page-head">
+              <span style="width:54px"></span>
+              <span class="p-title">步步的學習筆記</span>
+              <span style="width:54px"></span>
+            </div>
+            <div class="page-scroll">
+              <div class="page-body">
+                <div class="bubble" data-bp="11">
+                  <span class="who">步步</span>
+                  這些都是你教我的。我把它們記在這裡,你隨時可以翻。
+                  <span class="bp-pin" data-pin="11">11</span>
+                </div>
+
+                <div class="nb-wrap" data-bp="12">
+                  <div class="nb-spine"></div>
+                  <div class="notebook">
+                    <div class="nb-tape"></div>
+                    <div class="nb-head">
+                      <h3>我從你身上學到的事</h3>
+                      <p>步步的手寫筆記 · 依時間排列</p>
+                    </div>
+                    <div id="nbEntries"></div>
+                    <div class="nb-pages"></div>
+                  </div>
+                  <span class="bp-pin" data-pin="12">12</span>
+                </div>
+
+                <div style="text-align:center"><button class="linkish" data-goto="monthly">📖 這個月的我 · 跟爸爸媽媽交換一句話 →</button></div>
+
+                <div style="text-align:center;font-size:12.5px;color:var(--muted);padding:4px 10px">
+                  不數數量、不排名、不設目標 — 但本子會自己慢慢變厚。
+                </div>
+              </div>
+            </div>
+
+            <nav class="tabbar" data-nav>
+              <button data-goto="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>今天</button>
+              <button data-goto="growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11.5A7 7 0 0 1 19 9.5C19 15.3 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>成長</button>
+              <button data-goto="explore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2 5.2-5.2 2 2-5.2z" fill="currentColor" stroke="none"/></svg>探索</button>
+              <button data-goto="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>回顧</button>
+              <button class="on" data-goto="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>筆記</button>
+            </nav>
+          </section>
+
+          <!-- ═══ 頁:成長軌跡 ═══ -->
+          <section class="page" id="pg-growth" data-page="growth" data-od-id="screen-growth">
+            <div class="page-head">
+              <span style="width:54px"></span>
+              <span class="p-title">成長軌跡</span>
+              <span style="width:54px"></span>
+            </div>
+            <div class="page-scroll">
+              <div class="page-body">
+                <div class="bubble" data-bp="13">
+                  <span class="who">步步</span>
+                  這是你走過的路。只有你自己,沒有別人。
+                  <span class="bp-pin" data-pin="13">13</span>
+                </div>
+
+                <div class="trail-scene" data-bp="14">
+                  <svg class="trail-bubu" id="bubuGrowth" viewBox="0 0 200 190" aria-label="步步在山頂"></svg>
+                  <svg class="trail-svg" viewBox="0 0 340 560" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                      <linearGradient id="hillg" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stop-color="var(--border)"/><stop offset="1" stop-color="var(--border)"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="M0 470 Q 90 400 170 432 T 340 412 L340 560 L0 560 Z" fill="var(--surface)" opacity=".7"/>
+                    <path d="M0 512 Q 120 472 200 496 T 340 486 L340 560 L0 560 Z" fill="url(#hillg)" opacity=".65"/>
+                    <path id="trailPath" d="M60 524 C28 466,262 432,236 360 C214 300,44 262,66 188 C82 128,250 116,170 48"
+                      fill="none" stroke="var(--meta)" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 13" opacity=".75"/>
+                    <g id="trailLayer"></g>
+                  </svg>
+                  <span class="bp-pin" data-pin="14">14</span>
+                </div>
+
+                <div class="gstat">
+                  <div class="gstat-card">
+                    <div class="gs-ic" style="background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm))">🗓️</div>
+                    <div class="gs-body">
+                      <div class="gs-n" id="gPlanDays">—</div>
+                      <div class="gs-l">這個月,你想清楚要做什麼的天數</div>
+                    </div>
+                  </div>
+                  <div class="gstat-card">
+                    <div class="gs-ic" style="background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm))">🍚</div>
+                    <div class="gs-body">
+                      <div class="gs-n" id="gTopSit">—</div>
+                      <div class="gs-l">你最常用的「開始信號」</div>
+                    </div>
+                  </div>
+                  <div class="gstat-card">
+                    <div class="gs-ic" style="background:color-mix(in oklch, var(--accent) 12%, var(--surface-warm))">🎵</div>
+                    <div class="gs-body">
+                      <div class="gs-n" id="gTopTask">—</div>
+                      <div class="gs-l">你最常給自己排的事</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="gstat-foot">
+                  沒排計畫的日子,路只是還沒走到那裡 —— 不是斷掉,也不會留疤。
+                </div>
+              </div>
+            </div>
+
+            <nav class="tabbar" data-nav>
+              <button data-goto="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>今天</button>
+              <button class="on" data-goto="growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11.5A7 7 0 0 1 19 9.5C19 15.3 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>成長</button>
+              <button data-goto="explore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2 5.2-5.2 2 2-5.2z" fill="currentColor" stroke="none"/></svg>探索</button>
+              <button data-goto="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>回顧</button>
+              <button data-goto="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>筆記</button>
+            </nav>
+          </section>
+
+          <!-- ═══ 頁:探索角 ═══ -->
+          <section class="page" id="pg-explore" data-page="explore" data-od-id="screen-explore">
+            <div class="page-head">
+              <span style="width:54px"></span>
+              <span class="p-title">探索角</span>
+              <span style="width:54px"></span>
+            </div>
+            <div class="page-scroll">
+              <div class="page-body">
+
+                <div class="explore-card curio" data-bp="15">
+                  <span class="ec-badge">❓ 每日一個小疑問</span>
+                  <div class="ec-q" id="curioQ">…</div>
+                  <button class="btn btn-soft btn-sm" id="curioReveal" style="margin-top:10px">步步也想知道,點開看</button>
+                  <div class="ec-reveal" id="curioRevealBox">
+                    <span id="curioA"></span>
+                    <div class="ec-src"><b>為什麼放這裡</b> · <span id="curioSrc"></span></div>
+                  </div>
+                  <div style="margin-top:12px">
+                    <button class="linkish" id="curioNext">換一題 →</button>
+                  </div>
+                  <span class="bp-pin" data-pin="15">15</span>
+                </div>
+
+                <div class="explore-card surprise" data-bp="16">
+                  <span class="ec-badge">🎁 驚喜盒</span>
+                  <div class="surprise-box" id="surpriseBox">🎁</div>
+                  <div style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:2px" id="surpriseHint">輕點盒子,看看步步今天做了什麼</div>
+                  <div class="surprise-out" id="surpriseOut">
+                    <div class="so-bubu"><svg class="bubu" id="bubuSurprise" viewBox="0 0 200 190" style="width:96px" aria-label="步步"></svg></div>
+                    <div class="so-text" id="surpriseText"></div>
+                  </div>
+                  <span class="bp-pin" data-pin="16">16</span>
+                </div>
+
+                <div class="explore-card dress" data-bp="17">
+                  <span class="ec-badge">🎨 裝扮步步</span>
+                  <div class="dress-stage">
+                    <svg class="bubu" id="bubuExplore" viewBox="0 0 200 190" aria-label="步步"></svg>
+                    <div id="accLayer"></div>
+                  </div>
+                  <div class="acc-chips" id="accChips"></div>
+                  <div class="dress-note">想怎麼打扮就怎麼打扮 —— 這跟你有沒有做事,完全沒有關係。</div>
+                  <span class="bp-pin" data-pin="17">17</span>
+                </div>
+
+                <!-- ④ 塗鴉牆 · 創作區(模組五) -->
+                <div class="explore-card doodle" data-bp="20">
+                  <span class="ec-badge">🖍️ 塗鴉牆 · 畫給步步</span>
+                  <canvas class="doodle-canvas" id="doodleCanvas"></canvas>
+                  <div class="doodle-tools">
+                    <button class="dcolor sel" data-color="accent" style="background:var(--accent)" aria-label="藍色畫筆"></button>
+                    <button class="dcolor" data-color="success" style="background:var(--success)" aria-label="綠色畫筆"></button>
+                    <button class="dcolor" data-color="warn" style="background:var(--warn)" aria-label="黃色畫筆"></button>
+                    <button class="dcolor" data-color="fg" style="background:var(--fg)" aria-label="黑色畫筆"></button>
+                    <button class="dcolor eraser" data-color="eraser" aria-label="橡皮擦">清</button>
+                    <button class="linkish" id="doodleClear" style="margin-left:auto">清空</button>
+                    <button class="btn btn-soft btn-sm" id="doodleSave">送給步步</button>
+                  </div>
+                  <div class="doodle-gallery" id="doodleGallery"></div>
+                  <div class="dress-note">你想畫什麼都可以 —— 這裡沒有分數,步步只是想收到你的畫。</div>
+                  <span class="bp-pin" data-pin="20">20</span>
+                </div>
+
+              </div>
+            </div>
+
+            <nav class="tabbar" data-nav>
+              <button data-goto="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>今天</button>
+              <button data-goto="growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11.5A7 7 0 0 1 19 9.5C19 15.3 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>成長</button>
+              <button class="on" data-goto="explore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2 5.2-5.2 2 2-5.2z" fill="currentColor" stroke="none"/></svg>探索</button>
+              <button data-goto="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>回顧</button>
+              <button data-goto="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>筆記</button>
+            </nav>
+          </section>
+
+          <!-- ═══ 頁:月回顧(模組七 · 敘事自我認同,非數據) ═══ -->
+          <section class="page" id="pg-monthly" data-page="monthly" data-od-id="screen-monthly">
+            <div class="page-head">
+              <button class="linkish" data-goto="review">‹ 回去</button>
+              <span class="p-title">這個月的我</span>
+              <span style="width:54px"></span>
+            </div>
+            <div class="page-scroll">
+              <div class="page-body">
+                <div style="display:flex;justify-content:center;padding:2px 0">
+                  <svg class="bubu" id="bubuMonthly" viewBox="0 0 200 190" style="width:96px" aria-label="步步"></svg>
+                </div>
+                <div class="bubble">
+                  <span class="who">步步</span>
+                  一個月過去了。我們一起翻翻這本書 —— 不比好不好,只看看你。
+                </div>
+
+                <!-- 成長故事書 · 敘事頁 -->
+                <div class="book" data-bp="21" id="growthBook">
+                  <div class="bp-kicker">成長書 · 第 <span id="bkNum">1</span> 頁</div>
+                  <div class="bp-month" id="bkMonth">這個月的我</div>
+                  <p class="bp-narr" id="bkNarr"></p>
+
+                  <div class="letters" id="bkLetters"></div>
+
+                  <div class="book-nav">
+                    <button class="bnav-btn" id="bkPrev" aria-label="上一頁">‹</button>
+                    <div class="bnav-mid">
+                      <div class="bnav-page" id="bkPage">1 / 1</div>
+                      <div class="book-dots" id="bkDots"></div>
+                    </div>
+                    <button class="bnav-btn" id="bkNext" aria-label="下一頁">›</button>
+                  </div>
+                  <span class="bp-pin" data-pin="21">21</span>
+                </div>
+
+                <!-- 寫進這一頁(孩子 + 家長) -->
+                <div class="book-write" data-bp="22">
+                  <div class="mr-sec-label">✍️ 寫進這一頁</div>
+                  <div class="bw-label">🧒 孩子想跟家長說</div>
+                  <textarea id="mrChild" maxlength="80" placeholder="這個月我最想跟你說的是⋯"></textarea>
+                  <div class="bw-label" style="margin-top:13px">👪 家長想跟孩子說</div>
+                  <textarea id="mrParent" maxlength="80" placeholder="爸爸媽媽看到你這個月⋯"></textarea>
+                  <button class="btn btn-primary btn-block" id="mrSave" style="margin-top:14px">夾進這一頁的信</button>
+                  <span class="bp-pin" data-pin="22">22</span>
+                </div>
+              </div>
+            </div>
+
+            <nav class="tabbar" data-nav>
+              <button data-goto="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>今天</button>
+              <button data-goto="growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11.5A7 7 0 0 1 19 9.5C19 15.3 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>成長</button>
+              <button data-goto="explore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2 5.2-5.2 2 2-5.2z" fill="currentColor" stroke="none"/></svg>探索</button>
+              <button class="on" data-goto="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>回顧</button>
+              <button data-goto="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>筆記</button>
+            </nav>
+          </section>
+
+          <!-- ═══ 頁:家長設定(事情範本 / 時間點範本) ═══ -->
+          <section class="page" id="pg-settings" data-page="settings" data-od-id="screen-settings">
+            <div class="page-head">
+              <button class="linkish" data-goto="home">‹ 回首頁</button>
+              <span class="p-title">家長設定</span>
+              <span style="width:54px"></span>
+            </div>
+            <div class="page-scroll">
+              <div class="page-body">
+                <div class="bubble">
+                  <span class="who">給家長的話</span>
+                  在這裡設定孩子每天可以挑的「事情」和「時間點」。這些只是選項 —— 孩子還是自己決定要做什麼、什麼時候做。
+                </div>
+
+                <div>
+                  <div class="suggest-label" style="margin-top:0">📋 事情範本</div>
+                  <div class="set-list" id="taskTemplates"></div>
+                  <div class="set-add">
+                    <div class="set-emoji" id="taskEmojiPicks"></div>
+                    <div style="display:flex;gap:9px">
+                      <input class="input" id="newTaskText" placeholder="例如:讀一本故事書" maxlength="20">
+                      <button class="btn btn-soft btn-sm" id="addTask" style="flex:none">加入</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="suggest-label">🕐 時間點範本</div>
+                  <div class="set-list" id="cueTemplates"></div>
+                  <div class="set-add">
+                    <div style="display:flex;gap:9px">
+                      <input class="input" id="newCueText" placeholder="例如:吃完點心" maxlength="20">
+                      <button class="btn btn-soft btn-sm" id="addCue" style="flex:none">加入</button>
+                    </div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:8px">會自動加上「我」,變成「如果我⋯我就⋯」的開始信號</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="mr-sec-label">☀️ 白天提醒</div>
+                  <div class="set-toggle">
+                    <div>
+                      <div class="st-txt">讓步步在白天提醒孩子</div>
+                      <div class="st-sub">孩子通常沒有手機 —— 由你決定要不要、什麼時候</div>
+                    </div>
+                    <div class="switch" id="dayRemindSwitch" role="switch" aria-checked="false" tabindex="0"></div>
+                  </div>
+                  <div class="set-add" id="dayRemindSlotWrap" style="display:none;margin-top:10px">
+                    <div style="font-size:12.5px;color:var(--muted);margin-bottom:7px">提醒的時段(孩子打開 App 時,步步會輕輕探頭)</div>
+                    <select class="set-select" id="dayRemindSlot">
+                      <option value="afternoon">放學後</option>
+                      <option value="dinner">吃完晚飯</option>
+                      <option value="bedtime">睡前</option>
+                    </select>
+                  </div>
+                  <div style="font-size:12px;color:var(--muted);margin-top:8px;padding:0 2px">提醒只是邀請 —— 孩子可以選「等一下」或「今天算了」,都不會留下任何紀錄。</div>
+                </div>
+
+                <button class="linkish" id="resetTemplates" style="align-self:center">↺ 還原預設範本</button>
+
+                <div style="text-align:center;font-size:12.5px;color:var(--muted);padding:2px 10px">
+                  範本只是方便挑 —— 不選、不夠、自己另想,都完全沒關係。
+                </div>
+              </div>
+            </div>
+
+            <nav class="tabbar" data-nav>
+              <button class="on" data-goto="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>今天</button>
+              <button data-goto="growth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11.5A7 7 0 0 1 19 9.5C19 15.3 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>成長</button>
+              <button data-goto="explore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2 5.2-5.2 2 2-5.2z" fill="currentColor" stroke="none"/></svg>探索</button>
+              <button data-goto="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>回顧</button>
+              <button data-goto="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>筆記</button>
+            </nav>
+          </section>
+
+        </div><!-- /screens -->
+        <div class="homebar"></div>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--muted);text-align:center;max-width:300px">
+      👆 直接點手機裡的按鈕操作<br>或點右上角「施工註記」關掉註解看純介面
+    </div>
+  </div>
+
+  <!-- ═══ 施工藍圖欄 ═══ -->
+  <aside class="bp-col" id="bpCol">
+    <div class="bp-col-head">
+      <div class="t">🛠 施工藍圖註記</div>
+      <div class="s">點手機上的編號圓點,或點下面卡片,看每個元件的設計依據與 Flutter 對應。</div>
+    </div>
+    <div id="bpNotes"></div>
+  </aside>
+</main>
+
+<footer class="proto-foot" data-od-id="prototype-footer">
+  <div><b>小步 Little Steps</b> · 核心體驗原型 — 早晨計畫 / if-then / 夜晚回顧 / 寵物向孩子學習</div>
+  <div>文案通過《對話文案庫》七章檢核 · 無集點 / 無連續打卡 / 無完成率 / 「沒做」無懲罰</div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   步步 SVG(向量角色 — 可直接映射 Flutter CustomPainter)
+   ============================================================ */
+const BUBU_SVG = `
+<defs>
+  <linearGradient id="bb-body" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="var(--accent-hover)"/><stop offset="1" stop-color="var(--accent)"/>
+  </linearGradient>
+</defs>
+<!-- 耳朵 -->
+<circle cx="58" cy="42" r="20" fill="url(#bb-body)" stroke="var(--accent-active)" stroke-width="4"/>
+<circle cx="142" cy="42" r="20" fill="url(#bb-body)" stroke="var(--accent-active)" stroke-width="4"/>
+<circle cx="58" cy="42" r="9" fill="var(--surface-warm)"/>
+<circle cx="142" cy="42" r="9" fill="var(--surface-warm)"/>
+<!-- 身體 -->
+<ellipse cx="100" cy="108" rx="66" ry="62" fill="url(#bb-body)" stroke="var(--accent-active)" stroke-width="4"/>
+<!-- 肚子 -->
+<ellipse cx="100" cy="128" rx="40" ry="34" fill="var(--surface-warm)"/>
+<!-- 手 -->
+<ellipse cx="40" cy="112" rx="14" ry="18" fill="var(--accent)" stroke="var(--accent-active)" stroke-width="4" transform="rotate(20 40 112)"/>
+<ellipse cx="160" cy="112" rx="14" ry="18" fill="var(--accent)" stroke="var(--accent-active)" stroke-width="4" transform="rotate(-20 160 112)"/>
+<!-- 腳 -->
+<ellipse cx="76" cy="172" rx="17" ry="11" fill="var(--accent-active)"/>
+<ellipse cx="124" cy="172" rx="17" ry="11" fill="var(--accent-active)"/>
+<!-- 臉 -->
+<g class="bb-face">
+  <circle cx="78" cy="96" r="8.5" fill="var(--fg)"/>
+  <circle cx="122" cy="96" r="8.5" fill="var(--fg)"/>
+  <circle cx="80.5" cy="93" r="3" fill="var(--accent-on)"/>
+  <circle cx="124.5" cy="93" r="3" fill="var(--accent-on)"/>
+  <ellipse cx="62" cy="108" rx="8" ry="5.5" fill="var(--surface)" opacity=".8"/>
+  <ellipse cx="138" cy="108" rx="8" ry="5.5" fill="var(--surface)" opacity=".8"/>
+  <path d="M92 108 Q100 116 108 108" stroke="var(--fg)" stroke-width="4" stroke-linecap="round" fill="none"/>
+</g>`;
+["bubuHome","bubuNight","bubuLearn","bubuSleep","bubuGrowth","bubuSurprise","bubuExplore","bubuMonthly"].forEach(id=>{
+  const el=document.getElementById(id); if(el) el.innerHTML=BUBU_SVG;
+});
+/* 睡著的步步:換上瞇眼 */
+const sleepFace=document.querySelector("#bubuSleep .bb-face");
+if(sleepFace){sleepFace.innerHTML=`
+  <path d="M70 96 Q78 102 86 96" stroke="var(--fg)" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <path d="M114 96 Q122 102 130 96" stroke="var(--fg)" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <ellipse cx="62" cy="108" rx="8" ry="5.5" fill="var(--surface)" opacity=".8"/>
+  <ellipse cx="138" cy="108" rx="8" ry="5.5" fill="var(--surface)" opacity=".8"/>
+  <path d="M94 110 Q100 114 106 110" stroke="var(--fg)" stroke-width="4" stroke-linecap="round" fill="none"/>`;
+  document.getElementById("bubuSleep").style.opacity=".92";
+}
+
+/* ============================================================
+   藍圖註記資料(設計依據 + Flutter 對應)
+   ============================================================ */
+const BP_NOTES=[
+ {n:1,tag:"rel",tagName:"連結",title:"每日開場 · 語氣一致",
+  body:"步步的問候不論隔幾天都一樣 — 紅線:絕不提「你好久沒來」。這是無條件陪伴的具體實踐。<br><b>Flutter:</b> 開場句從文案庫隨機抽選,不讀取上次登入天數。"},
+ {n:2,tag:"aut",tagName:"自主",title:"主 CTA · 邀請而非命令",
+  body:"全產品只有這一個主行動。文案用邀請句(「來想想」),不用「完成今日任務」。<br><b>Flutter:</b> 首頁單一 FilledButton,其餘功能收次層(少即是多信條)。"},
+ {n:3,tag:"rel",tagName:"連結",title:"心情暖身 · 不記為數據",
+  body:"心情只是暖身與連結,企劃明定「不記錄為數據」。家長也看不到孩子心情。<br><b>Flutter:</b> 選擇只存於當次 session state,不寫入持久層。"},
+ {n:4,tag:"aut",tagName:"自主",title:"選任務 · 上限 3 件",
+  body:"硬性上限 3 件,避免待辦地獄,也符合小學生執行功能負荷。孩子自己選、自己寫 — 不代填。<br><b>Flutter:</b> 選取狀態存 Set,達 3 件即停用其餘 chip。"},
+ {n:5,tag:"com",tagName:"勝任",title:"if-then · 最強循證機制",
+  body:"執行意圖(Implementation Intention),兒童效果 g=0.31。步步只提問、不代寫 — 計畫必須由孩子自己產生。<br><b>Flutter:</b> 情境選單 + 自由填寫,品質太模糊時以追問引導,不自動補完。"},
+ {n:6,tag:"com",tagName:"勝任",title:"if-then 建構器 · 視覺化句型",
+  body:"把抽象意圖變成可見的句子結構。「如果=情境信號」「我就=具體行動」,到時候靠信號自動喚起。<br><b>Flutter:</b> 兩個 slot 狀態機,填滿才解鎖下一步。"},
+ {n:7,tag:"aut",tagName:"自主",title:"為什麼 · 可跳過",
+  body:"理由提供(rationale provision)是自主支持核心,幫孩子把外部期待轉成個人意義 — 但絕不強迫。<br><b>Flutter:</b> 此欄可為 null;「先不說」與填寫權重相等,無任何後果。"},
+ {n:8,tag:"red",tagName:"紅線",title:"三種狀態 · 完全等權",
+  body:"「做到了 / 做了一部分 / 今天沒做」視覺權重一致,無懲罰落差。「沒做」是整個產品最關鍵的中性選項 — 這裡的語氣決定孩子明天還說不說實話。<br><b>Flutter:</b> 三個同型按鈕,僅圖示色彩區分,不用紅/綠對比。"},
+ {n:9,tag:"com",tagName:"勝任",title:"步步學到 · 徒弟效應(LLM)",
+  body:"全產品唯一「孩子是給予方」的環節。步步學的必須具體、可回溯到孩子原話,不能編造。<b>關鍵紅線:孩子沒做的日子,步步也要學得到</b> — 否則「學習」退化成新酬賞。<br><b>Flutter:</b> 此句由 LLM 生成 + 三重防護(prompt 約束→關鍵詞過濾→fallback 範本)。"},
+ {n:10,tag:"rel",tagName:"連結",title:"主動給結束許可",
+  body:"「今天就到這裡囉」— 步步主動給結束許可,是反成癮設計的具體實踐。步步從不挽留、不說「不要走」。<br><b>Flutter:</b> 流程有明確終點,無無限捲動、無「再來一題」。"},
+ {n:11,tag:"com",tagName:"勝任",title:"筆記是成就感具體化",
+  body:"孩子能看見「我教會牠這麼多」— 把功勞明確記錄並歸還孩子。也是向家長分享的自然素材。<br><b>Flutter:</b> 本地儲存(離線優先),孩子決定要不要分享給家長。"},
+ {n:12,tag:"red",tagName:"紅線",title:"不數數量 · 不設目標",
+  body:"筆記本<strong>不做統計、不顯示數量、不設收集目標</strong> — 否則變回集點。手寫感、有塗鴉、不完美,避免像資料庫。<br><b>Flutter:</b> 刻意不用進度條/計數器 widget;列表依時間排列即可。"},
+ {n:13,tag:"com",tagName:"勝任",title:"成長軌跡 · 只跟自己比",
+  body:"企劃原則三:全面自我參照,產品中不存在任何跨用戶比較。這裡只呈現「想清楚要做什麼的天數」「最常用的開始信號」—— 全部是你自己的軌跡。<br><b>Flutter:</b> 成長視覺只用本地資料,永不拉取他人資料;不出現百分比、等級、排名。"},
+ {n:14,tag:"red",tagName:"紅線",title:"中斷不留疤",
+  body:"沒排計畫的日子,路只是還沒走到那裡 —— 不是斷點、不顯示空洞、不留疤。若做成 streak(連續天數)會立刻變成罪惡感機制。<br><b>Flutter:</b> 路徑只畫「有計畫的日子」,跳過沒計畫的日子,中間不補空格、不計間隔。"},
+ {n:15,tag:"com",tagName:"內生樂趣",title:"每日小疑問 · 資訊缺口",
+  body:"Loewenstein(1994)資訊缺口理論:先給一半最能引發好奇。問題必須「內生」於成長主題(大腦怎麼學習),不是無關冷知識 —— 否則就是誘人細節(g ≈ −0.16 至 −0.33)。<br><b>Flutter:</b> 事實性內容一律人工審核,絕不由 LLM 生成。"},
+ {n:16,tag:"com",tagName:"內生樂趣",title:"驚喜盒 · 非預期、非任務綁定",
+  body:"Deci et al.(1999)邊界條件:非預期酬賞不侵蝕內在動機。驚喜不能靠「做完任務」觸發,也不能累積、兌換。步步的自我揭露同時示範成長型思維、建立 rapport。<br><b>Flutter:</b> 隨機出現、每日上限、不與任務狀態連動。"},
+ {n:17,tag:"red",tagName:"紅線",title:"裝扮步步 · 外觀不與任務掛鉤",
+  body:"紅線三:外觀改變只來自孩子主動裝扮、時間推移、季節變化 —— 絕不是「完成 10 個任務解鎖新造型」。這裡的造型想穿就穿,跟有沒有做事無關。<br><b>Flutter:</b> 裝扮選項全部免費即時,無任何解鎖條件、不消耗任何貨幣。"},
+ {n:18,tag:"aut",tagName:"自主",title:"白天提醒 · 補上 if-then 那一環",
+  body:"原則二是全產品最強的循證機制 —— 但若早上寫了「如果⋯就⋯」、白天卻從不觸發,等於只做一半。<b>關鍵:孩子通常沒有手機</b>,所以由家長決定要不要、什麼時候提醒;孩子端可選「等一下/今天算了」,全部不留紀錄。<br><b>Flutter:</b> 提醒時段家長端設定,本地通知;不做完成率統計。"},
+ {n:19,tag:"com",tagName:"勝任",title:"步步成長型思維自我示範",
+  body:"MIT Tega 研究:與展現成長型思維的同伴互動,兒童解謎堅持度更高。步步不只評論孩子,也分享自己「卡住 → 換方法 → 再試」的小故事,把『卡住是正常的』示範出來。<br><b>Flutter:</b> 故事池人工撰寫,隨機出現,不與孩子表現連動。"},
+ {n:20,tag:"aut",tagName:"自主",title:"塗鴉牆 · 創造性自我表達",
+  body:"模組五創作區:畫畫、裝扮、自訂 = 自主支持(SDT)。這裡沒有分數、沒有「畫得好不好」,步步只是想收到孩子的畫 —— 表達本身即是目的。<br><b>Flutter:</b> Canvas 本地繪圖,存 dataURL;無評分、無分享壓力。"},
+ {n:21,tag:"com",tagName:"勝任",title:"月回顧 · 敘事自我認同",
+  body:"模組七/原則三:月回顧用『敘事』而非『數據』。只呈現『想清楚的天數』『最常做的事』—— 全自我參照,無完成率、無比較、無斷點。敘事強化自我認同,數字會退化成 KPI。<br><b>Flutter:</b> 從本地 trail 聚合,絕不計算完成百分比。"},
+ {n:22,tag:"rel",tagName:"連結",title:"交換一句話 · 親子共同成長",
+  body:"SDT 關聯需求 + 家庭『一起成長』框架:每月孩子與家長各寫一句話給對方,累積成共有的成長書。不是家長評語,是雙向、平等的留下。<br><b>Flutter:</b> 本地儲存;家長端與孩子端各自輸入,皆可留白。"},
+];
+
+/* ============================================================
+   App 狀態
+   ============================================================ */
+const state={
+  mood:null,
+  selected:[],           // 已選任務
+  currentTask:null,      // 正在排 if-then 的任務
+  planIdx:0,             // 正在排第幾件
+  taskIfs:{},            // 每件事各自的「如果」 {task: ifClause}
+  ifClause:null,
+  why:null,
+  plans:[],              // {task, if, why, state}
+  reviewState:null,
+  reflectText:null,
+  dayAck:null,           // ① 白天提醒本輪已回應的文案( session 內,不持久、不打分)
+};
+const $=id=>document.getElementById(id);
+const qsa=(s,el=document)=>[...el.querySelectorAll(s)];
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2400);}
+
+/* ---------- 頁面切換 ---------- */
+const ORDER=["home","plan1","plan2","plan3","review","learn","notes","growth","explore","monthly","settings"];
+function flowFor(page){
+  if(["plan1","plan2","plan3"].includes(page))return "plan";
+  if(page==="review"||page==="monthly")return "review";
+  if(page==="learn"||page==="notes"||page==="growth"||page==="explore")return "learn";
+  return "home";
+}
+function updateFlow(page){
+  const active=flowFor(page);
+  qsa("[data-flow]").forEach(b=>{
+    const on=b.dataset.flow===active;
+    b.classList.toggle("on",on);
+    if(on)b.setAttribute("aria-current","step");else b.removeAttribute("aria-current");
+  });
+}
+function go(page){
+  const cur=qsa(".page.active")[0];
+  const next=document.querySelector(`[data-page="${page}"]`);
+  if(!next)return;
+  if(cur!==next){cur.classList.remove("active");next.classList.add("active");}
+  const sc=next.querySelector(".page-scroll");if(sc)sc.scrollTop=0;
+  // tab highlight
+  qsa("[data-nav] button").forEach(b=>{
+    const nav=b.dataset.goto;
+    b.classList.toggle("on", nav===page || (nav==="review"&&page==="learn") || (nav==="review"&&page==="monthly") || (nav==="home"&&page==="settings"));
+  });
+  // 時鐘情境
+  const isNight=(page==="review"||page==="learn");
+  $("clock").textContent=isNight?"20:15":"7:42";
+  // 夜晚頁:狀態列(瀏海下)一起轉深,不再有淺色斷層
+  document.querySelector(".screen").classList.toggle("night",isNight);
+  updateFlow(page);
+  localStorage.setItem("bubu-current-page",page);
+  if(page==="notes")renderNotes();
+  if(page==="growth")renderGrowth();
+  if(page==="monthly")renderMonthly();
+  if(page==="explore")setupDoodle();
+}
+qsa("[data-goto]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.goto)));
+qsa("[data-flow-goto]").forEach(b=>b.addEventListener("click",()=>{
+  const page=b.dataset.flowGoto;
+  if(page==="review")startReview();
+  go(page);
+}));
+
+/* ============================================================
+   頁1→2:選任務
+   ============================================================ */
+const TASK_COLORS=["t-sky","t-leaf","t-peach"];
+const TASK_EMOJI={"寫數學那兩頁":"✏️","練直笛 10 分鐘":"🎵","幫忙倒垃圾":"🗑️","畫完那隻恐龍":"🦕","跟阿嬤說晚安":"🌷"};
+
+qsa("#moodRow .mood-btn").forEach(b=>b.addEventListener("click",()=>{
+  qsa("#moodRow .mood-btn").forEach(x=>x.classList.remove("sel"));
+  b.classList.add("sel");state.mood=b.dataset.mood;
+  toast(`步步記得你今天${state.mood} — 但不存成數據`);
+}));
+
+function renderSelected(){
+  const wrap=$("selTasksWrap"),box=$("selTasks");
+  box.innerHTML="";
+  state.selected.forEach(t=>{
+    const c=document.createElement("button");
+    c.className="chip sel-peach";c.innerHTML=`${TASK_EMOJI[t]||"⭐"} ${t} ✕`;
+    c.title="點一下移除";
+    c.onclick=()=>{state.selected=state.selected.filter(x=>x!==t);syncTaskChips();renderSelected();};
+    box.appendChild(c);
+  });
+  wrap.style.display=state.selected.length?"block":"none";
+  const n=state.selected.length;
+  $("toPlan2").disabled=n<1;
+  $("taskCount").textContent=n===0?"選 1–3 件,一件也很好":(n>=3?"3 件滿了,這樣很剛好":`選了 ${n} 件,最多 3 件`);
+}
+function syncTaskChips(){
+  qsa("#taskChips .chip").forEach(c=>{
+    const t=c.dataset.task;
+    c.classList.toggle("sel-peach",state.selected.includes(t));
+    c.disabled=state.selected.length>=3&&!state.selected.includes(t);
+    c.style.opacity=c.disabled?.45:1;
+  });
+}
+$("taskChips").addEventListener("click",e=>{
+  const c=e.target.closest(".chip");if(!c)return;
+  const t=c.dataset.task;
+  if(state.selected.includes(t)){state.selected=state.selected.filter(x=>x!==t);}
+  else if(state.selected.length<3){state.selected.push(t);}else{toast("最多 3 件就好,貪心會累");return;}
+  syncTaskChips();renderSelected();
+});
+$("addCustom").addEventListener("click",()=>{
+  const v=$("customTask").value.trim();if(!v)return;
+  if(state.selected.length>=3){toast("最多 3 件就好");return;}
+  if(!state.selected.includes(v)){state.selected.push(v);if(!TASK_EMOJI[v])TASK_EMOJI[v]="⭐";}
+  $("customTask").value="";syncTaskChips();renderSelected();
+});
+$("customTask").addEventListener("keydown",e=>{if(e.key==="Enter")$("addCustom").click();});
+
+$("toPlan2").addEventListener("click",()=>{
+  state.taskIfs={};state.planIdx=0;
+  loadIfthenFor(0);
+  go("plan2");
+});
+
+/* 依 index 載入「第幾件」的 if-then 建構器 */
+function loadIfthenFor(i){
+  state.planIdx=i;
+  const t=state.selected[i];
+  state.currentTask=t;
+  state.ifClause=state.taskIfs[t]||null;
+  $("thenText").textContent=t;
+  const total=state.selected.length;
+  // ifthenQ 整段重建(會蓋掉內部 <b>),不在之後再碰它的子元素
+  $("ifthenQ").innerHTML=total>1
+    ?`第 ${i+1} 件,共 ${total} 件。「<b>${t}</b>」你想在什麼時候做?`
+    :`我們把「<b>${t}</b>」變成一個「如果⋯就⋯」吧!你想在什麼時候做?`;
+  // 還原此任務已選的情境(若有)
+  setIf(state.taskIfs[t]||null);
+  $("customIf").value="";
+  // CTA 文案:最後一件→寫下來,否則→下一件
+  $("toPlan3").textContent=(i===total-1)?"好,寫下來 →":`下一件(${i+2}/${total})→`;
+}
+
+/* ============================================================
+   頁2:if-then
+   ============================================================ */
+function setIf(text){
+  state.ifClause=text;
+  const slot=$("slotIf");
+  slot.innerHTML=text?`<span>${text}</span>`:`<span class="ph">點下面的情境⋯</span>`;
+  slot.classList.toggle("filled",!!text);
+  qsa("#ifChips .chip").forEach(c=>c.classList.toggle("sel",c.dataset.if===text));
+  $("toPlan3").disabled=!text;
+}
+$("ifChips").addEventListener("click",e=>{
+  const c=e.target.closest(".chip");if(!c)return;
+  setIf(c.dataset.if);$("customIf").value="";
+});
+$("customIf").addEventListener("input",e=>{
+  const v=e.target.value.trim();
+  if(v){setIf(v.startsWith("我")?v:"我"+v);qsa("#ifChips .chip").forEach(c=>c.classList.remove("sel"));}
+  else setIf(null);
+});
+$("toPlan3").addEventListener("click",()=>{
+  // 存下這件事的「如果」
+  state.taskIfs[state.currentTask]=state.ifClause;
+  const nextIdx=state.planIdx+1;
+  if(nextIdx<state.selected.length){
+    // 還有下一件 → 繼續排它的時間
+    loadIfthenFor(nextIdx);
+    go("plan2");
+    return;
+  }
+  // 全部排完 → 進「為什麼」
+  buildFinalCard();
+  go("plan3");
+});
+
+/* plan3 頂部卡:顯示全部計畫(第一件完整,其餘列出) */
+function buildFinalCard(){
+  const wrap=$("finalCardWrap");wrap.innerHTML="";
+  state.selected.forEach((t,i)=>{
+    const card=document.createElement("div");
+    card.className=`plan-card ${TASK_COLORS[i%3]}`;
+    card.style.marginTop=i?"10px":"2px";
+    const ift=state.taskIfs[t]||"我想做的時候";
+    card.innerHTML=`
+      <div class="pc-ic" style="background:var(--surface)">${TASK_EMOJI[t]||"⭐"}</div>
+      <div class="pc-body">
+        <div class="pc-task">${t}</div>
+        <div class="pc-ifthen"><span class="k k-if">如果</span><span>${ift}</span><span class="k k-then">我就</span><span>${t}</span></div>
+      </div>`;
+    wrap.appendChild(card);
+  });
+}
+
+/* ============================================================
+   頁3:為什麼 → 完成計畫
+   ============================================================ */
+function finishPlan(){
+  state.why=$("whyInput").value.trim()||null;
+  state.dayAck=null;                          // 新計畫 → 白天提醒重新問
+  // 每件事用各自選的「如果」
+  state.plans=state.selected.map((t,i)=>({
+    task:t,
+    if:state.taskIfs[t]||"我想做的時候",
+    why:i===0?state.why:null,
+    state:null,
+    color:TASK_COLORS[i%3],
+  }));
+  renderPlans();
+  pushTrailToday();   // 把今天的計畫寫進成長軌跡(只記「有想清楚」,不記完成與否)
+  // 步步回應(歷程讚美,把功勞還給孩子)
+  const firstIf=state.plans[0].if,n=state.plans.length;
+  const replies=n>1?[
+    `${n} 件事都排好時間了,每一件都是你自己選的。`,
+    `好,${n} 個「如果⋯就⋯」都寫下來了。時間到步步會提醒你。`,
+  ]:[
+    `「${firstIf},我就${state.plans[0].task}」——很清楚耶!這是你自己排的。`,
+    `好,寫下來了。這個時間點是你自己選的,等一下就靠它提醒你。`,
+  ];
+  $("homeBubbleText").textContent=replies[Math.floor(Math.random()*replies.length)];
+  toast("計畫排好了 — 白天步步會用你選的情境提醒你");
+  go("home");
+}
+$("finishPlan").addEventListener("click",finishPlan);
+$("skipWhy").addEventListener("click",()=>{$("whyInput").value="";finishPlan();});
+
+function renderPlans(){
+  const list=$("planList");list.innerHTML="";
+  if(!state.plans.length){
+    list.innerHTML=`<div class="plan-empty">今天還沒有計畫。<br>想想要做哪 1–3 件嗎?</div>`;
+    $("planListLabel").style.display="none";
+    $("ctaPlanText").textContent="☀️ 來想想今天要做什麼";
+    renderDayCard();
+    return;
+  }
+  $("planListLabel").style.display="block";
+  // CTA 動作是「改計畫」,文案要跟動作一致,不做假狀態
+  $("ctaPlanText").textContent="✏️ 調整今天的計畫";
+  state.plans.forEach(p=>{
+    const card=document.createElement("div");
+    card.className=`plan-card ${p.color}`;
+    const stateTxt=p.state==="done"?"🌟 做到了":p.state==="part"?"🌗 一部分":p.state==="none"?"🌙 沒做":"待會兒";
+    card.innerHTML=`
+      <div class="pc-ic" style="background:var(--surface)">${TASK_EMOJI[p.task]||"⭐"}</div>
+      <div class="pc-body">
+        <div class="pc-task">${p.task}</div>
+        <div class="pc-ifthen"><span class="k k-if">如果</span><span>${p.if}</span><span class="k k-then">我就</span><span>${p.task}</span></div>
+      </div>
+      <div class="pc-state">${stateTxt}</div>`;
+    card.onclick=()=>go("review");
+    list.appendChild(card);
+  });
+  renderDayCard();
+}
+
+/* 首頁 → 計畫室(主 CTA) */
+$("ctaPlan").addEventListener("click",()=>go("plan1"));
+
+/* 首頁 → 夜晚 */
+$("goNight").addEventListener("click",()=>{startReview();go("review");});
+
+/* ============================================================
+   頁5:夜晚回顧
+   ============================================================ */
+function startReview(){
+  const p=state.plans[0];
+  state.reviewState=null;
+  qsa("#stateRow .state-btn").forEach(b=>b.classList.remove("sel","sel-leaf","sel-sky"));
+  $("toReflect").disabled=true;
+  $("reviewQ").innerHTML=p
+    ?`來看看今天吧。「<b>${p.task}</b>」後來怎麼樣了?`
+    :"來看看今天吧。今天過得怎麼樣?";
+}
+qsa("#stateRow .state-btn").forEach(b=>b.addEventListener("click",()=>{
+  state.reviewState=b.dataset.state;
+  if(state.plans[0])state.plans[0].state=state.reviewState;
+  qsa("#stateRow .state-btn").forEach(x=>x.classList.remove("sel","sel-leaf","sel-sky"));
+  b.classList.add(state.reviewState==="done"?"sel-leaf":state.reviewState==="part"?"sel-sky":"sel");
+  $("toReflect").disabled=false;
+}));
+
+/* 歷程問題(依情境,歷程讚美/好奇取代失望) */
+const PROCESS_Q={
+  done:"你照著自己想的計畫做了耶。你剛剛是怎麼開始的?",
+  part:"有開始,就已經過了最難的地方了。中間發生什麼事嗎?",
+  none:"喔～今天發生什麼事了?",
+};
+$("toReflect").addEventListener("click",()=>{
+  $("processQ").textContent=PROCESS_Q[state.reviewState]||PROCESS_Q.done;
+  // reset learn flow
+  $("reflectBlock").style.display="flex";
+  $("learnBlock").style.display="none";
+  $("sleepBlock").style.display="none";
+  $("reflectInput").value="";
+  go("learn");
+});
+
+/* ============================================================
+   頁6:步步學到(模擬 LLM + 三重防護 fallback)
+   ============================================================ */
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function bubuLearn(){
+  const p=state.plans[0]||{task:"那件事"};
+  const said=state.reflectText;
+  // 依「孩子說了什麼 + 做了沒」給出具體、可回溯、非諂媚的學習句
+  if(state.reviewState==="none"){
+    // 關鍵紅線:沒做的日子也要學得到
+    const pool=[
+      `你說今天${said?`「${said}」`:"事情有點多"},所以先休息。原來累的時候,可以先不做。`,
+      `你今天選了先不做。我覺得,這也是一種決定。`,
+      `你說那個時間點有點趕。我學到一件事:計畫要配合真實的一天。`,
+    ];
+    return {q:pick(pool),src:`來自你今晚說的${said?`:「${said}」`:"話"}`};
+  }
+  if(said){
+    const pool=[
+      `你剛剛說「${said}」——這個我以前沒想過。`,
+      `原來${said}。我一直以為要照順序來。`,
+      `你說${said}。這個我要記起來。`,
+    ];
+    return {q:pick(pool),src:`來自你今晚說的:「${said}」`};
+  }
+  if(state.reviewState==="part"){
+    return {q:`你有開始,雖然沒做完。我學到:開始,有時候比做完更難。`,src:"來自你今天的選擇"};
+  }
+  // done 但沒多說
+  const pool=[
+    `你用「${p.if}」當信號,真的記得了。我學到:把時間講具體,比較不會忘。`,
+    `今天是你自己排、自己做的。我把「自己排的順序比較順」這件事記下來了。`,
+  ];
+  return {q:pick(pool),src:"來自你今天的做法"};
+}
+
+function showLearn(){
+  const said=$("reflectInput").value.trim();
+  state.reflectText=said||null;
+  $("reflectBlock").style.display="none";
+  $("learnBlock").style.display="flex";
+  // 模擬「步步在想」的延遲(對應規格:延遲>3s 顯示想事情動畫)
+  $("learnQuote").innerHTML=`<span class="thinking" style="justify-content:flex-start"><i></i><i></i><i></i></span>`;
+  $("learnSrc").textContent="";
+  setTimeout(()=>{
+    const L=bubuLearn();
+    $("learnQuote").textContent=L.q;
+    $("learnSrc").innerHTML=`<b>回溯</b> · ${L.src}`;
+  },1300);
+  go("learn");
+}
+$("shareReflect").addEventListener("click",showLearn);
+$("skipReflect").addEventListener("click",()=>{$("reflectInput").value="";showLearn();});
+
+/* 存進筆記本 → 晚安 */
+$("saveNote").addEventListener("click",()=>{
+  const L=bubuLearn();
+  const today=new Date();
+  const stamp=`${today.getMonth()+1}月${today.getDate()}日`;
+  const tag=state.reviewState==="none"?["自我認識","leaf"]:state.reflectText?["方法","sky"]:["感受","lav"];
+  let notes=JSON.parse(localStorage.getItem("bubu-notes")||"null")||DEFAULT_NOTES.slice();
+  notes.unshift({date:stamp,text:L.q,tag:tag[0],color:tag[1],fresh:true});
+  localStorage.setItem("bubu-notes",JSON.stringify(notes));
+  toast("記進筆記本了 — 步步不數數量,只是記著");
+  showSleep();
+});
+$("toSleep").addEventListener("click",showSleep);
+function showSleep(){
+  $("reflectBlock").style.display="none";
+  $("learnBlock").style.display="none";
+  $("sleepBlock").style.display="block";
+  const sc=$("pg-learn").querySelector(".page-scroll");if(sc)sc.scrollTop=0;
+}
+$("backHomeNight").addEventListener("click",()=>{renderPlans();go("home");});
+
+/* ============================================================
+   頁7:學習筆記本
+   ============================================================ */
+const DEFAULT_NOTES=[
+ {date:"7月26日",text:"你說卡住的時候會想放棄,但過一下就好了。原來那個感覺會過去。",tag:"感受",color:"lav"},
+ {date:"7月24日",text:"你說你早上比較有精神。我還以為大家都一樣。",tag:"自我認識",color:"leaf"},
+ {date:"7月22日",text:"你說「先寫最討厭的那一項」——我以前都想說要按順序寫耶。",tag:"方法",color:"sky"},
+ {date:"7月20日",text:"直笛的高音要按半孔?我完全不知道欸。",tag:"世界的事",color:"sun"},
+];
+const TAG_STYLE={"方法":["color-mix(in oklch, var(--accent) 12%, var(--surface-warm))","var(--accent-active)"],"自我認識":["color-mix(in oklch, var(--accent) 12%, var(--surface-warm))","var(--accent-active)"],"感受":["color-mix(in oklch, var(--accent) 10%, var(--surface-warm))","var(--accent-active)"],"世界的事":["color-mix(in oklch, var(--accent) 10%, var(--surface-warm))","var(--warn)"]};
+function getNotes(){
+  try{return JSON.parse(localStorage.getItem("bubu-notes"))||DEFAULT_NOTES;}catch(e){return DEFAULT_NOTES;}
+}
+function renderNotes(){
+  const box=$("nbEntries");box.innerHTML="";
+  const notes=getNotes();
+  const SCRIB={"方法":"✏️","自我認識":"🌱","感受":"💭","世界的事":"⭐"};
+  const total=notes.length;
+  notes.forEach((n,i)=>{
+    const fg=(TAG_STYLE[n.tag]||TAG_STYLE["方法"])[1];
+    const e=document.createElement("div");
+    e.className="nb-entry";
+    const rot=((i*37)%5-2)*0.5;                    // -1~1deg 微微歪
+    const age=Math.min(i/Math.max(total-1,1),1);    // 0新→1舊
+    e.style.transform=`rotate(${rot}deg)`;
+    e.style.background=`rgba(240,230,200,${(age*0.28).toFixed(2)})`; // 越舊越泛黃
+    e.innerHTML=`
+      ${i===0&&n.fresh?'<span class="nb-heart">💛</span>':''}
+      <div class="nb-date">${n.date}</div>
+      <div class="nb-text">${n.text}</div>
+      <span class="nb-tag" style="color:${fg}"># ${n.tag}</span>
+      <span class="nb-scribble">${SCRIB[n.tag]||"✏️"}</span>`;
+    box.appendChild(e);
+  });
+  // 本子會長:則數越多書脊越厚、頁緣層次越多
+  const spine=document.querySelector(".nb-spine");
+  if(spine){spine.style.width=Math.min(12+total*1.5,26)+"px";}
+  const wrap=document.querySelector(".nb-wrap");
+  if(wrap){wrap.style.paddingLeft=Math.min(12+total*1.5,26)+"px";}
+}
+
+/* ============================================================
+   星空
+   ============================================================ */
+qsa(".stars").forEach(field=>{
+  for(let i=0;i<26;i++){
+    const s=document.createElement("i");
+    const sz=Math.random()*2.2+1;
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*70}%;width:${sz}px;height:${sz}px;animation-delay:${Math.random()*3}s`;
+    field.appendChild(s);
+  }
+});
+
+/* ============================================================
+   藍圖註記渲染 + 連動
+   ============================================================ */
+function renderBpNotes(){
+  const col=$("bpNotes");col.innerHTML="";
+  BP_NOTES.forEach(n=>{
+    const d=document.createElement("div");
+    d.className="bp-note";d.dataset.note=n.n;
+    d.innerHTML=`
+      <span class="bp-num">${n.n}</span>
+      <h4>${n.title}</h4>
+      <p>${n.body}</p>
+      <span class="bp-tagline tag-${n.tag}">${({紅線:"🚫 紅線",自主:"自主 Autonomy",勝任:"勝任 Competence",連結:"連結 Relatedness","內生樂趣":"✦ 內生樂趣"})[n.tagName]||n.tagName}</span>`;
+    d.onclick=()=>flashPin(n.n);
+    col.appendChild(d);
+  });
+}
+function flashNote(num){
+  const el=document.querySelector(`.bp-note[data-note="${num}"]`);
+  if(!el)return;
+  const col=$("bpCol");
+  const target=Math.max(0,el.offsetTop-col.clientHeight/2+el.offsetHeight/2);
+  col.scrollTo({top:target,behavior:"smooth"});
+  el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),1400);
+}
+function flashPin(num){
+  // 高亮手機上的對應元件
+  const host=document.querySelector(`[data-bp="${num}"]`);
+  if(host){
+    const pin=host.querySelector(".bp-pin");
+    if(pin){pin.style.background="var(--accent)";pin.style.transform="scale(1.35)";setTimeout(()=>{pin.style.background="";pin.style.transform="";},1200);}
+    host.style.transition="box-shadow .3s";host.style.boxShadow="0 0 0 3px color-mix(in oklch, var(--accent) 12%, var(--surface-warm))";
+    setTimeout(()=>host.style.boxShadow="",1200);
+  }
+}
+document.addEventListener("click",e=>{
+  const pin=e.target.closest(".bp-pin");
+  if(pin){e.stopPropagation();e.preventDefault();flashNote(pin.dataset.pin);}
+});
+
+/* 藍圖開關 */
+const bpToggle=$("bpToggle");
+function setBp(on){
+  document.body.classList.toggle("show-bp",on);
+  bpToggle.classList.toggle("on",on);
+  bpToggle.setAttribute("aria-checked",on);
+  localStorage.setItem("bubu-bp",on?"1":"0");
+}
+bpToggle.addEventListener("click",()=>setBp(!document.body.classList.contains("show-bp")));
+bpToggle.addEventListener("keydown",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();setBp(!document.body.classList.contains("show-bp"));}});
+setBp(localStorage.getItem("bubu-bp")==="1");
+
+/* 重置 */
+$("resetBtn").addEventListener("click",()=>{
+  state.mood=null;state.selected=[];state.currentTask=null;state.ifClause=null;state.why=null;
+  state.plans=[];state.reviewState=null;state.reflectText=null;state.dayAck=null;
+  qsa("#moodRow .mood-btn").forEach(x=>x.classList.remove("sel"));
+  $("customTask").value="";$("whyInput").value="";$("customIf").value="";$("reflectInput").value="";
+  setIf(null);syncTaskChips();renderSelected();renderPlans();
+  $("homeBubbleText").textContent="早安!今天過得怎麼樣?有什麼想做的事嗎?";
+  $("ctaPlanText").textContent="來想想今天要做什麼";
+  toast("已重置 — 重新開始一天");
+  go("home");
+});
+
+/* ============================================================
+   成長軌跡(企劃模組三 · 自我參照,不跟別人比)
+   ============================================================ */
+const DEFAULT_TRAIL=[
+  {date:"7/3",emoji:"🎵",task:"練直笛",sit:"洗完澡"},
+  {date:"7/4",emoji:"✏️",task:"寫數學",sit:"吃完晚飯"},
+  {date:"7/7",emoji:"🗑️",task:"倒垃圾",sit:"回到家"},
+  {date:"7/9",emoji:"🎵",task:"練直笛",sit:"洗完澡"},
+  {date:"7/10",emoji:"🦕",task:"畫恐龍",sit:"吃完晚飯"},
+  {date:"7/12",emoji:"✏️",task:"寫數學",sit:"吃完晚飯"},
+  {date:"7/14",emoji:"🌷",task:"跟阿嬤說晚安",sit:"刷完牙"},
+  {date:"7/16",emoji:"🎵",task:"練直笛",sit:"洗完澡"},
+  {date:"7/17",emoji:"✏️",task:"寫數學",sit:"吃完晚飯"},
+  {date:"7/19",emoji:"🦕",task:"畫恐龍",sit:"回到家"},
+  {date:"7/22",emoji:"✏️",task:"寫數學",sit:"吃完晚飯"},
+  {date:"7/24",emoji:"🎵",task:"練直笛",sit:"洗完澡"},
+  {date:"7/27",emoji:"✏️",task:"寫數學",sit:"吃完晚飯"},
+];
+function getTrail(){try{return JSON.parse(localStorage.getItem("bubu-trail"))||DEFAULT_TRAIL.slice()}catch(e){return DEFAULT_TRAIL.slice()}}
+function pushTrailToday(){
+  if(!state.plans.length)return;
+  const p=state.plans[0],d=new Date(),key=`${d.getMonth()+1}/${d.getDate()}`;
+  const tr=getTrail().filter(x=>x.date!==key);   // 同一天只留一筆
+  tr.unshift({date:key,emoji:TASK_EMOJI[p.task]||"⭐",task:p.task,sit:p.if});
+  localStorage.setItem("bubu-trail",JSON.stringify(tr.slice(0,40)));
+}
+function modeOf(arr){const c={};arr.forEach(x=>c[x]=(c[x]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||"—";}
+function renderGrowth(){
+  const tr=getTrail(),layer=$("trailLayer");if(!layer)return;
+  const path=document.getElementById("trailPath");if(!path)return;
+  const total=path.getTotalLength(),n=tr.length;
+  let html="";
+  tr.forEach((d,i)=>{
+    const t=n<=1?0.9:0.94-(i/(n-1))*0.88;   // newest(i=0)→山頂, 步步站的位置
+    const pt=path.getPointAtLength(t*total);
+    const isNew=i===0;
+    html+=`<g transform="translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)})">
+      <circle r="15" fill="var(--bg)" stroke="${isNew?"var(--accent-active)":"var(--accent)"}" stroke-width="${isNew?3:2.5}"/>
+      <text y="5" text-anchor="middle" font-size="14">${d.emoji}</text>
+      <text class="fp-date" y="30" text-anchor="middle" fill="var(--muted)">${d.date}</text>
+    </g>`;
+  });
+  layer.innerHTML=html;
+  $("gPlanDays").textContent=`${tr.length} 天`;
+  $("gTopSit").textContent=modeOf(tr.map(d=>d.sit));
+  $("gTopTask").textContent=modeOf(tr.map(d=>d.task));
+}
+
+/* ============================================================
+   探索角(企劃模組五 · 好奇 / 驚喜 / 創造,全部內生樂趣)
+   ============================================================ */
+const CURIO=[
+ {q:"你知道嗎?大腦睡覺的時候,會把白天練過的事,再偷偷複習一遍⋯",a:"所以好好睡覺,隔天吹直笛的指法會更順。練習不只在「練的時候」發生 —— 睡覺時也在。",src:"睡眠與記憶鞏固"},
+ {q:"為什麼同一件事,做很多次之後就會變簡單?",a:"大腦會把重複走過的路,鋪成一條「高速公路」。你多練一次,路就寬一點,下次就快一點。",src:"神經可塑性"},
+ {q:"「卡住」的時候,大腦其實正在做一件很重要的事⋯",a:"覺得難的時候,正是腦袋在蓋新路的時候。卡住不是壞事,是它在動工。",src:"學習的大腦"},
+ {q:"你知道嗎?身體會記得你練過的動作,就算很久沒再做⋯",a:"騎腳踏車一旦學會,就算十年沒騎,身體還記得。這叫「程序記憶」,藏在手和腳裡。",src:"程序記憶"},
+];
+let curioIdx=Math.floor(Math.random()*CURIO.length);
+function renderCurio(){
+  const c=CURIO[curioIdx%CURIO.length];
+  $("curioQ").textContent=c.q;
+  $("curioA").textContent=c.a;
+  $("curioSrc").textContent=c.src;
+  $("curioRevealBox").classList.remove("show");
+  $("curioReveal").textContent="步步也想知道,點開看";
+  $("curioReveal").disabled=false;
+}
+$("curioReveal")?.addEventListener("click",()=>{
+  $("curioRevealBox").classList.add("show");
+  $("curioReveal").textContent="答案在上面 ↑";
+  $("curioReveal").disabled=true;
+});
+$("curioNext")?.addEventListener("click",()=>{curioIdx++;renderCurio();});
+
+const SURPRISE=[
+ "步步今天試著用左手畫了一棵樹⋯歪歪的,但步步很喜歡。你也試過用不擅長的那一邊嗎?",
+ "步步剛剛發現:把書倒過來看,字會變得好奇怪。哈。",
+ "步步今天學會一個新表情 —— 瞇瞇眼。你做了一件讓自己滿意的事的時候,步步也會這樣。",
+ "步步昨晚做夢,夢到自己在雲上跳來跳去。醒來還記得一點點。",
+ "步步今天把幾顆小石頭排在一起,變成一條小路。原來小東西湊起來會變成別的東西。",
+];
+let surpriseOpened=false;
+$("surpriseBox")?.addEventListener("click",()=>{
+  const box=$("surpriseBox");
+  box.classList.add("shake");
+  setTimeout(()=>box.classList.remove("shake"),500);
+  setTimeout(()=>{
+    box.textContent="✨";
+    $("surpriseHint").style.display="none";
+    $("surpriseOut").classList.add("show");
+    $("surpriseText").textContent=pick(SURPRISE);
+    surpriseOpened=true;
+  },420);
+});
+
+const ACCESSORIES=[
+ {id:"hat",emoji:"🎩",label:"帽子",pos:"top:46px;left:50%;transform:translateX(-50%);font-size:30px"},
+ {id:"scarf",emoji:"🧣",label:"圍巾",pos:"top:116px;left:50%;transform:translateX(-50%);font-size:30px"},
+ {id:"flower",emoji:"🌸",label:"小花",pos:"top:70px;left:62%;font-size:24px"},
+];
+function getLook(){try{return JSON.parse(localStorage.getItem("bubu-look"))||[]}catch(e){return[]}}
+function setLook(a){localStorage.setItem("bubu-look",JSON.stringify(a))}
+function renderAcc(){
+  const worn=getLook();
+  $("accChips").innerHTML=ACCESSORIES.map(a=>
+    `<button class="acc-chip ${worn.includes(a.id)?"on":""}" data-acc="${a.id}">${a.emoji} ${a.label}${worn.includes(a.id)?" ✓":""}</button>`).join("");
+  $("accLayer").innerHTML=ACCESSORIES.filter(a=>worn.includes(a.id))
+    .map(a=>`<div class="acc-overlay" style="${a.pos}">${a.emoji}</div>`).join("");
+}
+$("accChips")?.addEventListener("click",e=>{
+  const b=e.target.closest("[data-acc]");if(!b)return;
+  const id=b.dataset.acc;let worn=getLook();
+  worn=worn.includes(id)?worn.filter(x=>x!==id):[...worn,id];
+  setLook(worn);renderAcc();
+});
+
+/* ============================================================
+   家長設定 · 事情範本 / 時間點範本(孩子從中挑選,仍自主決定)
+   ============================================================ */
+const DEFAULT_TASKS=[
+  {emoji:"✏️",text:"寫數學那兩頁"},
+  {emoji:"🎵",text:"練直笛 10 分鐘"},
+  {emoji:"🗑️",text:"幫忙倒垃圾"},
+  {emoji:"🦕",text:"畫完那隻恐龍"},
+  {emoji:"🌷",text:"跟阿嬤說晚安"},
+];
+function getTasks(){try{return JSON.parse(localStorage.getItem("bubu-tasks"))||DEFAULT_TASKS.slice()}catch(e){return DEFAULT_TASKS.slice()}}
+function setTasks(a){localStorage.setItem("bubu-tasks",JSON.stringify(a))}
+
+const DEFAULT_CUES=[
+  {emoji:"🍚",text:"我吃完晚飯"},
+  {emoji:"🛁",text:"我洗完澡"},
+  {emoji:"🎒",text:"我回到家放下書包"},
+  {emoji:"🪥",text:"我刷完牙"},
+];
+function getCues(){try{return JSON.parse(localStorage.getItem("bubu-cues"))||DEFAULT_CUES.slice()}catch(e){return DEFAULT_CUES.slice()}}
+function setCues(a){localStorage.setItem("bubu-cues",JSON.stringify(a))}
+
+/* 孩子的「事情庫 / 情境」改讀家長設定的範本(沒設定就用預設) */
+function renderTaskChips(){
+  const box=$("taskChips");if(!box)return;
+  box.innerHTML=getTasks().map(t=>`<button class="chip" data-task="${t.text}">${t.emoji} ${t.text}</button>`).join("");
+  syncTaskChips();
+}
+function renderIfChips(){
+  const box=$("ifChips");if(!box)return;
+  box.innerHTML=getCues().map(c=>`<button class="chip${c.text===state.ifClause?" sel":""}" data-if="${c.text}">${c.emoji} ${c.text.replace(/^我/,"")}</button>`).join("");
+}
+
+/* 家長設定頁 */
+const TASK_EMOJI_POOL=["✏️","🎵","🗑️","🦕","🌷","📖","🧹","⚽","🎨","🪥","💧","🌱","⭐"];
+let pickedTaskEmoji=TASK_EMOJI_POOL[0];
+function renderTaskEmojiPicks(){
+  const box=$("taskEmojiPicks");if(!box)return;
+  box.innerHTML=TASK_EMOJI_POOL.map(e=>`<button class="${e===pickedTaskEmoji?"sel":""}" data-emoji="${e}" aria-label="${e}">${e}</button>`).join("");
+}
+function renderTaskTemplates(){
+  const box=$("taskTemplates");if(!box)return;
+  const ts=getTasks();
+  box.innerHTML=ts.length?ts.map((t,i)=>`<div class="set-row"><span class="sr-emoji">${t.emoji}</span><span class="sr-text">${t.text}</span><button class="sr-del" data-del-task="${i}" aria-label="刪除">✕</button></div>`).join(""):`<div style="color:var(--muted);font-size:14px;padding:8px 2px">還沒有範本,下面加一個</div>`;
+}
+function renderCueTemplates(){
+  const box=$("cueTemplates");if(!box)return;
+  const cs=getCues();
+  box.innerHTML=cs.length?cs.map((c,i)=>`<div class="set-row"><span class="sr-emoji">${c.emoji}</span><span class="sr-text">${c.text}</span><button class="sr-del" data-del-cue="${i}" aria-label="刪除">✕</button></div>`).join(""):`<div style="color:var(--muted);font-size:14px;padding:8px 2px">還沒有時間點,下面加一個</div>`;
+}
+$("taskEmojiPicks")?.addEventListener("click",e=>{const b=e.target.closest("[data-emoji]");if(!b)return;pickedTaskEmoji=b.dataset.emoji;renderTaskEmojiPicks();});
+$("taskTemplates")?.addEventListener("click",e=>{
+  const b=e.target.closest("[data-del-task]");if(!b)return;
+  const ts=getTasks();ts.splice(+b.dataset.delTask,1);setTasks(ts);
+  renderTaskTemplates();renderTaskChips();
+});
+$("addTask")?.addEventListener("click",()=>{
+  const v=$("newTaskText").value.trim();if(!v){toast("先寫一下要做什麼");return;}
+  const ts=getTasks();
+  if(ts.some(t=>t.text===v)){toast("這件事已經有了");return;}
+  ts.push({emoji:pickedTaskEmoji,text:v});setTasks(ts);
+  TASK_EMOJI[v]=pickedTaskEmoji;
+  $("newTaskText").value="";renderTaskTemplates();renderTaskChips();
+  toast("事情範本加好了");
+});
+$("newTaskText")?.addEventListener("keydown",e=>{if(e.key==="Enter")$("addTask").click();});
+$("cueTemplates")?.addEventListener("click",e=>{
+  const b=e.target.closest("[data-del-cue]");if(!b)return;
+  const cs=getCues();cs.splice(+b.dataset.delCue,1);setCues(cs);
+  renderCueTemplates();renderIfChips();
+});
+$("addCue")?.addEventListener("click",()=>{
+  let v=$("newCueText").value.trim();if(!v){toast("先寫一下時間點");return;}
+  v=v.startsWith("我")?v:"我"+v;
+  const cs=getCues();
+  if(cs.some(c=>c.text===v)){toast("這個時間點已經有了");return;}
+  cs.push({emoji:"⏰",text:v});setCues(cs);
+  $("newCueText").value="";renderCueTemplates();renderIfChips();
+  toast("時間點範本加好了");
+});
+$("newCueText")?.addEventListener("keydown",e=>{if(e.key==="Enter")$("addCue").click();});
+$("resetTemplates")?.addEventListener("click",()=>{
+  setTasks(DEFAULT_TASKS.slice());setCues(DEFAULT_CUES.slice());
+  renderTaskTemplates();renderCueTemplates();renderTaskChips();renderIfChips();
+  toast("已還原預設範本");
+});
+
+/* ============================================================
+   ① 白天提醒(家長決定 · 補上 if-then 的白天那一環)
+   ============================================================ */
+function getDayRemind(){try{return JSON.parse(localStorage.getItem("bubu-dayremind"))||{on:false,slot:"afternoon"}}catch(e){return{on:false,slot:"afternoon"}}}
+function setDayRemind(o){localStorage.setItem("bubu-dayremind",JSON.stringify(o))}
+function renderDayRemind(){
+  const sw=$("dayRemindSwitch"),wrap=$("dayRemindSlotWrap"),sel=$("dayRemindSlot");if(!sw)return;
+  const r=getDayRemind();
+  sw.classList.toggle("on",r.on);sw.setAttribute("aria-checked",r.on);
+  wrap.style.display=r.on?"block":"none";
+  if(sel)sel.value=r.slot;
+}
+function toggleDayRemind(){const r=getDayRemind();r.on=!r.on;setDayRemind(r);renderDayRemind();renderDayCard();toast(r.on?"白天提醒開了 — 孩子白天會看到":"白天提醒關了");}
+$("dayRemindSwitch")?.addEventListener("click",toggleDayRemind);
+$("dayRemindSwitch")?.addEventListener("keydown",e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();toggleDayRemind();}});
+$("dayRemindSlot")?.addEventListener("change",e=>{const r=getDayRemind();r.slot=e.target.value;setDayRemind(r);renderDayCard();});
+
+const SLOT_LABEL={afternoon:"放學後",dinner:"吃完晚飯",bedtime:"睡前"};
+function renderDayCard(){
+  const card=$("dayCard");if(!card)return;
+  const r=getDayRemind();
+  const show=r.on&&state.plans.length>0;
+  card.classList.toggle("show",show);
+  if(!show)return;
+  if(state.dayAck){
+    card.classList.add("acked");
+    $("dayCueText").textContent=state.dayAck;
+    $("dayCue").classList.add("show");
+    $("dayOpts").style.display="none";
+  }else{
+    card.classList.remove("acked");
+    $("dayCue").classList.remove("show");
+    $("dayOpts").style.display="flex";
+  }
+}
+$("dayCard")?.addEventListener("click",e=>{
+  if(e.target.closest(".day-opts")||e.target.closest(".day-cue"))return;
+  if(state.dayAck)return;
+  const p=state.plans[0];
+  $("dayCueText").innerHTML=`你早上說「<b>${p.if}</b>,我就${p.task}」。現在是${SLOT_LABEL[getDayRemind().slot]}了 —— 是那個時間嗎?想做就去做,不想也完全沒關係。`;
+  $("dayCue").classList.add("show");
+});
+$("dayOpts")?.addEventListener("click",e=>{
+  const b=e.target.closest("[data-opt]");if(!b)return;
+  const opt=b.dataset.opt;
+  const reply={done:"好耶,去吧。是你自己決定的。",later:"好,等你想做的時候。時間是你訂的,不急。",skip:"沒關係,今天算了也是一種決定。步步都在。"}[opt];
+  state.dayAck=reply;
+  $("dayCueText").textContent=reply;
+  $("dayOpts").style.display="none";
+  $("dayCard").classList.add("acked");
+  toast("步步記下了 —— 不打分數,只是陪你");
+});
+
+/* ============================================================
+   ③ 步步成長型思維自我示範(§7.5 · 角色自己也會卡關再試)
+   ============================================================ */
+const BUBU_GROWTH=[
+ "步步昨天想摺一隻會跳的青蛙,摺了好多次都跳不起來。後來步步換了一張薄一點的紙,它就跳了!原來換個材料,也是一種辦法。",
+ "步步想學倒著走直線,一直歪掉。步步停下來想了一下,改成慢慢走,不要求快 —— 結果就穩了。慢慢來,也是一種快。",
+ "步步畫一棵樹,畫了好幾遍都不喜歡。後來步步決定:就畫一棵長得不一樣的樹吧。它變成步步最喜歡的那棵。",
+ "步步想自己綁鞋帶,一直打結。步步沒有生氣,就是再試一次。試到第好多好多次,突然就會了。步步覺得好神奇。",
+ "步步想學一個新魔術,變不出來。步步說:『我今天先學到這裡,明天再試。』休息一下再回來,有時候反而學得更快。",
+ "步步種的小豆芽一直不發芽。步步沒有放棄,每天還是澆一點水。第十天的早上,它冒出來了。原來等,也是一種努力。",
+];
+let gmIdx=Math.floor(Math.random()*BUBU_GROWTH.length);
+function renderGmStory(){const el=$("gmStoryText");if(el)el.textContent=BUBU_GROWTH[gmIdx%BUBU_GROWTH.length];}
+$("gmStoryNext")?.addEventListener("click",()=>{gmIdx++;renderGmStory();});
+
+/* ============================================================
+   ⑤ 今天不想計畫 · 無條件陪伴(紅線一:不計畫也在)
+   ============================================================ */
+const REST_LINES=[
+ "好啊,今天就這樣也很棒。步步在這裡陪你。",
+ "不想計畫也沒關係。休息,也是你需要的事。",
+ "嗯,今天先不要想那些。我們就這樣待一下。",
+];
+$("restToday")?.addEventListener("click",()=>{
+  $("homeBubbleText").textContent=pick(REST_LINES);
+  $("breathStage").classList.add("show");
+  $("breathTxt").textContent="跟著步步,慢慢吸⋯慢慢吐⋯";
+  setTimeout(()=>{$("breathTxt").textContent="好一點了嗎?步步隨時都在。";},7000);
+  toast("步步陪你 —— 不需要做任何事");
+});
+
+/* ============================================================
+   ④ 塗鴉牆 · 創作區(模組五 · 自主表達)
+   ============================================================ */
+let doodleColor="accent",doodling=false,dCtx=null,doodleReady=false;
+function cssColor(name){return getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim()||name;}
+function setupDoodle(){
+  const cv=$("doodleCanvas");if(!cv||doodleReady)return;doodleReady=true;
+  const r=cv.getBoundingClientRect();
+  cv.width=Math.max(r.width*2,2);cv.height=Math.max(r.height*2,2);
+  dCtx=cv.getContext("2d");dCtx.scale(2,2);dCtx.lineCap="round";dCtx.lineJoin="round";
+  const pos=e=>{const rr=cv.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-rr.left,y:t.clientY-rr.top};};
+  const start=e=>{e.preventDefault();doodling=true;dLast=pos(e);};
+  const move=e=>{if(!doodling)return;e.preventDefault();const p=pos(e);
+    dCtx.strokeStyle=doodleColor==="eraser"?cssColor("bg"):cssColor(doodleColor);
+    dCtx.lineWidth=doodleColor==="eraser"?16:4;
+    dCtx.beginPath();dCtx.moveTo(dLast.x,dLast.y);dCtx.lineTo(p.x,p.y);dCtx.stroke();dLast=p;};
+  const end=()=>{doodling=false;};
+  cv.addEventListener("mousedown",start);cv.addEventListener("mousemove",move);window.addEventListener("mouseup",end);
+  cv.addEventListener("touchstart",start,{passive:false});cv.addEventListener("touchmove",move,{passive:false});cv.addEventListener("touchend",end);
+}
+let dLast={x:0,y:0};
+function getDoodles(){try{return JSON.parse(localStorage.getItem("bubu-doodles"))||[]}catch(e){return[]}}
+function setDoodles(a){localStorage.setItem("bubu-doodles",JSON.stringify(a.slice(0,12)));}
+function renderDoodleGallery(){
+  const g=$("doodleGallery");if(!g)return;
+  g.innerHTML=getDoodles().map((d,i)=>`<img src="${d}" data-di="${i}" alt="步步收到的畫">`).join("");
+}
+qsa(".dcolor").forEach(c=>c.addEventListener("click",()=>{doodleColor=c.dataset.color;qsa(".dcolor").forEach(x=>x.classList.toggle("sel",x===c));}));
+$("doodleClear")?.addEventListener("click",()=>{const cv=$("doodleCanvas");if(cv&&dCtx)dCtx.clearRect(0,0,cv.width,cv.height);});
+$("doodleSave")?.addEventListener("click",()=>{
+  const cv=$("doodleCanvas");if(!cv||!dCtx)return;
+  const ds=getDoodles();ds.unshift(cv.toDataURL("image/png"));setDoodles(ds);renderDoodleGallery();
+  dCtx.clearRect(0,0,cv.width,cv.height);
+  toast("步步收到了 💛 謝謝你畫給牠");
+});
+$("doodleGallery")?.addEventListener("click",e=>{
+  const im=e.target.closest("[data-di]");if(!im||!dCtx)return;
+  const img=new Image();img.onload=()=>{const cv=$("doodleCanvas");dCtx.clearRect(0,0,cv.width,cv.height);dCtx.drawImage(img,0,0,cv.width/2,cv.height/2);};
+  img.src=getDoodles()[+im.dataset.di];
+});
+
+/* ============================================================
+   ② 月回顧(模組七 · 敘事自我認同,親子交換一句話)
+   ============================================================ */
+function getMonthly(){try{return JSON.parse(localStorage.getItem("bubu-monthly"))||[]}catch(e){return[]}}
+function setMonthly(a){localStorage.setItem("bubu-monthly",JSON.stringify(a));}
+let bookIdx=0;
+function bookPages(){
+  const tr=getTrail(),now=new Date(),cm=now.getMonth()+1,cy=now.getFullYear();
+  const map={};getMonthly().forEach(e=>{map[e.mKey||`${cy}/${String(e.month).replace("月","")}`]=e;});
+  const months=[...new Set(tr.map(x=>String(x.date).split("/")[0]))];
+  if(!months.includes(String(cm)))months.unshift(String(cm));   // 當月永遠有一頁可寫
+  return months.map(mstr=>{
+    const m=+mstr;
+    const entries=tr.filter(x=>(+String(x.date).split("/")[0])===m);
+    const ex=map[`${cy}/${m}`]||{};
+    return {m,entries,child:ex.child||"",parent:ex.parent||""};
+  }).sort((a,b)=>b.m-a.m);   // 最新在前 → 打開就是這個月
+}
+function bkNarrative(p){
+  const days=p.entries.length;
+  if(days===0)return `${p.m}月,還沒有寫下什麼。\n沒寫的日子,路還在那裡等你 —— 不是斷掉,只是那天你做了別的事。`;
+  const s=[`這個月,你有 <b>${days} 天</b>想清楚了今天要做什麼。`];
+  const topTask=modeOf(p.entries.map(d=>d.task));
+  if(topTask&&topTask!=="—")s.push(`你最常給自己排的是「<b>${topTask}</b>」。`);
+  const sit=p.entries.filter(d=>d.sit).map(d=>String(d.sit).replace(/^我/,""));
+  if(sit.length)s.push(`而且常常是在「<b>${modeOf(sit)}</b>」之後開始的。`);
+  s.push("這些都是你自己排的。");
+  s.push("沒寫的日子,路還在那裡等你 —— 不是斷掉,只是那天你做了別的事。");
+  return s.join("\n");
+}
+function renderMonthly(){
+  const book=$("growthBook");if(!book)return;
+  const pages=bookPages(),n=pages.length;
+  if(bookIdx>n-1)bookIdx=n-1;if(bookIdx<0)bookIdx=0;
+  const p=pages[bookIdx];
+  $("bkNum").textContent=bookIdx+1;
+  $("bkMonth").textContent=`${p.m}月的我`;
+  $("bkNarr").innerHTML=bkNarrative(p);
+  // 信件(孩子 / 家長)
+  let lh="";
+  if(p.child||p.parent){
+    if(p.child)lh+=`<div class="letter"><div class="lt-from">孩子寫的</div><div class="lt-txt">${p.child}</div></div>`;
+    if(p.parent)lh+=`<div class="letter parent"><div class="lt-from">家長寫的</div><div class="lt-txt">${p.parent}</div></div>`;
+  }else{
+    lh=`<div style="flex:1;text-align:center;padding:8px 4px"><div class="lt-empty">這一頁還沒有信 —— 在下面寫一句話,就會夾進來。</div></div>`;
+  }
+  $("bkLetters").innerHTML=lh;
+  // 翻頁
+  $("bkPage").textContent=`${bookIdx+1} / ${n}`;
+  $("bkPrev").disabled=bookIdx<=0;
+  $("bkNext").disabled=bookIdx>=n-1;
+  $("bkDots").innerHTML=pages.map((_,i)=>`<i class="${i===bookIdx?"on":""}" data-pi="${i}"></i>`).join("");
+}
+$("bkPrev")?.addEventListener("click",()=>{if(bookIdx>0){bookIdx--;renderMonthly();}});
+$("bkNext")?.addEventListener("click",()=>{if(bookIdx<bookPages().length-1){bookIdx++;renderMonthly();}});
+$("bkDots")?.addEventListener("click",e=>{const d=e.target.closest("[data-pi]");if(d){bookIdx=+d.dataset.pi;renderMonthly();}});
+$("mrSave")?.addEventListener("click",()=>{
+  const child=$("mrChild").value.trim(),parent=$("mrParent").value.trim();
+  if(!child&&!parent){toast("至少寫一句話喔");return;}
+  const now=new Date(),m=now.getMonth()+1,y=now.getFullYear();
+  const all=getMonthly().filter(e=>(e.mKey||`${y}/${String(e.month).replace("月","")}`)!==`${y}/${m}`);
+  all.unshift({mKey:`${y}/${m}`,month:`${m}月`,child,parent});
+  setMonthly(all);
+  bookIdx=0;renderMonthly();
+  $("mrChild").value="";$("mrParent").value="";
+  toast("信夾進這一頁了 💌");
+});
+
+/* init */
+renderBpNotes();renderTaskChips();renderIfChips();renderSelected();renderPlans();renderNotes();
+renderGrowth();renderCurio();renderAcc();renderTaskTemplates();renderCueTemplates();renderTaskEmojiPicks();
+renderDayRemind();renderDayCard();renderGmStory();renderDoodleGallery();renderMonthly();
+const savedPage=localStorage.getItem("bubu-current-page");
+go(ORDER.includes(savedPage)?savedPage:"home");
+</script>
+</body>
+</html>
