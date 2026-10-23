@@ -1,5 +1,5 @@
 name: little_steps
-description: "A new Flutter project."
+description: "小步 Little Steps：孩子自己決定、自己做到的成長 App。"
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -14,6 +14,8 @@ dependencies:
   firebase_auth: ^7.0.0
   firebase_core: ^5.0.0
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^3.4.3
   go_router: ^18.1.1
@@ -35,3 +37,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/copy_rules.json
+    - assets/crisis_patterns.json

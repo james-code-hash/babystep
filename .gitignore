@@ -1,0 +1,5 @@
+firebase-debug.log*
+.firebase/
+functions/lib/
+functions/node_modules/
+.claude/worktrees/

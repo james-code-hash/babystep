@@ -1,3 +1,3 @@
-# little_steps
+# little_steps（Flutter App）
 
-A new Flutter project.
+說明請看專案根目錄的 [README](../README.md)。
