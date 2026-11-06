@@ -13,6 +13,7 @@ import '../../core/theme.dart';
 import '../../data/repository.dart';
 import '../../domain/models.dart';
 import '../../providers.dart';
+import 'map_trail.dart';
 import 'path_insights.dart';
 import 'path_trail.dart';
 import 'sky_trail.dart';
@@ -61,6 +62,7 @@ class _StylePicker extends ConsumerWidget {
         TrailStyle.path => PathCopy.stylePath,
         TrailStyle.tree => PathCopy.styleTree,
         TrailStyle.sky => PathCopy.styleSky,
+        TrailStyle.map => PathCopy.styleMap,
       };
 
   @override
@@ -107,6 +109,7 @@ class _PathBody extends StatelessWidget {
             TrailStyle.path => PathCopy.intro,
             TrailStyle.tree => PathCopy.introTree,
             TrailStyle.sky => PathCopy.introSky,
+            TrailStyle.map => PathCopy.introMap,
           }
               .of(tone),
           style: text.bodyLarge,
@@ -117,6 +120,7 @@ class _PathBody extends StatelessWidget {
           TrailStyle.path => PathTrail(days: days, tone: tone),
           TrailStyle.tree => TreeTrail(days: days, tone: tone),
           TrailStyle.sky => SkyTrail(days: days, tone: tone),
+          TrailStyle.map => MapTrail(days: days, tone: tone),
         },
       ],
     );
@@ -190,6 +194,7 @@ class _EmptyPath extends StatelessWidget {
                   TrailStyle.path => PathCopy.empty,
                   TrailStyle.tree => PathCopy.emptyTree,
                   TrailStyle.sky => PathCopy.emptySky,
+                  TrailStyle.map => PathCopy.emptyMap,
                 }
                     .of(tone),
                 key: const ValueKey('path-empty'),
