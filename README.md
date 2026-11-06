@@ -122,6 +122,15 @@ cd app && fvm flutter test integration_test/full_day_test.dart -d <裝置 id>   
 cd app && fvm flutter test test/flow                                          # 沒有裝置時，用 widget test 跑同一份流程
 ```
 
+**各情境 E2E：** 情境寫在 `app/integration_test/scenarios/`，每一組一個檔案：孩子的核心循環、危機內容、家長區（PIN、建議、說話方式、LLM 開關、匯出、提醒時段、刪除全部）、話術轉譯器／家長微課程／全家一起／月回顧的信、分齡、探索角／驚喜盒、成長軌跡／月回顧。全部從畫面點，跨日用「App 進背景、隔天回來」模擬。
+
+```bash
+cd app && tool/e2e.sh <裝置 id>        # 真機、模擬器或桌面版（linux / macos），一次一個檔案；會清掉裝置上的資料
+cd app && fvm flutter test test/e2e     # 沒有裝置時：同一份情境，換成 in-memory 資料庫（CI 每次都跑）
+```
+
+在裝置上跑時用的是 App 真正的啟動方式（磁碟上的資料庫檔、刪除全部會真的刪檔重開）；`flutter test` 那一份只有「刪檔重開」這一步換成清資料列。兩種都不碰 LLM（App 沒帶 emulator 參數時本來就走範本）。
+
 ### 實機驗證步驟（建議在本機做一次）
 
 1. 開飛航模式，安裝並打開 App。
