@@ -73,6 +73,24 @@ abstract final class PlanCopy {
   static const useThis = Line.same('用這個');
   static const editTask = Line('想換個說法', '換個說法');
   static const editTaskHint = Line('我就⋯', '我就⋯');
+  // ------------------------------------------------------------ 計畫品質提示（MCII，決策 I5）
+  // 只問、不代寫：孩子可以改，也可以「這樣就好」，不擋下一步。
+
+  /// 事情裡有這些字，就問「做到什麼樣子算做完」。
+  static const vagueTaskWords = ['認真', '努力', '好好', '用功', '盡量', '多一點', '少一點', '專心', '進步', '變好', '更好'];
+
+  /// 事情是「不要⋯」，就問「那時候想改做什麼」。
+  static const negativeTaskWords = ['不要', '不再', '不准', '不可以', '別再'];
+
+  /// 時間點裡有這些字，就問「是哪件事做完的時候」。
+  static const vagueCueWords = ['有空', '有時間', '等一下', '待會', '晚一點', '想到', '有心情', '找時間', '哪天', '隨時'];
+
+  static const hintTaskVague = Line('這件事做到什麼樣子，就算做完了呢？', '這件事做到什麼樣子算做完？');
+  static const hintTaskNegative = Line('不做那件事的時候，你想改做什麼呢？', '不做那件事的時候，想改做什麼？');
+  static const hintCueVague = Line('那大概是什麼時候呀？是哪件事做完的時候呢？', '那是什麼時候？哪件事做完之後？');
+  static const hintEdit = Line.same('改一下');
+  static const hintKeep = Line.same('這樣就好');
+
   static const cueChosen = Line('這個時間點是你自己選的，等一下就靠它提醒你。', '時間點是你自己選的，到時候就靠它提醒你。');
 
   // ------------------------------------------------------------ 4. 為什麼（§4.5，可跳過）
