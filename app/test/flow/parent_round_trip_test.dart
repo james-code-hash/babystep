@@ -101,6 +101,13 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
     container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
     expect(find.byKey(const ValueKey('home-ended')), findsNothing);
+    // 剛安裝的樣子：先重新見面（D6）。
+    expect(find.byKey(const ValueKey('first-meeting')), findsOneWidget);
+    await tapKey(tester, 'hello-next');
+    await tapKey(tester, 'pet-name-keep');
+    await settleAll(tester);
+    await tapKey(tester, 'hello-done');
+    await settleAll(tester);
     expect(find.byKey(const ValueKey('home-plan')), findsOneWidget);
     expect(find.text(HomeCopy.planInvite.lively), findsOneWidget);
     expect(container.read(toneProvider), AgeTone.lively);

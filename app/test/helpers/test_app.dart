@@ -31,11 +31,13 @@ AppDatabase memoryDb() {
 }
 
 class TestEnv {
-  TestEnv({DateTime? now, int seed = 1})
+  /// [onboarded]：預設已經見過面（多數測試從首頁開始）；測初次見面時傳 false。
+  TestEnv({DateTime? now, int seed = 1, this.onboarded = true})
       : db = memoryDb(),
         clock = FixedClock(now ?? DateTime(2026, 10, 23, 19, 30)),
         random = Random(seed);
 
+  final bool onboarded;
   final AppDatabase db;
   final FixedClock clock;
   final Random random;
@@ -49,7 +51,10 @@ class TestEnv {
         crisisDetectorProvider.overrideWithValue(loadCrisisDetector()),
       ];
 
-  Future<void> seed() => repo.seedIfEmpty();
+  Future<void> seed() async {
+    await repo.seedIfEmpty();
+    if (onboarded) await repo.setOnboarded();
+  }
 
   ProviderContainer container({List<Override> extra = const []}) =>
       ProviderContainer(overrides: [...overrides, ...extra]);

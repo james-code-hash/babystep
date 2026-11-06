@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:little_steps/safety/safety_response.dart';
+import 'package:little_steps/copy/common.dart';
 import 'package:little_steps/copy/plan.dart';
 import 'package:little_steps/core/clock.dart';
 import 'package:little_steps/core/config.dart';
+import 'package:little_steps/core/theme.dart';
 import 'package:little_steps/domain/models.dart';
 import 'package:little_steps/features/home/home_screen.dart';
+import 'package:little_steps/features/plan/plan_hint.dart';
 import 'package:little_steps/features/plan/plan_screen.dart';
 
 import '../../helpers/test_app.dart';
@@ -127,6 +130,34 @@ void main() {
     await _finish(tester, env);
   });
 
+  // I4（企劃書模組一）：家長建議的事是另一個顏色；孩子選了就變成和自己選的一樣。
+  testWidgets('a parent suggestion has its own colour until the child picks it', (tester) async {
+    final env = TestEnv();
+    await env.seed();
+    final suggestion = await env.repo.addTaskTemplate(emoji: '🧺', text: '收衣服', origin: TemplateOrigin.parent);
+    await _openPlan(tester, env);
+    await _tap(tester, 'mood-unsaid');
+    await _tap(tester, 'plan-next');
+
+    FilterChip chip(String id) => tester.widget<FilterChip>(find.byKey(ValueKey('task-$id')));
+    final parentKey = suggestion.id;
+    expect(chip(parentKey).backgroundColor, AppColors.suggestSoft);
+    expect(chip(parentKey).side?.color, AppColors.suggestLine);
+    expect(chip('preset-task-0').backgroundColor, isNull, reason: 'other choices keep the theme colour');
+
+    await _tap(tester, 'task-$parentKey');
+    await _tap(tester, 'task-preset-task-0');
+    final picked = chip(parentKey), mine = chip('preset-task-0');
+    expect(picked.selected, isTrue);
+    expect((picked.backgroundColor, picked.side), (mine.backgroundColor, mine.side),
+        reason: 'once picked it looks like any other thing the child chose');
+
+    // 再取消，就回到建議的顏色。
+    await _tap(tester, 'task-$parentKey');
+    expect(chip(parentKey).backgroundColor, AppColors.suggestSoft);
+    await _finish(tester, env);
+  });
+
   testWidgets('a custom task goes into the child’s own library and is selected', (tester) async {
     final env = TestEnv();
     await _openPlan(tester, env);
@@ -172,6 +203,108 @@ void main() {
     expect(plans.single.emoji, '🎨');
     expect(plans.single.why, '我喜歡貓');
     await _finish(tester, env);
+  });
+
+  // I5（MCII 計畫品質提示）：太模糊時步步只問一句；孩子可以改，也可以「這樣就好」，不擋下一步。
+  group('plan quality hint', () {
+    test('asks about vague or "don\'t" tasks and vague cues, one at a time', () {
+      expect(planHintFor(task: '認真寫功課', cue: '我有空的時候'), PlanHint.taskVague);
+      expect(planHintFor(task: '不要一直玩手機', cue: '我放學回到家'), PlanHint.taskNegative);
+      expect(planHintFor(task: '寫兩頁數學', cue: '我有空的時候'), PlanHint.cueVague);
+      expect(planHintFor(task: '寫兩頁數學', cue: '我吃完晚飯'), isNull);
+      expect(planHintFor(task: '寫兩頁數學'), isNull);
+    });
+
+    test('never fires on the built-in tasks and cues', () {
+      for (final (_, task) in DefaultTemplates.tasks) {
+        for (final cue in DefaultTemplates.cues) {
+          expect(planHintFor(task: task, cue: cue), isNull, reason: '$task / $cue');
+        }
+      }
+    });
+
+    test('the questions pass the copy rules and never write the plan for the child', () {
+      final rules = loadCopyRules();
+      for (final l in [PlanCopy.hintTaskVague, PlanCopy.hintTaskNegative, PlanCopy.hintCueVague]) {
+        for (final tone in AgeTone.values) {
+          final s = l.of(tone);
+          expect(rules.check(s, tone: tone), isEmpty, reason: s);
+          expect(s, endsWith('？'), reason: 'a question, not a suggestion: $s');
+        }
+      }
+    });
+
+    Future<void> toIfThen(WidgetTester tester, TestEnv env, String task) async {
+      await _openPlan(tester, env);
+      await _tap(tester, 'mood-unsaid');
+      await _tap(tester, 'plan-next');
+      await _tap(tester, 'task-write-own');
+      await _enter(tester, 'task-custom-field', task);
+      await _tap(tester, 'task-custom-add');
+      await _tap(tester, 'plan-next');
+    }
+
+    testWidgets('a vague task: Bubu asks once the cue is chosen; 這樣就好 keeps it as is', (tester) async {
+      final env = TestEnv();
+      await toIfThen(tester, env, '認真寫功課');
+      expect(find.byKey(const ValueKey('plan-hint')), findsNothing, reason: 'nothing to ask before a cue');
+
+      await _tap(tester, 'cue-preset-cue-0');
+      expect(find.text(PlanCopy.hintTaskVague.of(_tone)), findsOneWidget);
+      expect(_enabled(tester, 'plan-next'), isTrue, reason: 'the hint never blocks');
+
+      await _tap(tester, 'plan-hint-keep');
+      expect(find.byKey(const ValueKey('plan-hint')), findsNothing);
+      expect(find.text(PlanCopy.cueChosen.of(_tone)), findsOneWidget);
+      expect(find.text('如果我吃完晚飯，我就認真寫功課'), findsOneWidget, reason: 'nothing rewritten');
+      await _finish(tester, env);
+    });
+
+    testWidgets('a vague task: 改一下 opens the child\'s own edit box, and a concrete answer ends the question',
+        (tester) async {
+      final env = TestEnv();
+      await toIfThen(tester, env, '認真寫功課');
+      await _tap(tester, 'cue-preset-cue-0');
+      await _tap(tester, 'plan-hint-edit');
+      final field = tester.widget<TextField>(find.byKey(const ValueKey('ifthen-task-field')));
+      expect(field.controller?.text, '認真寫功課', reason: 'starts from the child\'s words, nothing filled in');
+      await _enter(tester, 'ifthen-task-field', '寫完數學習作兩頁');
+      await _tap(tester, 'ifthen-task-done');
+      expect(find.byKey(const ValueKey('plan-hint')), findsNothing);
+      expect(find.text('如果我吃完晚飯，我就寫完數學習作兩頁'), findsOneWidget);
+      await _finish(tester, env);
+    });
+
+    testWidgets('這樣就好 on the task question still lets Bubu ask about a vague cue, once', (tester) async {
+      final env = TestEnv();
+      await toIfThen(tester, env, '認真寫功課');
+      await _tap(tester, 'cue-write-own');
+      await _enter(tester, 'cue-custom-field', '有空的時候');
+      await _tap(tester, 'cue-custom-use');
+      expect(find.text(PlanCopy.hintTaskVague.of(_tone)), findsOneWidget);
+      await _tap(tester, 'plan-hint-keep');
+      expect(find.text(PlanCopy.hintCueVague.of(_tone)), findsOneWidget);
+      await _tap(tester, 'plan-hint-keep');
+      expect(find.byKey(const ValueKey('plan-hint')), findsNothing);
+      await _finish(tester, env);
+    });
+
+    testWidgets('a vague cue: 改一下 opens the write-your-own cue box', (tester) async {
+      final env = TestEnv();
+      await toIfThen(tester, env, '寫兩頁數學');
+      await _tap(tester, 'cue-write-own');
+      await _enter(tester, 'cue-custom-field', '有空的時候');
+      await _tap(tester, 'cue-custom-use');
+      expect(find.text(PlanCopy.hintCueVague.of(_tone)), findsOneWidget);
+      await _tap(tester, 'plan-hint-edit');
+      expect(tester.widget<TextField>(find.byKey(const ValueKey('cue-custom-field'))).controller?.text, '有空的時候',
+          reason: 'starts from the child\'s words');
+      await _enter(tester, 'cue-custom-field', '吃完點心');
+      await _tap(tester, 'cue-custom-use');
+      expect(find.byKey(const ValueKey('plan-hint')), findsNothing);
+      expect(find.text('如果我吃完點心，我就寫兩頁數學'), findsOneWidget);
+      await _finish(tester, env);
+    });
   });
 
   testWidgets('crisis text in a custom task is never saved', (tester) async {

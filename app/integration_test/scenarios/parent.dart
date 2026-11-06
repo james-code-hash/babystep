@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:little_steps/bubu/bubu_inputs.dart';
 import 'package:little_steps/copy/home.dart';
+import 'package:little_steps/copy/line.dart';
 import 'package:little_steps/copy/parent.dart';
 import 'package:little_steps/core/config.dart';
 import 'package:little_steps/data/database_store.dart';
@@ -162,6 +163,10 @@ void parentScenarios() {
     // 用了一陣子：簡潔語氣、換了裝扮、排過也聊完、家人留了話、自己寫了一件事。
     await app.tap('nav-settings');
     await app.tap('tone-concise');
+    await app.tap('open-pet-name');
+    await app.enter('pet-name-field', '小花');
+    await app.tap('pet-name-use');
+    expect((await app.read((r) => r.settings())).petName, '小花');
     await app.tap('open-dress-up');
     await app.tap('hat-straw');
     await app.back();
@@ -193,9 +198,12 @@ void parentScenarios() {
       await app.settle(rounds: 2);
     }
 
-    // 直接回到剛安裝的首頁，不用重開 App。
+    // 直接回到剛安裝的樣子，不用重開 App：先重新見面，名字也回到「步步」（D6）。
     expect(find.byType(ParentHome), findsNothing);
     expect(find.byType(HomeScreen), findsOneWidget);
+    expect((await app.read((r) => r.settings())).petName, isNull);
+    expect(PetName.current, PetName.original);
+    await app.meet();
     expect(app.has('home-ended'), isFalse);
     expect(find.text(HomeCopy.planInvite.lively), findsOneWidget);
     expect(app.container.read(toneProvider), AgeTone.lively);

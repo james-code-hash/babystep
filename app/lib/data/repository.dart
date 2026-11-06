@@ -517,6 +517,8 @@ class Repository {
   static const _kSeeded = 'seeded';
   static const _kFamilyNotes = 'familyNotesOn';
   static const _kTrailStyle = 'trailStyle';
+  static const _kPetName = 'petName';
+  static const _kReadAloud = 'readAloud';
 
   Future<String?> _getSetting(String key) async =>
       (await (_db.select(_db.settings)..where((s) => s.key.equals(key))).getSingleOrNull())?.value;
@@ -537,6 +539,8 @@ class Repository {
         onboarded: m[_kOnboarded] == 'true',
         familyNotesOn: m[_kFamilyNotes] != 'false',
         trailStyle: enumByName(TrailStyle.values, m[_kTrailStyle] ?? '', TrailStyle.path),
+        petName: m[_kPetName],
+        readAloud: m[_kReadAloud] == 'true',
       );
 
   Stream<Map<String, String>> _watchSettingMap() =>
@@ -558,6 +562,19 @@ class Repository {
 
   /// 只有孩子在自己的設定裡改（§4.11）。
   Future<void> setFamilyNotesOn(bool on) => _setSetting(_kFamilyNotes, '$on');
+
+  /// 孩子幫步步取名字；null 或空白＝還是叫「步步」（D6）。
+  Future<void> setPetName(String? name) async {
+    final t = name?.trim() ?? '';
+    if (t.isEmpty) {
+      await (_db.delete(_db.settings)..where((s) => s.key.equals(_kPetName))).go();
+    } else {
+      await _setSetting(_kPetName, t);
+    }
+  }
+
+  /// 朗讀按鈕（孩子在自己的設定裡開，I6）。
+  Future<void> setReadAloud(bool on) => _setSetting(_kReadAloud, '$on');
 
   /// 成長軌跡的樣子（孩子在小路頁上換）。
   Future<void> setTrailStyle(TrailStyle style) => _setSetting(_kTrailStyle, style.name);
@@ -643,6 +660,8 @@ class Repository {
         'reminderSlots': [for (final r in s.reminderSlots) r.toJson()],
         'dressUp': (await dressUp()).toJson(),
         'trailStyle': s.trailStyle.name,
+        'petName': s.petName,
+        'readAloud': s.readAloud,
       },
       'taskTemplates': [for (final t in await taskTemplates()) t.toJson()],
       'cueTemplates': [for (final c in await cueTemplates()) c.toJson()],

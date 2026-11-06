@@ -13,7 +13,9 @@ import '../../domain/models.dart';
 import '../../providers.dart';
 import '../../safety/safety_gate.dart';
 import 'plan_flow_controller.dart';
+import 'plan_hint.dart';
 import 'plan_nav.dart';
+import '../read_aloud/read_aloud.dart';
 
 /// 孩子自己寫事情時可以挑的圖案（不是文字，不需要放 copy/）。
 const customTaskEmojis = ['⭐', '📚', '🎨', '⚽', '🎵', '🧩', '🌱', '🐾', '🧸', '🚲'];
@@ -77,7 +79,7 @@ class _Bubble extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(color: AppColors.line),
         ),
-        child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
+        child: ReadAloud(text: text, child: Text(text, style: Theme.of(context).textTheme.bodyLarge)),
       );
 }
 
@@ -312,11 +314,10 @@ class _ChooseStepState extends ConsumerState<ChooseStep> {
           runSpacing: AppSpace.s,
           children: [
             for (final t in ts)
-              FilterChip(
-                key: ValueKey('task-${t.id}'),
-                label: Text('${t.emoji} ${t.text}'),
+              _TaskChip(
+                template: t,
                 selected: flow.isSelected(t.id),
-                onSelected: (_) => controller.toggle(t),
+                onSelected: () => controller.toggle(t),
               ),
           ],
         );
@@ -386,6 +387,27 @@ class _ChooseStepState extends ConsumerState<ChooseStep> {
   }
 }
 
+/// 一件可以選的事。家長建議的事還沒選時是另一個顏色；孩子選了，就和自己選的其他事一樣（I4）。
+class _TaskChip extends StatelessWidget {
+  const _TaskChip({required this.template, required this.selected, required this.onSelected});
+  final TaskTemplate template;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final suggested = template.origin == TemplateOrigin.parent && !selected;
+    return FilterChip(
+      key: ValueKey('task-${template.id}'),
+      label: Text('${template.emoji} ${template.text}'),
+      selected: selected,
+      onSelected: (_) => onSelected(),
+      backgroundColor: suggested ? AppColors.suggestSoft : null,
+      side: suggested ? const BorderSide(color: AppColors.suggestLine) : null,
+    );
+  }
+}
+
 // ============================================================== 3. 如果⋯我就⋯
 
 class IfThenStep extends ConsumerStatefulWidget {
@@ -398,6 +420,12 @@ class IfThenStep extends ConsumerStatefulWidget {
 class _IfThenStepState extends ConsumerState<IfThenStep> {
   bool _writingCue = false;
   bool _editingTask = false;
+
+  /// 孩子說「這樣就好」的提示（只在記憶體）：同一件事、同一個時間點不再問。
+  final Set<String> _kept = {};
+
+  /// 從「改一下」打開時間點輸入框時，從孩子原本的字開始（不幫忙填）。
+  String _cueInitial = '';
 
   Future<void> _addCue(String text) async {
     final c = await ref.read(repositoryProvider).addCueTemplate(text: text, origin: TemplateOrigin.child);
@@ -421,6 +449,11 @@ class _IfThenStepState extends ConsumerState<IfThenStep> {
     final cue = item.cue;
     final ask = PlanCopy.cueAsk.lines[flow.index % PlanCopy.cueAsk.length];
     final textTheme = Theme.of(context).textTheme;
+    // 時間點選好之後才看計畫品質；正在改的時候不打斷。
+    String keyOf(PlanHint h) => '${h.name}|${item.task}|$cue';
+    final hint = cue == null || _editingTask || _writingCue
+        ? null
+        : planHintsFor(task: item.task, cue: cue).where((h) => !_kept.contains(keyOf(h))).firstOrNull;
 
     Widget slot(String label, Widget content) => Card(
           margin: const EdgeInsets.only(bottom: AppSpace.s),
@@ -439,8 +472,13 @@ class _IfThenStepState extends ConsumerState<IfThenStep> {
         );
 
     return _StepLayout(
-      expression: listeningExpression(answered: cue != null),
-      bubuSays: cue == null ? ask.of(tone) : PlanCopy.cueChosen.of(tone),
+      expression: hint != null ? BubuExpression.curious : listeningExpression(answered: cue != null),
+      bubuSays: switch (hint) {
+        PlanHint.taskVague => PlanCopy.hintTaskVague.of(tone),
+        PlanHint.taskNegative => PlanCopy.hintTaskNegative.of(tone),
+        PlanHint.cueVague => PlanCopy.hintCueVague.of(tone),
+        null => cue == null ? ask.of(tone) : PlanCopy.cueChosen.of(tone),
+      },
       content: [
         slot(
           PlanCopy.ifSlot.of(tone),
@@ -482,6 +520,34 @@ class _IfThenStepState extends ConsumerState<IfThenStep> {
               style: textTheme.headlineSmall?.copyWith(fontSize: 20),
             ),
           ),
+        if (hint != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpace.m),
+            child: Wrap(
+              key: const ValueKey('plan-hint'),
+              spacing: AppSpace.s,
+              runSpacing: AppSpace.s,
+              children: [
+                OutlinedButton(
+                  key: const ValueKey('plan-hint-edit'),
+                  onPressed: () => setState(() {
+                    if (hint == PlanHint.cueVague) {
+                      _cueInitial = PlanCopy.cueBody(cue!);
+                      _writingCue = true;
+                    } else {
+                      _editingTask = true;
+                    }
+                  }),
+                  child: Text(PlanCopy.hintEdit.of(tone)),
+                ),
+                OutlinedButton(
+                  key: const ValueKey('plan-hint-keep'),
+                  onPressed: () => setState(() => _kept.add(keyOf(hint))),
+                  child: Text(PlanCopy.hintKeep.of(tone)),
+                ),
+              ],
+            ),
+          ),
         _SectionTitle(PlanCopy.ifSlot.of(tone)),
         Wrap(
           spacing: AppSpace.s,
@@ -499,7 +565,10 @@ class _IfThenStepState extends ConsumerState<IfThenStep> {
                 key: const ValueKey('cue-write-own'),
                 avatar: const Icon(Icons.edit_outlined, size: 18),
                 label: Text(CommonCopy.writeMyOwn.of(tone)),
-                onPressed: () => setState(() => _writingCue = true),
+                onPressed: () => setState(() {
+                  _cueInitial = '';
+                  _writingCue = true;
+                }),
               ),
           ],
         ),
@@ -511,6 +580,7 @@ class _IfThenStepState extends ConsumerState<IfThenStep> {
             hint: PlanCopy.customCueHint.of(tone),
             submitLabel: PlanCopy.useThis.of(tone),
             maxChars: AppConfig.maxCueChars,
+            initial: _cueInitial,
             onAccepted: _addCue,
           ),
         ],
