@@ -247,4 +247,24 @@ abstract final class TrailConfig {
 
   /// 一顆星的大小（dp）。
   static const double starSize = 40;
+
+  /// 地圖一列幾個地方、一列多高、一個地方多大（dp）。
+  static const int mapPerRow = 3;
+  static const double mapRowHeight = 96;
+  static const double mapPlaceSize = 48;
+
+  /// 同一列裡上下起伏的幅度（一列高度的比例）與頻率。
+  static const double mapWaveFraction = 0.12;
+  static const double mapWaveStep = 1.7;
+
+  /// 虛線的路：一段長、間隔（一段＋空白）、粗細。
+  static const double mapDash = 7;
+  static const double mapDashPeriod = 14;
+  static const double mapRouteWidth = 3;
+
+  /// 風景：每多少平方 dp 一個小山或小樹；小山的半寬與高、小樹的半徑。
+  static const double mapSceneryArea = 9000;
+  static const double mapHillHalfWidth = 14;
+  static const double mapHillHeight = 12;
+  static const double mapTreeRadius = 5;
 }

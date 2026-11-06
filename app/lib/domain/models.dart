@@ -254,7 +254,7 @@ class ReminderSlot {
 
 /// 設定。注意：沒有「上次開啟」之類的欄位。
 /// 成長軌跡的樣子（J3）：孩子自己選。每一種都只畫有計畫的日子，一天一個記號，沒有空洞。
-enum TrailStyle { path, tree, sky }
+enum TrailStyle { path, tree, sky, map }
 
 class AppSettings {
   const AppSettings({
