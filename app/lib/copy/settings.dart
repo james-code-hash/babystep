@@ -19,6 +19,11 @@ abstract final class SettingsCopy {
   static const previewLively = Line.same('嗨～我是步步！今天想做點什麼呢？');
   static const previewConcise = Line.same('嗨，我是步步。今天想做什麼？');
 
+  /// 取名字（D6）。顯示時「步步」會換成現在的名字。
+  static const nameEntry = Line('幫步步取名字', '幫步步取名字');
+  static const nameEntryHint = Line('想叫什麼都可以，隨時都能改。', '叫什麼都可以，隨時能改。');
+  static const nameTitle = Line.same('步步的名字');
+
   static const dressUpEntry = Line('幫步步換裝扮', '幫步步換裝扮');
   static const dressUpEntryHint = Line('帽子、圍巾、顏色，都可以隨你挑。', '帽子、脖子上的東西、顏色，隨你挑。');
 

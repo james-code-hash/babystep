@@ -122,7 +122,7 @@ cd app && fvm flutter test integration_test/full_day_test.dart -d <裝置 id>   
 cd app && fvm flutter test test/flow                                          # 沒有裝置時，用 widget test 跑同一份流程
 ```
 
-**各情境 E2E：** 情境寫在 `app/integration_test/scenarios/`，每一組一個檔案：孩子的核心循環、危機內容、家長區（PIN、建議、說話方式、LLM 開關、匯出、提醒時段、刪除全部）、話術轉譯器／家長微課程／全家一起／月回顧的信、分齡、探索角／驚喜盒、成長軌跡／月回顧。全部從畫面點，跨日用「App 進背景、隔天回來」模擬。
+**各情境 E2E：** 情境寫在 `app/integration_test/scenarios/`，每一組一個檔案：初次見面與取名字、孩子的核心循環、危機內容、家長區（PIN、建議、說話方式、LLM 開關、匯出、提醒時段、刪除全部）、話術轉譯器／家長微課程／全家一起／月回顧的信、分齡、探索角／驚喜盒、成長軌跡／月回顧。全部從畫面點，跨日用「App 進背景、隔天回來」模擬。
 
 ```bash
 cd app && tool/e2e.sh <裝置 id>        # 真機、模擬器或桌面版（linux / macos），一次一個檔案；會清掉裝置上的資料
@@ -195,7 +195,7 @@ cd app && fvm flutter test test/e2e     # 沒有裝置時：同一份情境，�
 - [ ] 在真機（iOS、Android 各一台）跑 `integration_test/full_day_test.dart` 與「實機驗證步驟」
 - [ ] 在 Android 模擬器＋Firebase emulator 端對端驗一次 LLM 模式
 - [ ] 待決事項 1–3 由人決定後：部署 Functions、確認 Vertex 資料保留、危機字表專業審核（含注音與簡體變體，決策 F4）
-- [ ] 初次見面流程＋孩子幫步步取名字（文案庫 §4.1；決策 D5 先固定為「步步」）
+- [x] 初次見面流程＋孩子幫步步取名字（文案庫 §4.1，D6）
 
 ### 第二階段：家長同行＋分齡
 

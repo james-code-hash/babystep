@@ -31,6 +31,9 @@ abstract final class AppConfig {
   /// 自由輸入的字數上限（自訂事情、時間點、為什麼、反思）。
   static const int maxTaskChars = 20;
   static const int maxCueChars = 20;
+
+  /// 孩子幫步步取的名字最多幾個字（D6）。
+  static const int maxPetNameChars = 6;
   static const int maxWhyChars = 60;
   static const int maxReflectionChars = 120;
 

@@ -44,7 +44,9 @@ class E2EApp {
   static bool get _live => WidgetsBinding.instance is LiveTestWidgetsFlutterBinding;
 
   /// 從「剛安裝」開始，打開 App 停在首頁。
-  static Future<E2EApp> launch(WidgetTester tester, {required DateTime now, int seed = 7, Size size = phoneSize}) async {
+  /// 剛安裝會先「初次見面」（D6）：[meet] 為 true 時照預設走過（不取名字），停在一般首頁。
+  static Future<E2EApp> launch(WidgetTester tester,
+      {required DateTime now, int seed = 7, Size size = phoneSize, bool meet = true}) async {
     tester.view.physicalSize = size * 2;
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
@@ -69,7 +71,22 @@ class E2EApp {
     ]));
     await app.settle();
     expect(find.byType(HomeScreen), findsOneWidget);
+    if (meet) await app.meet();
     return app;
+  }
+
+  /// 走過初次見面：打招呼 → 不取名字（或取 [name]）→ 開始。
+  Future<void> meet({String? name}) async {
+    expect(has('first-meeting'), isTrue, reason: 'a fresh install starts with the first meeting');
+    await tap('hello-next');
+    if (name == null) {
+      await tap('pet-name-keep');
+    } else {
+      await enter('pet-name-field', name);
+      await tap('pet-name-use');
+    }
+    await tap('hello-done');
+    expect(has('first-meeting'), isFalse);
   }
 
   /// 目前這一代 App 的 ProviderContainer（刪除全部之後會換一個）。

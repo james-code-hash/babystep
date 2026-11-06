@@ -9,5 +9,6 @@ abstract final class Routes {
   static const month = '/month';
   static const settings = '/settings';
   static const dressUp = '/settings/dress-up';
+  static const petName = '/settings/name';
   static const parent = '/parent';
 }
