@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../bubu/bubu_view.dart';
+import '../../copy/line.dart';
 import '../../copy/path.dart';
 import '../../core/clock.dart';
 import '../../core/layout.dart';
@@ -11,8 +12,11 @@ import '../../domain/models.dart';
 import '../../providers.dart';
 import 'path_insights.dart';
 import 'path_trail.dart';
+import 'sky_trail.dart';
+import 'tree_trail.dart';
 
 /// 「我的小路」：資料只來自 [plannedDaysProvider]（沒有 outcome，C5）。
+/// 孩子可以換成一棵樹或星空（J3）；每一種都只畫有計畫的日子，一天一個記號。
 class PathScreen extends ConsumerWidget {
   const PathScreen({super.key});
 
@@ -21,12 +25,13 @@ class PathScreen extends ConsumerWidget {
     final tone = ref.watch(toneProvider);
     final days = ref.watch(plannedDaysProvider);
     final now = ref.watch(clockProvider).now();
+    final style = ref.watch(trailStyleProvider);
     return Scaffold(
       appBar: AppBar(title: Text(PathCopy.title.of(tone))),
       body: SafeArea(
         child: switch (days) {
-          AsyncData(:final value) when value.isNotEmpty => _PathBody(days: value, tone: tone, now: now),
-          AsyncData() || AsyncError() => _EmptyPath(tone: tone),
+          AsyncData(:final value) when value.isNotEmpty => _PathBody(days: value, tone: tone, now: now, style: style),
+          AsyncData() || AsyncError() => _EmptyPath(tone: tone, style: style),
           _ => const Center(child: CircularProgressIndicator()),
         },
       ),
@@ -34,11 +39,44 @@ class PathScreen extends ConsumerWidget {
   }
 }
 
+/// 換個樣子：小路／一棵樹／星空。孩子自己選，存在孩子的設定裡。
+class _StylePicker extends ConsumerWidget {
+  const _StylePicker({required this.tone, required this.style});
+  final AgeTone tone;
+  final TrailStyle style;
+
+  static Line labelOf(TrailStyle s) => switch (s) {
+        TrailStyle.path => PathCopy.stylePath,
+        TrailStyle.tree => PathCopy.styleTree,
+        TrailStyle.sky => PathCopy.styleSky,
+      };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Semantics(
+        label: PathCopy.styleAsk.of(tone),
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: AppSpace.s,
+          runSpacing: AppSpace.xs,
+          children: [
+            for (final s in TrailStyle.values)
+              ChoiceChip(
+                key: ValueKey('trail-style-${s.name}'),
+                label: Text(labelOf(s).of(tone)),
+                selected: s == style,
+                onSelected: (_) => ref.read(repositoryProvider).setTrailStyle(s),
+              ),
+          ],
+        ),
+      );
+}
+
 class _PathBody extends StatelessWidget {
-  const _PathBody({required this.days, required this.tone, required this.now});
+  const _PathBody({required this.days, required this.tone, required this.now, required this.style});
   final List<PlannedDay> days;
   final AgeTone tone;
   final DateTime now;
+  final TrailStyle style;
 
   @override
   Widget build(BuildContext context) {
@@ -50,9 +88,24 @@ class _PathBody extends StatelessWidget {
       sideAtEnd: true,
       side: (context, wide) => _InsightsCard(insights: insights, tone: tone),
       children: [
-        Text(PathCopy.intro.of(tone), style: text.bodyLarge, textAlign: TextAlign.center),
+        _StylePicker(tone: tone, style: style),
         const SizedBox(height: AppSpace.m),
-        PathTrail(days: days, tone: tone),
+        Text(
+          switch (style) {
+            TrailStyle.path => PathCopy.intro,
+            TrailStyle.tree => PathCopy.introTree,
+            TrailStyle.sky => PathCopy.introSky,
+          }
+              .of(tone),
+          style: text.bodyLarge,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpace.m),
+        switch (style) {
+          TrailStyle.path => PathTrail(days: days, tone: tone),
+          TrailStyle.tree => TreeTrail(days: days, tone: tone),
+          TrailStyle.sky => SkyTrail(days: days, tone: tone),
+        },
       ],
     );
   }
@@ -105,8 +158,9 @@ class _InsightsCard extends StatelessWidget {
 }
 
 class _EmptyPath extends StatelessWidget {
-  const _EmptyPath({required this.tone});
+  const _EmptyPath({required this.tone, required this.style});
   final AgeTone tone;
+  final TrailStyle style;
 
   @override
   Widget build(BuildContext context) => Center(
@@ -115,10 +169,17 @@ class _EmptyPath extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _StylePicker(tone: tone, style: style),
+              const SizedBox(height: AppSpace.l),
               BubuView(expression: BubuExpression.curious, size: Layout.bubu(context, BubuSlot.empty)),
               const SizedBox(height: AppSpace.l),
               Text(
-                PathCopy.empty.of(tone),
+                switch (style) {
+                  TrailStyle.path => PathCopy.empty,
+                  TrailStyle.tree => PathCopy.emptyTree,
+                  TrailStyle.sky => PathCopy.emptySky,
+                }
+                    .of(tone),
                 key: const ValueKey('path-empty'),
                 style: Theme.of(context).textTheme.bodyLarge,
                 textAlign: TextAlign.center,

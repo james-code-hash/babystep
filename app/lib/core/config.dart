@@ -175,3 +175,24 @@ abstract final class SurpriseConfig {
   /// 首頁輕點步步後，小反應停留的毫秒數。
   static const int pokeMs = 2200;
 }
+
+/// 成長軌跡的另外兩種樣子（J3）：樹與星空。
+abstract final class TrailConfig {
+  /// 一片葉子的直徑（dp）。
+  static const double leafSize = 44;
+
+  /// 相鄰兩片葉子中心的距離（dp，蜂巢格）。
+  static const double leafSpacing = 46;
+
+  /// 樹幹的高度（dp）。
+  static const double trunkHeight = 120;
+
+  /// 星空一列幾顆星。
+  static const int starsPerRow = 4;
+
+  /// 星空一列的高度（dp）。
+  static const double starRowHeight = 88;
+
+  /// 一顆星的大小（dp）。
+  static const double starSize = 40;
+}

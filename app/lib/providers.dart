@@ -33,6 +33,9 @@ final settingsProvider = StreamProvider<AppSettings>((ref) => ref.watch(reposito
 /// 步步說話的方式；設定還沒載入時用活潑。
 final toneProvider = Provider<AgeTone>((ref) => ref.watch(settingsProvider).value?.tone ?? AgeTone.lively);
 
+final trailStyleProvider =
+    Provider<TrailStyle>((ref) => ref.watch(settingsProvider).value?.trailStyle ?? TrailStyle.path);
+
 final dressUpProvider = StreamProvider<DressUp>((ref) => ref.watch(repositoryProvider).watchDressUp());
 
 final todayPlansProvider = StreamProvider<List<Plan>>(

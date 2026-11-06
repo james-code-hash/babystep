@@ -486,6 +486,7 @@ class Repository {
   static const _kDressUp = 'dressUp';
   static const _kSeeded = 'seeded';
   static const _kFamilyNotes = 'familyNotesOn';
+  static const _kTrailStyle = 'trailStyle';
 
   Future<String?> _getSetting(String key) async =>
       (await (_db.select(_db.settings)..where((s) => s.key.equals(key))).getSingleOrNull())?.value;
@@ -505,6 +506,7 @@ class Repository {
         parentPin: m[_kPin],
         onboarded: m[_kOnboarded] == 'true',
         familyNotesOn: m[_kFamilyNotes] != 'false',
+        trailStyle: enumByName(TrailStyle.values, m[_kTrailStyle] ?? '', TrailStyle.path),
       );
 
   Stream<Map<String, String>> _watchSettingMap() =>
@@ -526,6 +528,9 @@ class Repository {
 
   /// 只有孩子在自己的設定裡改（§4.11）。
   Future<void> setFamilyNotesOn(bool on) => _setSetting(_kFamilyNotes, '$on');
+
+  /// 成長軌跡的樣子（孩子在小路頁上換）。
+  Future<void> setTrailStyle(TrailStyle style) => _setSetting(_kTrailStyle, style.name);
 
   static DressUp _dressUpFrom(Map<String, String> m) =>
       m[_kDressUp] == null ? DressUp.initial : DressUp.fromJson(jsonDecode(m[_kDressUp]!) as Map<String, Object?>);
@@ -589,6 +594,8 @@ class Repository {
         'llmEnabled': s.llmEnabled,
         'reminderSlots': [for (final r in s.reminderSlots) r.toJson()],
         'dressUp': (await dressUp()).toJson(),
+        'familyNotesOn': s.familyNotesOn,
+        'trailStyle': s.trailStyle.name,
       },
       'taskTemplates': [for (final t in await taskTemplates()) t.toJson()],
       'cueTemplates': [for (final c in await cueTemplates()) c.toJson()],
