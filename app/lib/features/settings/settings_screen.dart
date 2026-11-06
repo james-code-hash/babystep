@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../bubu/bubu_view.dart';
+import '../../copy/family.dart';
 import '../../copy/settings.dart';
 import '../../core/routes.dart';
 import '../../core/layout.dart';
@@ -34,6 +35,16 @@ class ChildSettingsScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpace.s),
               ],
               const SizedBox(height: AppSpace.l),
+              Card(
+                child: SwitchListTile(
+                  key: const ValueKey('family-notes-switch'),
+                  title: Text(FamilyCopy.settingTitle.of(tone), style: text.titleMedium),
+                  subtitle: Text(FamilyCopy.settingHint.of(tone)),
+                  value: ref.watch(settingsProvider).value?.familyNotesOn ?? true,
+                  onChanged: (v) => ref.read(repositoryProvider).setFamilyNotesOn(v),
+                ),
+              ),
+              const SizedBox(height: AppSpace.m),
               Card(
                 child: ListTile(
                   key: const ValueKey('open-dress-up'),

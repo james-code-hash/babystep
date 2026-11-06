@@ -14,7 +14,7 @@ abstract final class ParentCopy {
   static const pinBackspace = Line.same('刪掉一個數字');
 
   // ---------------------------------------------------------------- 首頁
-  static const intro = Line.same('這裡只放設定，以及孩子主動分享給你的筆記。');
+  static const intro = Line.same('這裡放設定、給大人的小工具、全家一起，以及孩子主動分享給你的筆記。這裡看不到孩子每天做了沒有。');
 
   // ---------------------------------------------------------------- 事情範本
   static const tasksTitle = Line.same('事情範本');

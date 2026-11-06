@@ -408,6 +408,71 @@ class Repository {
         ];
   }
 
+  // ---------------------------------------------------------------- 全家一起（I2）
+
+  FamilyToday _familyToday(FamilyTodayRow r) => FamilyToday(id: r.id, dayKey: r.dayKey, who: r.who, text: r.body);
+
+  FamilyNote _familyNote(FamilyNoteRow r) => FamilyNote(
+        id: r.id,
+        dayKey: r.dayKey,
+        who: r.who,
+        text: r.body,
+        createdAt: r.createdAt,
+        childRead: r.childRead,
+      );
+
+  Selectable<FamilyToday> _familyTodayQuery(String dayKey) => (_db.select(_db.familyTodayEntries)
+        ..where((f) => f.dayKey.equals(dayKey))
+        ..orderBy([(f) => OrderingTerm(expression: f.who)]))
+      .map(_familyToday);
+
+  Stream<List<FamilyToday>> watchFamilyToday(String dayKey) => _familyTodayQuery(dayKey).watch();
+
+  Future<List<FamilyToday>> familyToday(String dayKey) => _familyTodayQuery(dayKey).get();
+
+  /// 一位家人一天一件：同一天同一個人再寫就覆蓋。
+  Future<void> saveFamilyToday(String dayKey, {required String who, required String text}) async {
+    final w = who.trim();
+    await _db.transaction(() async {
+      await (_db.delete(_db.familyTodayEntries)..where((f) => f.dayKey.equals(dayKey) & f.who.equals(w))).go();
+      await _db.into(_db.familyTodayEntries).insert(
+            FamilyTodayEntriesCompanion.insert(id: _id(), dayKey: dayKey, who: w, body: text.trim()),
+          );
+    });
+  }
+
+  Future<void> deleteFamilyToday(String id) => (_db.delete(_db.familyTodayEntries)..where((f) => f.id.equals(id))).go();
+
+  Future<FamilyNote> addFamilyNote({required String who, required String text}) async {
+    final now = _clock.now();
+    final note = FamilyNote(id: _id(), dayKey: dayKeyOf(now), who: who.trim(), text: text.trim(), createdAt: now);
+    await _db.into(_db.familyNotes).insert(FamilyNotesCompanion.insert(
+          id: note.id,
+          dayKey: note.dayKey,
+          who: note.who,
+          body: note.text,
+          createdAt: note.createdAt,
+        ));
+    return note;
+  }
+
+  Future<void> deleteFamilyNote(String id) => (_db.delete(_db.familyNotes)..where((n) => n.id.equals(id))).go();
+
+  Selectable<FamilyNote> _familyNotesQuery({bool unreadOnly = false}) {
+    final q = _db.select(_db.familyNotes)..orderBy([(n) => OrderingTerm(expression: n.createdAt)]);
+    if (unreadOnly) q.where((n) => n.childRead.equals(false));
+    return q.map(_familyNote);
+  }
+
+  /// 孩子還沒看過的留言（舊的在前）。
+  Stream<List<FamilyNote>> watchUnreadFamilyNotes() => _familyNotesQuery(unreadOnly: true).watch();
+
+  Future<List<FamilyNote>> familyNotes() => _familyNotesQuery().get();
+
+  /// 孩子看過了。只影響首頁要不要再轉達，家長端看不到。
+  Future<void> markFamilyNoteRead(String id) => (_db.update(_db.familyNotes)..where((n) => n.id.equals(id)))
+      .write(const FamilyNotesCompanion(childRead: Value(true)));
+
   // ---------------------------------------------------------------- 設定
 
   static const _kTone = 'tone';
@@ -417,6 +482,7 @@ class Repository {
   static const _kOnboarded = 'onboarded';
   static const _kDressUp = 'dressUp';
   static const _kSeeded = 'seeded';
+  static const _kFamilyNotes = 'familyNotesOn';
 
   Future<String?> _getSetting(String key) async =>
       (await (_db.select(_db.settings)..where((s) => s.key.equals(key))).getSingleOrNull())?.value;
@@ -435,6 +501,7 @@ class Repository {
               ],
         parentPin: m[_kPin],
         onboarded: m[_kOnboarded] == 'true',
+        familyNotesOn: m[_kFamilyNotes] != 'false',
       );
 
   Stream<Map<String, String>> _watchSettingMap() =>
@@ -454,6 +521,9 @@ class Repository {
   Future<void> setParentPin(String pin) => _setSetting(_kPin, pin);
   Future<void> setOnboarded() => _setSetting(_kOnboarded, 'true');
 
+  /// 只有孩子在自己的設定裡改（§4.11）。
+  Future<void> setFamilyNotesOn(bool on) => _setSetting(_kFamilyNotes, '$on');
+
   static DressUp _dressUpFrom(Map<String, String> m) =>
       m[_kDressUp] == null ? DressUp.initial : DressUp.fromJson(jsonDecode(m[_kDressUp]!) as Map<String, Object?>);
 
@@ -471,7 +541,9 @@ class Repository {
   Stream<ParentView> watchParentView() async* {
     yield await parentView();
     final updates = _db.tableUpdates(
-      TableUpdateQuery.onAllTables([_db.taskTemplates, _db.cueTemplates, _db.settings, _db.lessons]),
+      TableUpdateQuery.onAllTables(
+        [_db.taskTemplates, _db.cueTemplates, _db.settings, _db.lessons, _db.familyTodayEntries, _db.familyNotes],
+      ),
     );
     await for (final _ in updates) {
       yield await parentView();
@@ -490,6 +562,13 @@ class Repository {
       cueTemplates: await cueTemplates(origins: parentOrigins),
       settings: ParentSettingsView(tone: s.tone, llmEnabled: s.llmEnabled, reminderSlots: s.reminderSlots),
       sharedLessons: [for (final r in shared) SharedLesson(id: r.id, dayKey: r.dayKey, text: r.body)],
+      familyToday: [
+        for (final f in await familyToday(dayKeyOf(_clock.now()))) FamilyTodayView(id: f.id, who: f.who, text: f.text),
+      ],
+      familyNotes: [
+        for (final n in (await familyNotes()).reversed)
+          FamilyNoteView(id: n.id, dayKey: n.dayKey, who: n.who, text: n.text),
+      ],
     );
   }
 
@@ -513,6 +592,8 @@ class Repository {
       'plans': [for (final r in await _db.select(_db.plans).get()) _plan(r).toJson()],
       'dayRecords': [for (final r in await _db.select(_db.dayRecords).get()) _day(r).toJson()],
       'lessons': [for (final r in await _db.select(_db.lessons).get()) _lesson(r).toJson()],
+      'familyToday': [for (final r in await _db.select(_db.familyTodayEntries).get()) _familyToday(r).toJson()],
+      'familyNotes': [for (final r in await _db.select(_db.familyNotes).get()) _familyNote(r).toJson()],
     };
     return const JsonEncoder.withIndent('  ').convert(data);
   }

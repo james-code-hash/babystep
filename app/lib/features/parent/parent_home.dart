@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../app_root.dart';
+import '../../copy/family.dart';
 import '../../copy/line.dart';
 import '../../copy/parent.dart';
 import '../../copy/parent_guide.dart';
@@ -13,6 +14,7 @@ import '../../domain/models.dart';
 import '../../domain/parent_view.dart';
 import '../../providers.dart';
 import 'parent_dialogs.dart';
+import 'parent_family.dart';
 import 'parent_guide.dart';
 import 'parent_providers.dart';
 
@@ -66,6 +68,12 @@ class _ParentBody extends ConsumerWidget {
             title: ParentGuideCopy.sectionTitle,
             note: ParentGuideCopy.sectionNote,
             children: [ParentGuideEntries()],
+          ),
+          _Section(
+            id: 'family',
+            title: FamilyCopy.sectionTitle,
+            note: FamilyCopy.sectionNote,
+            children: [FamilySection(today: view.familyToday, notes: view.familyNotes)],
           ),
           _TaskTemplatesSection(templates: view.taskTemplates),
           _CueTemplatesSection(templates: view.cueTemplates),

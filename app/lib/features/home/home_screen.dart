@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../bubu/bubu_view.dart';
 import '../../bubu/greeting.dart';
+import '../../copy/family.dart';
 import '../../copy/home.dart';
 import '../../copy/plan.dart';
 import '../../core/clock.dart';
@@ -46,6 +47,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   bool _peekShown = false;
   _PeekReply? _peekReply;
   int _peekVariant = 0;
+
+  /// 這次進到首頁時，孩子對哪些家人留言說了「等一下」（只在記憶體，下次進來再問一次）。
+  final Set<String> _notesLater = {};
 
   /// 上一次決定探頭時看到的輸入（提醒時段、今天有沒有計畫、聊完了沒）。
   /// 輸入變了、而且這次還沒探頭過，就重新決定一次（G6、H1）。
@@ -120,6 +124,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         ended,
       ].join('|');
 
+  /// 打開一則家人留言：原封不動顯示，步步不加評論（§4.11）。看過就不再轉達這一則。
+  Future<void> _openNote(FamilyNote note, AgeTone tone) async {
+    await ref.read(repositoryProvider).markFamilyNoteRead(note.id);
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        key: const ValueKey('family-note-dialog'),
+        title: Text(FamilyCopy.noteFrom.fill(tone, {'who': note.who})),
+        content: Text(note.text, key: const ValueKey('family-note-text'), style: Theme.of(context).textTheme.bodyLarge),
+        actions: [
+          FilledButton(
+            key: const ValueKey('family-note-close'),
+            onPressed: () => Navigator.pop(context),
+            child: Text(FamilyCopy.noteClose.of(tone)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _open(String route) async {
     await GoRouter.of(context).push(route);
     _newVisit();
@@ -172,6 +197,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         );
 
     final children = <Widget>[];
+
+    // 家人的留言：一次問一則，孩子可以先不看（§4.11）。
+    final notes = ref.watch(unreadFamilyNotesProvider).value ?? const <FamilyNote>[];
+    final note = notes.where((n) => !_notesLater.contains(n.id)).firstOrNull;
+    if (loaded && note != null) {
+      children.addAll([
+        _FamilyNoteInvite(
+          tone: tone,
+          note: note,
+          onOpen: () => _openNote(note, tone),
+          onLater: () => setState(() => _notesLater.add(note.id)),
+        ),
+        const SizedBox(height: AppSpace.m),
+      ]);
+    }
 
     if (loaded) {
       if (ended) {
@@ -230,6 +270,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           ),
         ]);
       }
+    }
+
+    final family = ref.watch(familyTodayProvider).value ?? const <FamilyToday>[];
+    if (loaded && family.isNotEmpty) {
+      children.addAll([
+        const SizedBox(height: AppSpace.l),
+        _FamilyTodayCard(tone: tone, family: family),
+      ]);
     }
 
     children.addAll([
@@ -364,6 +412,76 @@ class _PeekCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 「某某有留話給你喔，要看嗎？」兩個選項份量相同。
+class _FamilyNoteInvite extends StatelessWidget {
+  const _FamilyNoteInvite({required this.tone, required this.note, required this.onOpen, required this.onLater});
+  final AgeTone tone;
+  final FamilyNote note;
+  final VoidCallback onOpen;
+  final VoidCallback onLater;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        key: const ValueKey('home-family-note'),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.m),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(FamilyCopy.noteInvite.fill(tone, {'who': note.who}), style: Theme.of(context).textTheme.bodyLarge),
+              const SizedBox(height: AppSpace.s),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      key: const ValueKey('family-note-open'),
+                      onPressed: onOpen,
+                      child: Text(FamilyCopy.noteOpen.of(tone)),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpace.s),
+                  Expanded(
+                    child: OutlinedButton(
+                      key: const ValueKey('family-note-later'),
+                      onPressed: onLater,
+                      child: Text(FamilyCopy.noteLater.of(tone)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+/// 家人今天自己想做的事：只列出來，不計數、不比較、沒有做到了沒。
+class _FamilyTodayCard extends StatelessWidget {
+  const _FamilyTodayCard({required this.tone, required this.family});
+  final AgeTone tone;
+  final List<FamilyToday> family;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        key: const ValueKey('home-family-today'),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.m),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(FamilyCopy.homeTitle.of(tone), style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: AppSpace.xs),
+              for (final f in family)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpace.xs),
+                  child: Text(FamilyCopy.homeItem.fill(tone, {'who': f.who, 'text': f.text})),
+                ),
+            ],
+          ),
+        ),
+      );
 }
 
 /// 安靜的次要導覽：沒有數字、沒有小紅點。

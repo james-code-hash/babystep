@@ -20,11 +20,15 @@ const allowedKeys = {
   'label', 'startMinute', 'endMinute',
   // SharedLesson
   'dayKey',
+  // 全家一起（I2）：家長自己寫的「今天的我」與留言
+  'familyToday', 'familyNotes', 'who',
 };
 
 const forbiddenKeyFragments = [
   'outcome', 'reflection', 'mood', 'completion', 'rate', 'usage', 'duration', 'streak', 'lastopen', 'last_open',
   'pin', 'why', 'favorite', 'quote', 'kind', 'source', 'createdat', 'endedat', 'plan', 'cue_', 'task_',
+  // 沒有已讀回條、看不到孩子有沒有關掉轉達（§4.11、I2）。
+  'read', 'seen', 'opened', 'familynoteson',
 ];
 
 Set<String> collectKeys(Object? json) {
@@ -94,6 +98,13 @@ void main() {
     );
     await env.repo.setSharedWithParent(shared!.id, true);
 
+    // 全家一起：家長寫了「今天的我」和兩則留言；孩子看過其中一則，也關掉了轉達。
+    await env.repo.saveFamilyToday(day, who: '媽媽', text: '散步二十分鐘');
+    final read = await env.repo.addFamilyNote(who: '爸爸', text: '我看到你自己把書包整理好了');
+    await env.repo.addFamilyNote(who: '媽媽', text: '今天的晚餐有你喜歡的湯');
+    await env.repo.markFamilyNoteRead(read.id);
+    await env.repo.setFamilyNotesOn(false);
+
     final view = await env.repo.parentView();
     // 走一次 JSON 編碼，確保拿到的是真的會被序列化的東西。
     return jsonDecode(jsonEncode(view.toJson())) as Map<String, Object?>;
@@ -129,6 +140,18 @@ void main() {
     final shared = (j['sharedLessons'] as List).cast<Map<String, Object?>>();
     expect(shared, hasLength(1));
     expect(shared.single['text'], sharedLesson);
+  });
+
+  test('family entries are visible to the parent, without any "child read it" or "child turned it off" signal',
+      () async {
+    final j = await buildParentJson();
+    expect((j['familyToday'] as List).single, containsPair('text', '散步二十分鐘'));
+    final notes = (j['familyNotes'] as List).cast<Map<String, Object?>>();
+    expect(notes, hasLength(2));
+    for (final n in notes) {
+      expect(n.keys.toSet(), {'id', 'dayKey', 'who', 'text'});
+    }
+    expect(j['settings'], isNot(contains('familyNotesOn')));
   });
 
   test('child-origin templates are not included', () async {

@@ -253,6 +253,7 @@ class AppSettings {
     this.reminderSlots = const [],
     this.parentPin,
     this.onboarded = false,
+    this.familyNotesOn = true,
   });
 
   final AgeTone tone;
@@ -263,12 +264,16 @@ class AppSettings {
   final String? parentPin;
   final bool onboarded;
 
+  /// 孩子要不要讓步步轉達家人的留言（孩子在自己的設定裡關；家長端看不到這個開關，§4.11）。
+  final bool familyNotesOn;
+
   AppSettings copyWith({
     AgeTone? tone,
     bool? llmEnabled,
     List<ReminderSlot>? reminderSlots,
     String? parentPin,
     bool? onboarded,
+    bool? familyNotesOn,
   }) =>
       AppSettings(
         tone: tone ?? this.tone,
@@ -276,5 +281,48 @@ class AppSettings {
         reminderSlots: reminderSlots ?? this.reminderSlots,
         parentPin: parentPin ?? this.parentPin,
         onboarded: onboarded ?? this.onboarded,
+        familyNotesOn: familyNotesOn ?? this.familyNotesOn,
       );
+}
+
+/// 全家一起：一位家人今天自己想做的一件事（企劃書 §9.5）。家長在家長區寫；沒有「做到了沒」。
+class FamilyToday {
+  const FamilyToday({required this.id, required this.dayKey, required this.who, required this.text});
+  final String id;
+  final String dayKey;
+
+  /// 誰（爸爸、媽媽、阿嬤⋯⋯）。
+  final String who;
+  final String text;
+
+  Map<String, Object?> toJson() => {'id': id, 'dayKey': dayKey, 'who': who, 'text': text};
+}
+
+/// 家人留給孩子的一句話，由步步轉達（文案庫 §4.11）。
+class FamilyNote {
+  const FamilyNote({
+    required this.id,
+    required this.dayKey,
+    required this.who,
+    required this.text,
+    required this.createdAt,
+    this.childRead = false,
+  });
+  final String id;
+  final String dayKey;
+  final String who;
+  final String text;
+  final DateTime createdAt;
+
+  /// 只給孩子這一端用：決定首頁還要不要轉達。家長端看不到（沒有已讀回條，底線 7）。
+  final bool childRead;
+
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'dayKey': dayKey,
+        'who': who,
+        'text': text,
+        'createdAt': createdAt.toIso8601String(),
+        'childRead': childRead,
+      };
 }

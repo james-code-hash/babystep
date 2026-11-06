@@ -34,6 +34,10 @@ abstract final class AppConfig {
   static const int maxWhyChars = 60;
   static const int maxReflectionChars = 120;
 
+  /// 全家一起：「你是誰」、家人留言的字數上限（I2）。
+  static const int maxFamilyWhoChars = 6;
+  static const int maxFamilyNoteChars = 40;
+
   /// 家長 PIN 的位數。
   static const int parentPinLength = 4;
 
