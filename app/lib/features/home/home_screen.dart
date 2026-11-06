@@ -93,11 +93,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     _newVisit();
   }
 
-  /// 又一次「進到首頁」（從背景回來、從別的畫面回來）：重新決定要不要探頭。
+  /// 又一次「進到首頁」（從背景回來、從別的畫面回來）：重新決定要不要探頭，家人留言也再問一次。
   /// 卡片正顯示著、還沒回答時就留著，不重抽也不多算一次。
   void _newVisit() {
     if (!mounted) return;
-    if (_peekShown && _peekReply == null) return;
+    // 家人留言的「等一下」只算這一次：回到首頁就再問一次。
+    _notesLater.clear();
+    if (_peekShown && _peekReply == null) {
+      setState(() {});
+      return;
+    }
     setState(() {
       _peekDecided = false;
       _peekShown = false;

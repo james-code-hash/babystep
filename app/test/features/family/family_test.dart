@@ -100,6 +100,24 @@ void main() {
       await finishTest(tester, env);
     });
 
+    testWidgets('after "later", the note is offered again on the next visit to Home', (tester) async {
+      _tall(tester);
+      final env = TestEnv();
+      await env.seed();
+      await env.repo.addFamilyNote(who: '阿嬤', text: '週末一起去公園');
+      await pumpApp(tester, env);
+      await settleAll(tester);
+      await tester.tap(find.byKey(const ValueKey('family-note-later')));
+      await settleAll(tester);
+      expect(find.byKey(const ValueKey('home-family-note')), findsNothing);
+      // 從背景回來＝又一次進到首頁。
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await settleAll(tester);
+      expect(find.byKey(const ValueKey('home-family-note')), findsOneWidget);
+      await finishTest(tester, env);
+    });
+
     testWidgets('the child can turn relaying off in their own settings', (tester) async {
       _tall(tester);
       final env = TestEnv();

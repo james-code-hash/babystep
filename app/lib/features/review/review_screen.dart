@@ -211,12 +211,14 @@ class _ReviewFlowScreenState extends ConsumerState<ReviewFlowScreen> {
                 label: Text(c.of(tone)),
                 onPressed: _checking ? null : () => _submit(c.of(tone)),
               ),
-            ActionChip(
-              key: const ValueKey('review-write'),
-              avatar: const Icon(Icons.edit_outlined, size: 18),
-              label: Text(ReviewCopy.writeOwn.of(tone)),
-              onPressed: () => setState(() => _writing = true),
-            ),
+            // 小探險家的輸入框一直都在，不需要「寫我自己的」。
+            if (tone != AgeTone.concise)
+              ActionChip(
+                key: const ValueKey('review-write'),
+                avatar: const Icon(Icons.edit_outlined, size: 18),
+                label: Text(ReviewCopy.writeOwn.of(tone)),
+                onPressed: () => setState(() => _writing = true),
+              ),
           ],
         ),
         if (writing) ...[

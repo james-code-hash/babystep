@@ -2,10 +2,26 @@ import 'package:flutter/material.dart';
 
 import '../../copy/line.dart';
 import '../../copy/parent.dart';
+import '../../core/age_text_scale.dart';
 import '../../core/config.dart';
 import '../../domain/models.dart';
 
 String pt(Line l) => l.of(AgeTone.concise);
+
+/// 家長區的對話框。對話框開在最外層的 Navigator 上、不在家長區畫面底下，
+/// 所以要自己換回系統原本的字級（小樹苗的放大只給孩子的畫面，I3）。
+Future<T?> showParentDialog<T>({required BuildContext context, required WidgetBuilder builder}) => showDialog<T>(
+      context: context,
+      builder: (context) => AgeTextScale.unscaled(context, Builder(builder: builder)),
+    );
+
+/// 家長區的時間選擇器（同上，用系統原本的字級）。
+Future<TimeOfDay?> showParentTimePicker({required BuildContext context, required TimeOfDay initialTime}) =>
+    showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) => AgeTextScale.unscaled(context, child ?? const SizedBox.shrink()),
+    );
 
 /// 預設圖示（家長沒填的時候）。
 const defaultTaskEmoji = '⭐';
@@ -20,7 +36,7 @@ String formatMinute(int m) {
 Future<(String, String)?> showTaskDialog(BuildContext context, {TaskTemplate? initial}) {
   final emoji = TextEditingController(text: initial?.emoji ?? '');
   final text = TextEditingController(text: initial?.text ?? '');
-  return showDialog<(String, String)>(
+  return showParentDialog<(String, String)>(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(pt(initial == null ? ParentCopy.addTask : ParentCopy.editTask)),
@@ -61,7 +77,7 @@ Future<(String, String)?> showTaskDialog(BuildContext context, {TaskTemplate? in
 /// 新增／修改時間點範本。回傳文字（存的時候 repository 會補成「我⋯」開頭）。
 Future<String?> showCueDialog(BuildContext context, {CueTemplate? initial}) {
   final text = TextEditingController(text: initial?.text ?? '');
-  return showDialog<String>(
+  return showParentDialog<String>(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(pt(initial == null ? ParentCopy.addCue : ParentCopy.editCue)),
@@ -93,12 +109,12 @@ Future<(String, int, int)?> showSlotDialog(BuildContext context, {ReminderSlot? 
   final label = TextEditingController(text: initial?.label ?? '');
   var start = initial?.startMinute ?? ParentConfig.newSlotStartMinute;
   var end = initial?.endMinute ?? ParentConfig.newSlotEndMinute;
-  return showDialog<(String, int, int)>(
+  return showParentDialog<(String, int, int)>(
     context: context,
     builder: (context) => StatefulBuilder(builder: (context, setState) {
       Future<void> pick(bool isStart) async {
         final m = isStart ? start : end;
-        final picked = await showTimePicker(context: context, initialTime: TimeOfDay(hour: m ~/ 60, minute: m % 60));
+        final picked = await showParentTimePicker(context: context, initialTime: TimeOfDay(hour: m ~/ 60, minute: m % 60));
         if (picked == null) return;
         setState(() {
           final v = picked.hour * 60 + picked.minute;
@@ -176,7 +192,7 @@ Future<bool> confirmDialog(
   required Line confirm,
   String confirmKey = 'dialog-confirm',
 }) async {
-  final ok = await showDialog<bool>(
+  final ok = await showParentDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(pt(title)),
@@ -194,7 +210,7 @@ Future<bool> confirmDialog(
 Future<bool> confirmDeleteAllTyped(BuildContext context) async {
   final word = pt(ParentCopy.deleteConfirmWord);
   final field = TextEditingController();
-  final ok = await showDialog<bool>(
+  final ok = await showParentDialog<bool>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
