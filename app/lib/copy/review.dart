@@ -83,6 +83,18 @@ abstract final class ReviewCopy {
   /// 有「今天沒做」的日子多給的 chip。
   static const notTodayChips = [Line('我想換個時間', '想換個時間'), Line('我想休息', '想休息')];
 
+  /// 活潑模式（6–8 歲）短答案前面的小圖示（I3）。
+  static String? chipIcon(Line chip) => switch (chip.lively) {
+        '沒有特別的' => '🙂',
+        '今天很滿' => '📦',
+        '有好玩的事' => '🎈',
+        '有一點卡住' => '🧩',
+        '比我想的快' => '⚡',
+        '我想換個時間' => '⏰',
+        '我想休息' => '🛋️',
+        _ => null,
+      };
+
   static const skipQuestion = Line('先跳過', '跳過');
   static const writeOwn = Line('我自己說', '自己寫');
   static const answerHint = Line('想說什麼都可以～', '想寫什麼都可以');

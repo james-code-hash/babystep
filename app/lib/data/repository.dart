@@ -237,6 +237,7 @@ class Repository {
         task: r.task,
         cue: r.cue,
         why: r.why,
+        stuck: r.stuckPlan,
         outcome: r.outcome == null ? null : enumByName(Outcome.values, r.outcome!, Outcome.notToday),
       );
 
@@ -266,6 +267,7 @@ class Repository {
           task: d.task.trim(),
           cue: CueTemplate.normalize(d.cue),
           why: (d.why?.trim().isEmpty ?? true) ? null : d.why!.trim(),
+          stuck: (d.stuck?.trim().isEmpty ?? true) ? null : d.stuck!.trim(),
         );
         await _db.into(_db.plans).insert(PlansCompanion.insert(
               id: plan.id,
@@ -275,6 +277,7 @@ class Repository {
               task: plan.task,
               cue: plan.cue,
               why: Value(plan.why),
+              stuckPlan: Value(plan.stuck),
             ));
         saved.add(plan);
       }
@@ -408,6 +411,101 @@ class Repository {
         ];
   }
 
+  // ---------------------------------------------------------------- 全家一起（I2）
+
+  FamilyToday _familyToday(FamilyTodayRow r) => FamilyToday(id: r.id, dayKey: r.dayKey, who: r.who, text: r.body);
+
+  FamilyNote _familyNote(FamilyNoteRow r) => FamilyNote(
+        id: r.id,
+        dayKey: r.dayKey,
+        who: r.who,
+        text: r.body,
+        createdAt: r.createdAt,
+        childRead: r.childRead,
+      );
+
+  Selectable<FamilyToday> _familyTodayQuery(String dayKey) => (_db.select(_db.familyTodayEntries)
+        ..where((f) => f.dayKey.equals(dayKey))
+        ..orderBy([(f) => OrderingTerm(expression: f.who)]))
+      .map(_familyToday);
+
+  Stream<List<FamilyToday>> watchFamilyToday(String dayKey) => _familyTodayQuery(dayKey).watch();
+
+  Future<List<FamilyToday>> familyToday(String dayKey) => _familyTodayQuery(dayKey).get();
+
+  /// 一位家人一天一件：同一天同一個人再寫就覆蓋。
+  Future<void> saveFamilyToday(String dayKey, {required String who, required String text}) async {
+    final w = who.trim();
+    await _db.transaction(() async {
+      await (_db.delete(_db.familyTodayEntries)..where((f) => f.dayKey.equals(dayKey) & f.who.equals(w))).go();
+      await _db.into(_db.familyTodayEntries).insert(
+            FamilyTodayEntriesCompanion.insert(id: _id(), dayKey: dayKey, who: w, body: text.trim()),
+          );
+    });
+  }
+
+  /// 這個月家人寫過的「今天的我」（月回顧用，舊的在前）。
+  Stream<List<FamilyToday>> watchFamilyTodayInMonth(String monthKey) => (_db.select(_db.familyTodayEntries)
+        ..where((f) => f.dayKey.like('$monthKey-%'))
+        ..orderBy([(f) => OrderingTerm(expression: f.dayKey), (f) => OrderingTerm(expression: f.who)]))
+      .map(_familyToday)
+      .watch();
+
+  Future<void> deleteFamilyToday(String id) => (_db.delete(_db.familyTodayEntries)..where((f) => f.id.equals(id))).go();
+
+  Future<FamilyNote> addFamilyNote({required String who, required String text}) async {
+    final now = _clock.now();
+    final note = FamilyNote(id: _id(), dayKey: dayKeyOf(now), who: who.trim(), text: text.trim(), createdAt: now);
+    await _db.into(_db.familyNotes).insert(FamilyNotesCompanion.insert(
+          id: note.id,
+          dayKey: note.dayKey,
+          who: note.who,
+          body: note.text,
+          createdAt: note.createdAt,
+        ));
+    return note;
+  }
+
+  Future<void> deleteFamilyNote(String id) => (_db.delete(_db.familyNotes)..where((n) => n.id.equals(id))).go();
+
+  Selectable<FamilyNote> _familyNotesQuery({bool unreadOnly = false}) {
+    final q = _db.select(_db.familyNotes)..orderBy([(n) => OrderingTerm(expression: n.createdAt)]);
+    if (unreadOnly) q.where((n) => n.childRead.equals(false));
+    return q.map(_familyNote);
+  }
+
+  /// 孩子還沒看過的留言（舊的在前）。
+  Stream<List<FamilyNote>> watchUnreadFamilyNotes() => _familyNotesQuery(unreadOnly: true).watch();
+
+  Future<List<FamilyNote>> familyNotes() => _familyNotesQuery().get();
+
+  /// 孩子看過了。只影響首頁要不要再轉達，家長端看不到。
+  Future<void> markFamilyNoteRead(String id) => (_db.update(_db.familyNotes)..where((n) => n.id.equals(id)))
+      .write(const FamilyNotesCompanion(childRead: Value(true)));
+
+  // ---------------------------------------------------------------- 月回顧的信（J4）
+
+  Selectable<MonthLetter> _lettersQuery() => (_db.select(_db.monthLetters)
+        ..orderBy([(l) => OrderingTerm(expression: l.monthKey, mode: OrderingMode.desc)]))
+      .map((r) => MonthLetter(
+            monthKey: r.monthKey,
+            author: enumByName(LetterAuthor.values, r.author, LetterAuthor.parent),
+            text: r.body,
+          ));
+
+  Stream<List<MonthLetter>> watchMonthLetters() => _lettersQuery().watch();
+
+  Future<List<MonthLetter>> monthLetters() => _lettersQuery().get();
+
+  /// 一個月每個人一封：再寫就覆蓋。
+  Future<void> saveMonthLetter(String monthKey, LetterAuthor author, String text) => _db
+      .into(_db.monthLetters)
+      .insertOnConflictUpdate(MonthLettersCompanion.insert(monthKey: monthKey, author: author.name, body: text.trim()));
+
+  Future<void> deleteMonthLetter(String monthKey, LetterAuthor author) => (_db.delete(_db.monthLetters)
+        ..where((l) => l.monthKey.equals(monthKey) & l.author.equals(author.name)))
+      .go();
+
   // ---------------------------------------------------------------- 設定
 
   static const _kTone = 'tone';
@@ -417,6 +515,8 @@ class Repository {
   static const _kOnboarded = 'onboarded';
   static const _kDressUp = 'dressUp';
   static const _kSeeded = 'seeded';
+  static const _kFamilyNotes = 'familyNotesOn';
+  static const _kTrailStyle = 'trailStyle';
 
   Future<String?> _getSetting(String key) async =>
       (await (_db.select(_db.settings)..where((s) => s.key.equals(key))).getSingleOrNull())?.value;
@@ -435,6 +535,8 @@ class Repository {
               ],
         parentPin: m[_kPin],
         onboarded: m[_kOnboarded] == 'true',
+        familyNotesOn: m[_kFamilyNotes] != 'false',
+        trailStyle: enumByName(TrailStyle.values, m[_kTrailStyle] ?? '', TrailStyle.path),
       );
 
   Stream<Map<String, String>> _watchSettingMap() =>
@@ -454,6 +556,12 @@ class Repository {
   Future<void> setParentPin(String pin) => _setSetting(_kPin, pin);
   Future<void> setOnboarded() => _setSetting(_kOnboarded, 'true');
 
+  /// 只有孩子在自己的設定裡改（§4.11）。
+  Future<void> setFamilyNotesOn(bool on) => _setSetting(_kFamilyNotes, '$on');
+
+  /// 成長軌跡的樣子（孩子在小路頁上換）。
+  Future<void> setTrailStyle(TrailStyle style) => _setSetting(_kTrailStyle, style.name);
+
   static DressUp _dressUpFrom(Map<String, String> m) =>
       m[_kDressUp] == null ? DressUp.initial : DressUp.fromJson(jsonDecode(m[_kDressUp]!) as Map<String, Object?>);
 
@@ -471,11 +579,30 @@ class Repository {
   Stream<ParentView> watchParentView() async* {
     yield await parentView();
     final updates = _db.tableUpdates(
-      TableUpdateQuery.onAllTables([_db.taskTemplates, _db.cueTemplates, _db.settings, _db.lessons]),
+      TableUpdateQuery.onAllTables(
+        [
+          _db.taskTemplates,
+          _db.cueTemplates,
+          _db.settings,
+          _db.lessons,
+          _db.familyTodayEntries,
+          _db.familyNotes,
+          _db.monthLetters,
+        ],
+      ),
     );
     await for (final _ in updates) {
       yield await parentView();
     }
+  }
+
+  static List<MonthLettersView> _lettersByMonth(List<MonthLetter> letters) {
+    final months = <String, (String?, String?)>{};
+    for (final l in letters) {
+      final (c, p) = months[l.monthKey] ?? (null, null);
+      months[l.monthKey] = l.author == LetterAuthor.child ? (l.text, p) : (c, l.text);
+    }
+    return [for (final e in months.entries) MonthLettersView(month: e.key, child: e.value.$1, parent: e.value.$2)];
   }
 
   Future<ParentView> parentView() async {
@@ -490,6 +617,14 @@ class Repository {
       cueTemplates: await cueTemplates(origins: parentOrigins),
       settings: ParentSettingsView(tone: s.tone, llmEnabled: s.llmEnabled, reminderSlots: s.reminderSlots),
       sharedLessons: [for (final r in shared) SharedLesson(id: r.id, dayKey: r.dayKey, text: r.body)],
+      familyToday: [
+        for (final f in await familyToday(dayKeyOf(_clock.now()))) FamilyTodayView(id: f.id, who: f.who, text: f.text),
+      ],
+      familyNotes: [
+        for (final n in (await familyNotes()).reversed)
+          FamilyNoteView(id: n.id, dayKey: n.dayKey, who: n.who, text: n.text),
+      ],
+      monthLetters: _lettersByMonth(await monthLetters()),
     );
   }
 
@@ -507,12 +642,17 @@ class Repository {
         'llmEnabled': s.llmEnabled,
         'reminderSlots': [for (final r in s.reminderSlots) r.toJson()],
         'dressUp': (await dressUp()).toJson(),
+        'familyNotesOn': s.familyNotesOn,
+        'trailStyle': s.trailStyle.name,
       },
       'taskTemplates': [for (final t in await taskTemplates()) t.toJson()],
       'cueTemplates': [for (final c in await cueTemplates()) c.toJson()],
       'plans': [for (final r in await _db.select(_db.plans).get()) _plan(r).toJson()],
       'dayRecords': [for (final r in await _db.select(_db.dayRecords).get()) _day(r).toJson()],
       'lessons': [for (final r in await _db.select(_db.lessons).get()) _lesson(r).toJson()],
+      'familyToday': [for (final r in await _db.select(_db.familyTodayEntries).get()) _familyToday(r).toJson()],
+      'familyNotes': [for (final r in await _db.select(_db.familyNotes).get()) _familyNote(r).toJson()],
+      'monthLetters': [for (final l in await monthLetters()) l.toJson()],
     };
     return const JsonEncoder.withIndent('  ').convert(data);
   }

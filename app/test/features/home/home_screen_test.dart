@@ -111,7 +111,7 @@ void main() {
       await finish(tester, env);
     });
 
-    testWidgets('quiet navigation reaches notebook, path, settings and parent; no badges', (tester) async {
+    testWidgets('quiet navigation reaches notebook, path, explore, settings and parent; no badges', (tester) async {
       tallScreen(tester);
       env = TestEnv();
       await pumpApp(tester, env);
@@ -119,6 +119,7 @@ void main() {
       for (final (key, target) in [
         ('nav-notebook', Routes.notebook),
         ('nav-path', Routes.path),
+        ('nav-explore', Routes.explore),
         ('nav-settings', Routes.settings),
         ('nav-parent', Routes.parent),
       ]) {
@@ -379,6 +380,27 @@ void main() {
       await tester.runAsync(() => env.repo.savePlans(dayKeyOf(env.clock.now()), const [
             PlanDraft(emoji: '✏️', task: '寫數學作業', cue: '我吃完晚飯'),
           ]));
+      await settleAll(tester);
+      expect(find.byKey(const ValueKey('home-peek')), findsOneWidget);
+      await finish(tester, env);
+    });
+
+    testWidgets('a reminder slot added on another screen → back on Home → card appears (audit bug 2)', (tester) async {
+      tallScreen(tester);
+      env = TestEnv(); // 19:30
+      await _plan(env);
+      await env.repo.setReminderSlots(const []);
+      await pumpApp(tester, env);
+      expect(find.byKey(const ValueKey('home-peek')), findsNothing);
+      await tester.ensureVisible(find.byKey(const ValueKey('nav-notebook')));
+      await tester.tap(find.byKey(const ValueKey('nav-notebook')));
+      await settleAll(tester);
+      // 家長在別的畫面新增了一個涵蓋現在的時段。
+      await tester.runAsync(() => env.repo.setReminderSlots(const [
+            ReminderSlot(id: 'new', label: '晚上', startMinute: 19 * 60, endMinute: 21 * 60),
+          ]));
+      await settleAll(tester);
+      GoRouter.of(tester.element(find.byType(HomeScreen, skipOffstage: false))).pop();
       await settleAll(tester);
       expect(find.byKey(const ValueKey('home-peek')), findsOneWidget);
       await finish(tester, env);

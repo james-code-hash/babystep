@@ -41,13 +41,18 @@ class DatabaseStore {
   /// 資料庫本體與 SQLite 會在旁邊產生的檔案。
   List<File> get files => [for (final suffix in const ['', '-wal', '-shm', '-journal']) File('$path$suffix')];
 
+  /// 刪檔失敗時也一定會重新開一個資料庫（不會留下已關閉的那個），再把錯誤往外丟：
+  /// 這時舊資料還在，畫面上看得到，可以再刪一次。
   Future<void> reset() async {
     await _current.close();
-    for (final f in files) {
-      if (await f.exists()) await f.delete();
+    try {
+      for (final f in files) {
+        if (await f.exists()) await f.delete();
+      }
+    } finally {
+      _current = _open(path);
+      await Repository(_current).seedIfEmpty();
     }
-    _current = _open(path);
-    await Repository(_current).seedIfEmpty();
   }
 }
 

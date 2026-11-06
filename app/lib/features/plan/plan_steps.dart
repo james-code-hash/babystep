@@ -328,6 +328,9 @@ class _ChooseStepState extends ConsumerState<ChooseStep> {
     final notice = switch (flow.chooseNotice) {
       ChooseNotice.one => PlanCopy.chooseOne.of(tone),
       ChooseNotice.full => PlanCopy.chooseFull.fill(tone, max),
+      // 活潑模式（6–8 歲）建議 1–2 件：選到建議的件數時軟性提一下，還是可以再加（I3）。
+      ChooseNotice.none when tone == AgeTone.lively && flow.items.length >= AgeConfig.sproutSuggestedPlans =>
+        PlanCopy.chooseEnough.of(tone),
       ChooseNotice.none => null,
     };
 
@@ -484,7 +487,7 @@ class _IfThenStepState extends ConsumerState<IfThenStep> {
             for (final c in cues)
               ChoiceChip(
                 key: ValueKey('cue-${c.id}'),
-                label: Text(c.text),
+                label: Text(_withIcon(tone, PlanCopy.cueIcon(c.text), c.text)),
                 selected: cue == c.text,
                 onSelected: (_) => controller.setCue(c.text),
               ),
@@ -528,6 +531,9 @@ class WhyStep extends ConsumerStatefulWidget {
 class _WhyStepState extends ConsumerState<WhyStep> {
   bool _writing = false;
 
+  /// 活潑模式在答案前面加的小圖示（和 [_answers] 一一對應）。
+  static const _whyIcons = ['🧪', '🙋', '😌', '🏠', '🤔'];
+
   static const _answers = [
     PlanCopy.whyTry,
     PlanCopy.whyMine,
@@ -565,7 +571,7 @@ class _WhyStepState extends ConsumerState<WhyStep> {
             for (final (i, a) in _answers.indexed)
               ChoiceChip(
                 key: ValueKey('why-$i'),
-                label: Text(a.of(tone)),
+                label: Text(_withIcon(tone, _whyIcons[i], a.of(tone))),
                 selected: why == a.of(tone),
                 onSelected: (sel) => controller.setWhy(sel ? a.of(tone) : null),
               ),
@@ -612,6 +618,108 @@ class _WhyStepState extends ConsumerState<WhyStep> {
   }
 }
 
+// ============================================================== 4b. 卡住的時候（簡潔模式，可跳過）
+
+/// MCII 的「如果遇到障礙，我就⋯」（企劃書模組二、§10.2）。只在簡潔模式（9–12 歲）出現（I3）。
+/// 選項都是「下一步怎麼做」，不是對孩子的要求；孩子也可以自己寫或跳過。
+class StuckStep extends ConsumerStatefulWidget {
+  const StuckStep({super.key});
+
+  @override
+  ConsumerState<StuckStep> createState() => _StuckStepState();
+}
+
+class _StuckStepState extends ConsumerState<StuckStep> {
+  bool _writing = false;
+
+  static const _options = [
+    PlanCopy.stuckOneMinute,
+    PlanCopy.stuckBreathe,
+    PlanCopy.stuckEasyFirst,
+    PlanCopy.stuckBreak,
+    PlanCopy.stuckAsk2,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = ref.watch(toneProvider);
+    final flow = ref.watch(planFlowProvider);
+    final controller = ref.read(planFlowProvider.notifier);
+    final item = flow.current;
+    if (item == null) return const SizedBox.shrink();
+    final stuck = item.stuck;
+    return _StepLayout(
+      expression: listeningExpression(answered: stuck != null),
+      bubuSays: stuck == null ? PlanCopy.stuckAsk.fill(tone, {'task': item.task}) : PlanCopy.stuckHeard.of(tone),
+      content: [
+        if (stuck != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpace.s),
+            child: Text(
+              PlanCopy.stuckLine.fill(tone, {'stuck': stuck}),
+              key: const ValueKey('stuck-sentence'),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 20),
+            ),
+          ),
+        _SectionTitle(PlanCopy.stuckSlot.of(tone)),
+        Wrap(
+          spacing: AppSpace.s,
+          runSpacing: AppSpace.s,
+          children: [
+            for (final (i, o) in _options.indexed)
+              ChoiceChip(
+                key: ValueKey('stuck-$i'),
+                label: Text(o.of(tone)),
+                selected: stuck == o.of(tone),
+                onSelected: (sel) => controller.setStuck(sel ? o.of(tone) : null),
+              ),
+            if (!_writing)
+              ActionChip(
+                key: const ValueKey('stuck-write-own'),
+                avatar: const Icon(Icons.edit_outlined, size: 18),
+                label: Text(CommonCopy.writeMyOwn.of(tone)),
+                onPressed: () => setState(() => _writing = true),
+              ),
+          ],
+        ),
+        if (_writing) ...[
+          const SizedBox(height: AppSpace.s),
+          _SafeTextEntry(
+            fieldKey: 'stuck-custom-field',
+            submitKey: 'stuck-custom-use',
+            hint: PlanCopy.stuckHint.of(tone),
+            submitLabel: PlanCopy.useThis.of(tone),
+            maxChars: AppConfig.maxTaskChars,
+            onAccepted: (text) async {
+              controller.setStuck(text);
+              if (mounted) setState(() => _writing = false);
+            },
+          ),
+        ],
+      ],
+      actions: [
+        if (stuck != null)
+          _nextButton(context, tone, onPressed: controller.next)
+        else
+          Center(
+            child: TextButton(
+              key: const ValueKey('stuck-skip'),
+              onPressed: () {
+                controller.setStuck(null);
+                controller.next();
+              },
+              child: Text(CommonCopy.skip.of(tone)),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// 活潑模式（6–8 歲）在選項前面加一個小圖示，多一點圖像、少一點讀字（I3）。
+String _withIcon(AgeTone tone, String? icon, String text) =>
+    tone == AgeTone.lively && icon != null ? '$icon $text' : text;
+
 // ============================================================== 5. 確認
 
 class ConfirmStep extends ConsumerStatefulWidget {
@@ -654,9 +762,20 @@ class _ConfirmStepState extends ConsumerState<ConfirmStep> {
                   Text(item.emoji, style: const TextStyle(fontSize: 26)),
                   const SizedBox(width: AppSpace.m),
                   Expanded(
-                    child: Text(
-                      PlanCopy.ifThen.fill(tone, {'cue': item.cue ?? '', 'task': item.task}),
-                      style: Theme.of(context).textTheme.bodyLarge,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          PlanCopy.ifThen.fill(tone, {'cue': item.cue ?? '', 'task': item.task}),
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                        if (item.stuck != null)
+                          Text(
+                            PlanCopy.stuckLine.fill(tone, {'stuck': item.stuck!}),
+                            key: ValueKey('confirm-stuck-$i'),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.inkSoft),
+                          ),
+                      ],
                     ),
                   ),
                 ],

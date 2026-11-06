@@ -727,6 +727,17 @@ class $PlansTable extends Plans with TableInfo<$PlansTable, PlanRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _stuckPlanMeta = const VerificationMeta(
+    'stuckPlan',
+  );
+  @override
+  late final GeneratedColumn<String> stuckPlan = GeneratedColumn<String>(
+    'stuck_plan',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _outcomeMeta = const VerificationMeta(
     'outcome',
   );
@@ -747,6 +758,7 @@ class $PlansTable extends Plans with TableInfo<$PlansTable, PlanRow> {
     task,
     cue,
     why,
+    stuckPlan,
     outcome,
   ];
   @override
@@ -812,6 +824,12 @@ class $PlansTable extends Plans with TableInfo<$PlansTable, PlanRow> {
         why.isAcceptableOrUnknown(data['why']!, _whyMeta),
       );
     }
+    if (data.containsKey('stuck_plan')) {
+      context.handle(
+        _stuckPlanMeta,
+        stuckPlan.isAcceptableOrUnknown(data['stuck_plan']!, _stuckPlanMeta),
+      );
+    }
     if (data.containsKey('outcome')) {
       context.handle(
         _outcomeMeta,
@@ -855,6 +873,10 @@ class $PlansTable extends Plans with TableInfo<$PlansTable, PlanRow> {
         DriftSqlType.string,
         data['${effectivePrefix}why'],
       ),
+      stuckPlan: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stuck_plan'],
+      ),
       outcome: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}outcome'],
@@ -877,6 +899,9 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
   final String cue;
   final String? why;
 
+  /// 「如果卡住了，我就⋯」（MCII，簡潔模式才問，可跳過）。v3 加入。
+  final String? stuckPlan;
+
   /// done / partly / notToday；還沒回顧是 null。
   final String? outcome;
   const PlanRow({
@@ -887,6 +912,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
     required this.task,
     required this.cue,
     this.why,
+    this.stuckPlan,
     this.outcome,
   });
   @override
@@ -900,6 +926,9 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
     map['cue'] = Variable<String>(cue);
     if (!nullToAbsent || why != null) {
       map['why'] = Variable<String>(why);
+    }
+    if (!nullToAbsent || stuckPlan != null) {
+      map['stuck_plan'] = Variable<String>(stuckPlan);
     }
     if (!nullToAbsent || outcome != null) {
       map['outcome'] = Variable<String>(outcome);
@@ -916,6 +945,9 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
       task: Value(task),
       cue: Value(cue),
       why: why == null && nullToAbsent ? const Value.absent() : Value(why),
+      stuckPlan: stuckPlan == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stuckPlan),
       outcome: outcome == null && nullToAbsent
           ? const Value.absent()
           : Value(outcome),
@@ -935,6 +967,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
       task: serializer.fromJson<String>(json['task']),
       cue: serializer.fromJson<String>(json['cue']),
       why: serializer.fromJson<String?>(json['why']),
+      stuckPlan: serializer.fromJson<String?>(json['stuckPlan']),
       outcome: serializer.fromJson<String?>(json['outcome']),
     );
   }
@@ -949,6 +982,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
       'task': serializer.toJson<String>(task),
       'cue': serializer.toJson<String>(cue),
       'why': serializer.toJson<String?>(why),
+      'stuckPlan': serializer.toJson<String?>(stuckPlan),
       'outcome': serializer.toJson<String?>(outcome),
     };
   }
@@ -961,6 +995,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
     String? task,
     String? cue,
     Value<String?> why = const Value.absent(),
+    Value<String?> stuckPlan = const Value.absent(),
     Value<String?> outcome = const Value.absent(),
   }) => PlanRow(
     id: id ?? this.id,
@@ -970,6 +1005,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
     task: task ?? this.task,
     cue: cue ?? this.cue,
     why: why.present ? why.value : this.why,
+    stuckPlan: stuckPlan.present ? stuckPlan.value : this.stuckPlan,
     outcome: outcome.present ? outcome.value : this.outcome,
   );
   PlanRow copyWithCompanion(PlansCompanion data) {
@@ -981,6 +1017,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
       task: data.task.present ? data.task.value : this.task,
       cue: data.cue.present ? data.cue.value : this.cue,
       why: data.why.present ? data.why.value : this.why,
+      stuckPlan: data.stuckPlan.present ? data.stuckPlan.value : this.stuckPlan,
       outcome: data.outcome.present ? data.outcome.value : this.outcome,
     );
   }
@@ -995,14 +1032,24 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
           ..write('task: $task, ')
           ..write('cue: $cue, ')
           ..write('why: $why, ')
+          ..write('stuckPlan: $stuckPlan, ')
           ..write('outcome: $outcome')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, dayKey, position, emoji, task, cue, why, outcome);
+  int get hashCode => Object.hash(
+    id,
+    dayKey,
+    position,
+    emoji,
+    task,
+    cue,
+    why,
+    stuckPlan,
+    outcome,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1014,6 +1061,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
           other.task == this.task &&
           other.cue == this.cue &&
           other.why == this.why &&
+          other.stuckPlan == this.stuckPlan &&
           other.outcome == this.outcome);
 }
 
@@ -1025,6 +1073,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
   final Value<String> task;
   final Value<String> cue;
   final Value<String?> why;
+  final Value<String?> stuckPlan;
   final Value<String?> outcome;
   final Value<int> rowid;
   const PlansCompanion({
@@ -1035,6 +1084,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
     this.task = const Value.absent(),
     this.cue = const Value.absent(),
     this.why = const Value.absent(),
+    this.stuckPlan = const Value.absent(),
     this.outcome = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1046,6 +1096,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
     required String task,
     required String cue,
     this.why = const Value.absent(),
+    this.stuckPlan = const Value.absent(),
     this.outcome = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1062,6 +1113,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
     Expression<String>? task,
     Expression<String>? cue,
     Expression<String>? why,
+    Expression<String>? stuckPlan,
     Expression<String>? outcome,
     Expression<int>? rowid,
   }) {
@@ -1073,6 +1125,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
       if (task != null) 'task': task,
       if (cue != null) 'cue': cue,
       if (why != null) 'why': why,
+      if (stuckPlan != null) 'stuck_plan': stuckPlan,
       if (outcome != null) 'outcome': outcome,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1086,6 +1139,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
     Value<String>? task,
     Value<String>? cue,
     Value<String?>? why,
+    Value<String?>? stuckPlan,
     Value<String?>? outcome,
     Value<int>? rowid,
   }) {
@@ -1097,6 +1151,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
       task: task ?? this.task,
       cue: cue ?? this.cue,
       why: why ?? this.why,
+      stuckPlan: stuckPlan ?? this.stuckPlan,
       outcome: outcome ?? this.outcome,
       rowid: rowid ?? this.rowid,
     );
@@ -1126,6 +1181,9 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
     if (why.present) {
       map['why'] = Variable<String>(why.value);
     }
+    if (stuckPlan.present) {
+      map['stuck_plan'] = Variable<String>(stuckPlan.value);
+    }
     if (outcome.present) {
       map['outcome'] = Variable<String>(outcome.value);
     }
@@ -1145,6 +1203,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
           ..write('task: $task, ')
           ..write('cue: $cue, ')
           ..write('why: $why, ')
+          ..write('stuckPlan: $stuckPlan, ')
           ..write('outcome: $outcome, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -2191,6 +2250,983 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   }
 }
 
+class $FamilyTodayEntriesTable extends FamilyTodayEntries
+    with TableInfo<$FamilyTodayEntriesTable, FamilyTodayRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FamilyTodayEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dayKeyMeta = const VerificationMeta('dayKey');
+  @override
+  late final GeneratedColumn<String> dayKey = GeneratedColumn<String>(
+    'day_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _whoMeta = const VerificationMeta('who');
+  @override
+  late final GeneratedColumn<String> who = GeneratedColumn<String>(
+    'who',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, dayKey, who, body];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'family_today_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FamilyTodayRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('day_key')) {
+      context.handle(
+        _dayKeyMeta,
+        dayKey.isAcceptableOrUnknown(data['day_key']!, _dayKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayKeyMeta);
+    }
+    if (data.containsKey('who')) {
+      context.handle(
+        _whoMeta,
+        who.isAcceptableOrUnknown(data['who']!, _whoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_whoMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FamilyTodayRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FamilyTodayRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      dayKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day_key'],
+      )!,
+      who: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}who'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+    );
+  }
+
+  @override
+  $FamilyTodayEntriesTable createAlias(String alias) {
+    return $FamilyTodayEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class FamilyTodayRow extends DataClass implements Insertable<FamilyTodayRow> {
+  final String id;
+  final String dayKey;
+
+  /// 誰（爸爸、媽媽、阿嬤⋯⋯，家長自己填）。
+  final String who;
+  final String body;
+  const FamilyTodayRow({
+    required this.id,
+    required this.dayKey,
+    required this.who,
+    required this.body,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['day_key'] = Variable<String>(dayKey);
+    map['who'] = Variable<String>(who);
+    map['body'] = Variable<String>(body);
+    return map;
+  }
+
+  FamilyTodayEntriesCompanion toCompanion(bool nullToAbsent) {
+    return FamilyTodayEntriesCompanion(
+      id: Value(id),
+      dayKey: Value(dayKey),
+      who: Value(who),
+      body: Value(body),
+    );
+  }
+
+  factory FamilyTodayRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FamilyTodayRow(
+      id: serializer.fromJson<String>(json['id']),
+      dayKey: serializer.fromJson<String>(json['dayKey']),
+      who: serializer.fromJson<String>(json['who']),
+      body: serializer.fromJson<String>(json['body']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'dayKey': serializer.toJson<String>(dayKey),
+      'who': serializer.toJson<String>(who),
+      'body': serializer.toJson<String>(body),
+    };
+  }
+
+  FamilyTodayRow copyWith({
+    String? id,
+    String? dayKey,
+    String? who,
+    String? body,
+  }) => FamilyTodayRow(
+    id: id ?? this.id,
+    dayKey: dayKey ?? this.dayKey,
+    who: who ?? this.who,
+    body: body ?? this.body,
+  );
+  FamilyTodayRow copyWithCompanion(FamilyTodayEntriesCompanion data) {
+    return FamilyTodayRow(
+      id: data.id.present ? data.id.value : this.id,
+      dayKey: data.dayKey.present ? data.dayKey.value : this.dayKey,
+      who: data.who.present ? data.who.value : this.who,
+      body: data.body.present ? data.body.value : this.body,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FamilyTodayRow(')
+          ..write('id: $id, ')
+          ..write('dayKey: $dayKey, ')
+          ..write('who: $who, ')
+          ..write('body: $body')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, dayKey, who, body);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FamilyTodayRow &&
+          other.id == this.id &&
+          other.dayKey == this.dayKey &&
+          other.who == this.who &&
+          other.body == this.body);
+}
+
+class FamilyTodayEntriesCompanion extends UpdateCompanion<FamilyTodayRow> {
+  final Value<String> id;
+  final Value<String> dayKey;
+  final Value<String> who;
+  final Value<String> body;
+  final Value<int> rowid;
+  const FamilyTodayEntriesCompanion({
+    this.id = const Value.absent(),
+    this.dayKey = const Value.absent(),
+    this.who = const Value.absent(),
+    this.body = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FamilyTodayEntriesCompanion.insert({
+    required String id,
+    required String dayKey,
+    required String who,
+    required String body,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       dayKey = Value(dayKey),
+       who = Value(who),
+       body = Value(body);
+  static Insertable<FamilyTodayRow> custom({
+    Expression<String>? id,
+    Expression<String>? dayKey,
+    Expression<String>? who,
+    Expression<String>? body,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (dayKey != null) 'day_key': dayKey,
+      if (who != null) 'who': who,
+      if (body != null) 'body': body,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FamilyTodayEntriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? dayKey,
+    Value<String>? who,
+    Value<String>? body,
+    Value<int>? rowid,
+  }) {
+    return FamilyTodayEntriesCompanion(
+      id: id ?? this.id,
+      dayKey: dayKey ?? this.dayKey,
+      who: who ?? this.who,
+      body: body ?? this.body,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (dayKey.present) {
+      map['day_key'] = Variable<String>(dayKey.value);
+    }
+    if (who.present) {
+      map['who'] = Variable<String>(who.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FamilyTodayEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('dayKey: $dayKey, ')
+          ..write('who: $who, ')
+          ..write('body: $body, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FamilyNotesTable extends FamilyNotes
+    with TableInfo<$FamilyNotesTable, FamilyNoteRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FamilyNotesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dayKeyMeta = const VerificationMeta('dayKey');
+  @override
+  late final GeneratedColumn<String> dayKey = GeneratedColumn<String>(
+    'day_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _whoMeta = const VerificationMeta('who');
+  @override
+  late final GeneratedColumn<String> who = GeneratedColumn<String>(
+    'who',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _childReadMeta = const VerificationMeta(
+    'childRead',
+  );
+  @override
+  late final GeneratedColumn<bool> childRead = GeneratedColumn<bool>(
+    'child_read',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("child_read" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    dayKey,
+    who,
+    body,
+    createdAt,
+    childRead,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'family_notes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FamilyNoteRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('day_key')) {
+      context.handle(
+        _dayKeyMeta,
+        dayKey.isAcceptableOrUnknown(data['day_key']!, _dayKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayKeyMeta);
+    }
+    if (data.containsKey('who')) {
+      context.handle(
+        _whoMeta,
+        who.isAcceptableOrUnknown(data['who']!, _whoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_whoMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('child_read')) {
+      context.handle(
+        _childReadMeta,
+        childRead.isAcceptableOrUnknown(data['child_read']!, _childReadMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FamilyNoteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FamilyNoteRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      dayKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day_key'],
+      )!,
+      who: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}who'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      childRead: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}child_read'],
+      )!,
+    );
+  }
+
+  @override
+  $FamilyNotesTable createAlias(String alias) {
+    return $FamilyNotesTable(attachedDatabase, alias);
+  }
+}
+
+class FamilyNoteRow extends DataClass implements Insertable<FamilyNoteRow> {
+  final String id;
+  final String dayKey;
+  final String who;
+  final String body;
+  final DateTime createdAt;
+
+  /// 孩子看過了沒（只用來決定首頁要不要再轉達）。**不給家長**：家長端沒有已讀回條（底線 7）。
+  final bool childRead;
+  const FamilyNoteRow({
+    required this.id,
+    required this.dayKey,
+    required this.who,
+    required this.body,
+    required this.createdAt,
+    required this.childRead,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['day_key'] = Variable<String>(dayKey);
+    map['who'] = Variable<String>(who);
+    map['body'] = Variable<String>(body);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['child_read'] = Variable<bool>(childRead);
+    return map;
+  }
+
+  FamilyNotesCompanion toCompanion(bool nullToAbsent) {
+    return FamilyNotesCompanion(
+      id: Value(id),
+      dayKey: Value(dayKey),
+      who: Value(who),
+      body: Value(body),
+      createdAt: Value(createdAt),
+      childRead: Value(childRead),
+    );
+  }
+
+  factory FamilyNoteRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FamilyNoteRow(
+      id: serializer.fromJson<String>(json['id']),
+      dayKey: serializer.fromJson<String>(json['dayKey']),
+      who: serializer.fromJson<String>(json['who']),
+      body: serializer.fromJson<String>(json['body']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      childRead: serializer.fromJson<bool>(json['childRead']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'dayKey': serializer.toJson<String>(dayKey),
+      'who': serializer.toJson<String>(who),
+      'body': serializer.toJson<String>(body),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'childRead': serializer.toJson<bool>(childRead),
+    };
+  }
+
+  FamilyNoteRow copyWith({
+    String? id,
+    String? dayKey,
+    String? who,
+    String? body,
+    DateTime? createdAt,
+    bool? childRead,
+  }) => FamilyNoteRow(
+    id: id ?? this.id,
+    dayKey: dayKey ?? this.dayKey,
+    who: who ?? this.who,
+    body: body ?? this.body,
+    createdAt: createdAt ?? this.createdAt,
+    childRead: childRead ?? this.childRead,
+  );
+  FamilyNoteRow copyWithCompanion(FamilyNotesCompanion data) {
+    return FamilyNoteRow(
+      id: data.id.present ? data.id.value : this.id,
+      dayKey: data.dayKey.present ? data.dayKey.value : this.dayKey,
+      who: data.who.present ? data.who.value : this.who,
+      body: data.body.present ? data.body.value : this.body,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      childRead: data.childRead.present ? data.childRead.value : this.childRead,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FamilyNoteRow(')
+          ..write('id: $id, ')
+          ..write('dayKey: $dayKey, ')
+          ..write('who: $who, ')
+          ..write('body: $body, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('childRead: $childRead')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, dayKey, who, body, createdAt, childRead);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FamilyNoteRow &&
+          other.id == this.id &&
+          other.dayKey == this.dayKey &&
+          other.who == this.who &&
+          other.body == this.body &&
+          other.createdAt == this.createdAt &&
+          other.childRead == this.childRead);
+}
+
+class FamilyNotesCompanion extends UpdateCompanion<FamilyNoteRow> {
+  final Value<String> id;
+  final Value<String> dayKey;
+  final Value<String> who;
+  final Value<String> body;
+  final Value<DateTime> createdAt;
+  final Value<bool> childRead;
+  final Value<int> rowid;
+  const FamilyNotesCompanion({
+    this.id = const Value.absent(),
+    this.dayKey = const Value.absent(),
+    this.who = const Value.absent(),
+    this.body = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.childRead = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FamilyNotesCompanion.insert({
+    required String id,
+    required String dayKey,
+    required String who,
+    required String body,
+    required DateTime createdAt,
+    this.childRead = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       dayKey = Value(dayKey),
+       who = Value(who),
+       body = Value(body),
+       createdAt = Value(createdAt);
+  static Insertable<FamilyNoteRow> custom({
+    Expression<String>? id,
+    Expression<String>? dayKey,
+    Expression<String>? who,
+    Expression<String>? body,
+    Expression<DateTime>? createdAt,
+    Expression<bool>? childRead,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (dayKey != null) 'day_key': dayKey,
+      if (who != null) 'who': who,
+      if (body != null) 'body': body,
+      if (createdAt != null) 'created_at': createdAt,
+      if (childRead != null) 'child_read': childRead,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FamilyNotesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? dayKey,
+    Value<String>? who,
+    Value<String>? body,
+    Value<DateTime>? createdAt,
+    Value<bool>? childRead,
+    Value<int>? rowid,
+  }) {
+    return FamilyNotesCompanion(
+      id: id ?? this.id,
+      dayKey: dayKey ?? this.dayKey,
+      who: who ?? this.who,
+      body: body ?? this.body,
+      createdAt: createdAt ?? this.createdAt,
+      childRead: childRead ?? this.childRead,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (dayKey.present) {
+      map['day_key'] = Variable<String>(dayKey.value);
+    }
+    if (who.present) {
+      map['who'] = Variable<String>(who.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (childRead.present) {
+      map['child_read'] = Variable<bool>(childRead.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FamilyNotesCompanion(')
+          ..write('id: $id, ')
+          ..write('dayKey: $dayKey, ')
+          ..write('who: $who, ')
+          ..write('body: $body, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('childRead: $childRead, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MonthLettersTable extends MonthLetters
+    with TableInfo<$MonthLettersTable, MonthLetterRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MonthLettersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _monthKeyMeta = const VerificationMeta(
+    'monthKey',
+  );
+  @override
+  late final GeneratedColumn<String> monthKey = GeneratedColumn<String>(
+    'month_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _authorMeta = const VerificationMeta('author');
+  @override
+  late final GeneratedColumn<String> author = GeneratedColumn<String>(
+    'author',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [monthKey, author, body];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'month_letters';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MonthLetterRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('month_key')) {
+      context.handle(
+        _monthKeyMeta,
+        monthKey.isAcceptableOrUnknown(data['month_key']!, _monthKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_monthKeyMeta);
+    }
+    if (data.containsKey('author')) {
+      context.handle(
+        _authorMeta,
+        author.isAcceptableOrUnknown(data['author']!, _authorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_authorMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {monthKey, author};
+  @override
+  MonthLetterRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MonthLetterRow(
+      monthKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}month_key'],
+      )!,
+      author: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}author'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+    );
+  }
+
+  @override
+  $MonthLettersTable createAlias(String alias) {
+    return $MonthLettersTable(attachedDatabase, alias);
+  }
+}
+
+class MonthLetterRow extends DataClass implements Insertable<MonthLetterRow> {
+  /// 'YYYY-MM'
+  final String monthKey;
+
+  /// 'child' 或 'parent'
+  final String author;
+  final String body;
+  const MonthLetterRow({
+    required this.monthKey,
+    required this.author,
+    required this.body,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['month_key'] = Variable<String>(monthKey);
+    map['author'] = Variable<String>(author);
+    map['body'] = Variable<String>(body);
+    return map;
+  }
+
+  MonthLettersCompanion toCompanion(bool nullToAbsent) {
+    return MonthLettersCompanion(
+      monthKey: Value(monthKey),
+      author: Value(author),
+      body: Value(body),
+    );
+  }
+
+  factory MonthLetterRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MonthLetterRow(
+      monthKey: serializer.fromJson<String>(json['monthKey']),
+      author: serializer.fromJson<String>(json['author']),
+      body: serializer.fromJson<String>(json['body']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'monthKey': serializer.toJson<String>(monthKey),
+      'author': serializer.toJson<String>(author),
+      'body': serializer.toJson<String>(body),
+    };
+  }
+
+  MonthLetterRow copyWith({String? monthKey, String? author, String? body}) =>
+      MonthLetterRow(
+        monthKey: monthKey ?? this.monthKey,
+        author: author ?? this.author,
+        body: body ?? this.body,
+      );
+  MonthLetterRow copyWithCompanion(MonthLettersCompanion data) {
+    return MonthLetterRow(
+      monthKey: data.monthKey.present ? data.monthKey.value : this.monthKey,
+      author: data.author.present ? data.author.value : this.author,
+      body: data.body.present ? data.body.value : this.body,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MonthLetterRow(')
+          ..write('monthKey: $monthKey, ')
+          ..write('author: $author, ')
+          ..write('body: $body')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(monthKey, author, body);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MonthLetterRow &&
+          other.monthKey == this.monthKey &&
+          other.author == this.author &&
+          other.body == this.body);
+}
+
+class MonthLettersCompanion extends UpdateCompanion<MonthLetterRow> {
+  final Value<String> monthKey;
+  final Value<String> author;
+  final Value<String> body;
+  final Value<int> rowid;
+  const MonthLettersCompanion({
+    this.monthKey = const Value.absent(),
+    this.author = const Value.absent(),
+    this.body = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MonthLettersCompanion.insert({
+    required String monthKey,
+    required String author,
+    required String body,
+    this.rowid = const Value.absent(),
+  }) : monthKey = Value(monthKey),
+       author = Value(author),
+       body = Value(body);
+  static Insertable<MonthLetterRow> custom({
+    Expression<String>? monthKey,
+    Expression<String>? author,
+    Expression<String>? body,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (monthKey != null) 'month_key': monthKey,
+      if (author != null) 'author': author,
+      if (body != null) 'body': body,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MonthLettersCompanion copyWith({
+    Value<String>? monthKey,
+    Value<String>? author,
+    Value<String>? body,
+    Value<int>? rowid,
+  }) {
+    return MonthLettersCompanion(
+      monthKey: monthKey ?? this.monthKey,
+      author: author ?? this.author,
+      body: body ?? this.body,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (monthKey.present) {
+      map['month_key'] = Variable<String>(monthKey.value);
+    }
+    if (author.present) {
+      map['author'] = Variable<String>(author.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MonthLettersCompanion(')
+          ..write('monthKey: $monthKey, ')
+          ..write('author: $author, ')
+          ..write('body: $body, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2200,6 +3236,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DayRecordsTable dayRecords = $DayRecordsTable(this);
   late final $LessonsTable lessons = $LessonsTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
+  late final $FamilyTodayEntriesTable familyTodayEntries =
+      $FamilyTodayEntriesTable(this);
+  late final $FamilyNotesTable familyNotes = $FamilyNotesTable(this);
+  late final $MonthLettersTable monthLetters = $MonthLettersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2211,6 +3251,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     dayRecords,
     lessons,
     settings,
+    familyTodayEntries,
+    familyNotes,
+    monthLetters,
   ];
 }
 
@@ -2621,6 +3664,7 @@ typedef $$PlansTableCreateCompanionBuilder = PlansCompanion Function({
   required String task,
   required String cue,
   Value<String?> why,
+  Value<String?> stuckPlan,
   Value<String?> outcome,
   Value<int> rowid,
 });
@@ -2632,6 +3676,7 @@ typedef $$PlansTableUpdateCompanionBuilder = PlansCompanion Function({
   Value<String> task,
   Value<String> cue,
   Value<String?> why,
+  Value<String?> stuckPlan,
   Value<String?> outcome,
   Value<int> rowid,
 });
@@ -2676,6 +3721,11 @@ class $$PlansTableFilterComposer extends Composer<_$AppDatabase, $PlansTable> {
 
   ColumnFilters<String> get why => $composableBuilder(
     column: $table.why,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stuckPlan => $composableBuilder(
+    column: $table.stuckPlan,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2729,6 +3779,11 @@ class $$PlansTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get stuckPlan => $composableBuilder(
+    column: $table.stuckPlan,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get outcome => $composableBuilder(
     column: $table.outcome,
     builder: (column) => ColumnOrderings(column),
@@ -2764,6 +3819,9 @@ class $$PlansTableAnnotationComposer
 
   GeneratedColumn<String> get why =>
       $composableBuilder(column: $table.why, builder: (column) => column);
+
+  GeneratedColumn<String> get stuckPlan =>
+      $composableBuilder(column: $table.stuckPlan, builder: (column) => column);
 
   GeneratedColumn<String> get outcome =>
       $composableBuilder(column: $table.outcome, builder: (column) => column);
@@ -2804,6 +3862,7 @@ class $$PlansTableTableManager
                 Value<String> task = const Value.absent(),
                 Value<String> cue = const Value.absent(),
                 Value<String?> why = const Value.absent(),
+                Value<String?> stuckPlan = const Value.absent(),
                 Value<String?> outcome = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PlansCompanion(
@@ -2814,6 +3873,7 @@ class $$PlansTableTableManager
                 task: task,
                 cue: cue,
                 why: why,
+                stuckPlan: stuckPlan,
                 outcome: outcome,
                 rowid: rowid,
               ),
@@ -2826,6 +3886,7 @@ class $$PlansTableTableManager
                 required String task,
                 required String cue,
                 Value<String?> why = const Value.absent(),
+                Value<String?> stuckPlan = const Value.absent(),
                 Value<String?> outcome = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PlansCompanion.insert(
@@ -2836,6 +3897,7 @@ class $$PlansTableTableManager
                 task: task,
                 cue: cue,
                 why: why,
+                stuckPlan: stuckPlan,
                 outcome: outcome,
                 rowid: rowid,
               ),
@@ -3459,6 +4521,604 @@ typedef $$SettingsTableProcessedTableManager =
       SettingRow,
       PrefetchHooks Function()
     >;
+typedef $$FamilyTodayEntriesTableCreateCompanionBuilder =
+    FamilyTodayEntriesCompanion Function({
+      required String id,
+      required String dayKey,
+      required String who,
+      required String body,
+      Value<int> rowid,
+    });
+typedef $$FamilyTodayEntriesTableUpdateCompanionBuilder =
+    FamilyTodayEntriesCompanion Function({
+      Value<String> id,
+      Value<String> dayKey,
+      Value<String> who,
+      Value<String> body,
+      Value<int> rowid,
+    });
+
+class $$FamilyTodayEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $FamilyTodayEntriesTable> {
+  $$FamilyTodayEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dayKey => $composableBuilder(
+    column: $table.dayKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get who => $composableBuilder(
+    column: $table.who,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FamilyTodayEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $FamilyTodayEntriesTable> {
+  $$FamilyTodayEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dayKey => $composableBuilder(
+    column: $table.dayKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get who => $composableBuilder(
+    column: $table.who,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FamilyTodayEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FamilyTodayEntriesTable> {
+  $$FamilyTodayEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get dayKey =>
+      $composableBuilder(column: $table.dayKey, builder: (column) => column);
+
+  GeneratedColumn<String> get who =>
+      $composableBuilder(column: $table.who, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+}
+
+class $$FamilyTodayEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FamilyTodayEntriesTable,
+          FamilyTodayRow,
+          $$FamilyTodayEntriesTableFilterComposer,
+          $$FamilyTodayEntriesTableOrderingComposer,
+          $$FamilyTodayEntriesTableAnnotationComposer,
+          $$FamilyTodayEntriesTableCreateCompanionBuilder,
+          $$FamilyTodayEntriesTableUpdateCompanionBuilder,
+          (
+            FamilyTodayRow,
+            BaseReferences<
+              _$AppDatabase,
+              $FamilyTodayEntriesTable,
+              FamilyTodayRow
+            >,
+          ),
+          FamilyTodayRow,
+          PrefetchHooks Function()
+        > {
+  $$FamilyTodayEntriesTableTableManager(
+    _$AppDatabase db,
+    $FamilyTodayEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FamilyTodayEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FamilyTodayEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FamilyTodayEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> dayKey = const Value.absent(),
+                Value<String> who = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FamilyTodayEntriesCompanion(
+                id: id,
+                dayKey: dayKey,
+                who: who,
+                body: body,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String dayKey,
+                required String who,
+                required String body,
+                Value<int> rowid = const Value.absent(),
+              }) => FamilyTodayEntriesCompanion.insert(
+                id: id,
+                dayKey: dayKey,
+                who: who,
+                body: body,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$FamilyTodayEntriesTable, FamilyTodayRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $FamilyTodayEntriesTable,
+                    FamilyTodayRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FamilyTodayEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FamilyTodayEntriesTable,
+      FamilyTodayRow,
+      $$FamilyTodayEntriesTableFilterComposer,
+      $$FamilyTodayEntriesTableOrderingComposer,
+      $$FamilyTodayEntriesTableAnnotationComposer,
+      $$FamilyTodayEntriesTableCreateCompanionBuilder,
+      $$FamilyTodayEntriesTableUpdateCompanionBuilder,
+      (
+        FamilyTodayRow,
+        BaseReferences<_$AppDatabase, $FamilyTodayEntriesTable, FamilyTodayRow>,
+      ),
+      FamilyTodayRow,
+      PrefetchHooks Function()
+    >;
+typedef $$FamilyNotesTableCreateCompanionBuilder =
+    FamilyNotesCompanion Function({
+      required String id,
+      required String dayKey,
+      required String who,
+      required String body,
+      required DateTime createdAt,
+      Value<bool> childRead,
+      Value<int> rowid,
+    });
+typedef $$FamilyNotesTableUpdateCompanionBuilder =
+    FamilyNotesCompanion Function({
+      Value<String> id,
+      Value<String> dayKey,
+      Value<String> who,
+      Value<String> body,
+      Value<DateTime> createdAt,
+      Value<bool> childRead,
+      Value<int> rowid,
+    });
+
+class $$FamilyNotesTableFilterComposer
+    extends Composer<_$AppDatabase, $FamilyNotesTable> {
+  $$FamilyNotesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dayKey => $composableBuilder(
+    column: $table.dayKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get who => $composableBuilder(
+    column: $table.who,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get childRead => $composableBuilder(
+    column: $table.childRead,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FamilyNotesTableOrderingComposer
+    extends Composer<_$AppDatabase, $FamilyNotesTable> {
+  $$FamilyNotesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dayKey => $composableBuilder(
+    column: $table.dayKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get who => $composableBuilder(
+    column: $table.who,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get childRead => $composableBuilder(
+    column: $table.childRead,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FamilyNotesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FamilyNotesTable> {
+  $$FamilyNotesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get dayKey =>
+      $composableBuilder(column: $table.dayKey, builder: (column) => column);
+
+  GeneratedColumn<String> get who =>
+      $composableBuilder(column: $table.who, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get childRead =>
+      $composableBuilder(column: $table.childRead, builder: (column) => column);
+}
+
+class $$FamilyNotesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FamilyNotesTable,
+          FamilyNoteRow,
+          $$FamilyNotesTableFilterComposer,
+          $$FamilyNotesTableOrderingComposer,
+          $$FamilyNotesTableAnnotationComposer,
+          $$FamilyNotesTableCreateCompanionBuilder,
+          $$FamilyNotesTableUpdateCompanionBuilder,
+          (
+            FamilyNoteRow,
+            BaseReferences<_$AppDatabase, $FamilyNotesTable, FamilyNoteRow>,
+          ),
+          FamilyNoteRow,
+          PrefetchHooks Function()
+        > {
+  $$FamilyNotesTableTableManager(_$AppDatabase db, $FamilyNotesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FamilyNotesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FamilyNotesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FamilyNotesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> dayKey = const Value.absent(),
+                Value<String> who = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> childRead = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FamilyNotesCompanion(
+                id: id,
+                dayKey: dayKey,
+                who: who,
+                body: body,
+                createdAt: createdAt,
+                childRead: childRead,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String dayKey,
+                required String who,
+                required String body,
+                required DateTime createdAt,
+                Value<bool> childRead = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FamilyNotesCompanion.insert(
+                id: id,
+                dayKey: dayKey,
+                who: who,
+                body: body,
+                createdAt: createdAt,
+                childRead: childRead,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$FamilyNotesTable, FamilyNoteRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $FamilyNotesTable,
+                    FamilyNoteRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FamilyNotesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FamilyNotesTable,
+      FamilyNoteRow,
+      $$FamilyNotesTableFilterComposer,
+      $$FamilyNotesTableOrderingComposer,
+      $$FamilyNotesTableAnnotationComposer,
+      $$FamilyNotesTableCreateCompanionBuilder,
+      $$FamilyNotesTableUpdateCompanionBuilder,
+      (
+        FamilyNoteRow,
+        BaseReferences<_$AppDatabase, $FamilyNotesTable, FamilyNoteRow>,
+      ),
+      FamilyNoteRow,
+      PrefetchHooks Function()
+    >;
+typedef $$MonthLettersTableCreateCompanionBuilder =
+    MonthLettersCompanion Function({
+      required String monthKey,
+      required String author,
+      required String body,
+      Value<int> rowid,
+    });
+typedef $$MonthLettersTableUpdateCompanionBuilder =
+    MonthLettersCompanion Function({
+      Value<String> monthKey,
+      Value<String> author,
+      Value<String> body,
+      Value<int> rowid,
+    });
+
+class $$MonthLettersTableFilterComposer
+    extends Composer<_$AppDatabase, $MonthLettersTable> {
+  $$MonthLettersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get monthKey => $composableBuilder(
+    column: $table.monthKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get author => $composableBuilder(
+    column: $table.author,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MonthLettersTableOrderingComposer
+    extends Composer<_$AppDatabase, $MonthLettersTable> {
+  $$MonthLettersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get monthKey => $composableBuilder(
+    column: $table.monthKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get author => $composableBuilder(
+    column: $table.author,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MonthLettersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MonthLettersTable> {
+  $$MonthLettersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get monthKey =>
+      $composableBuilder(column: $table.monthKey, builder: (column) => column);
+
+  GeneratedColumn<String> get author =>
+      $composableBuilder(column: $table.author, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+}
+
+class $$MonthLettersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MonthLettersTable,
+          MonthLetterRow,
+          $$MonthLettersTableFilterComposer,
+          $$MonthLettersTableOrderingComposer,
+          $$MonthLettersTableAnnotationComposer,
+          $$MonthLettersTableCreateCompanionBuilder,
+          $$MonthLettersTableUpdateCompanionBuilder,
+          (
+            MonthLetterRow,
+            BaseReferences<_$AppDatabase, $MonthLettersTable, MonthLetterRow>,
+          ),
+          MonthLetterRow,
+          PrefetchHooks Function()
+        > {
+  $$MonthLettersTableTableManager(_$AppDatabase db, $MonthLettersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MonthLettersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MonthLettersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MonthLettersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> monthKey = const Value.absent(),
+                Value<String> author = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MonthLettersCompanion(
+                monthKey: monthKey,
+                author: author,
+                body: body,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String monthKey,
+                required String author,
+                required String body,
+                Value<int> rowid = const Value.absent(),
+              }) => MonthLettersCompanion.insert(
+                monthKey: monthKey,
+                author: author,
+                body: body,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$MonthLettersTable, MonthLetterRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $MonthLettersTable,
+                    MonthLetterRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MonthLettersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MonthLettersTable,
+      MonthLetterRow,
+      $$MonthLettersTableFilterComposer,
+      $$MonthLettersTableOrderingComposer,
+      $$MonthLettersTableAnnotationComposer,
+      $$MonthLettersTableCreateCompanionBuilder,
+      $$MonthLettersTableUpdateCompanionBuilder,
+      (
+        MonthLetterRow,
+        BaseReferences<_$AppDatabase, $MonthLettersTable, MonthLetterRow>,
+      ),
+      MonthLetterRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3475,4 +5135,10 @@ class $AppDatabaseManager {
       $$LessonsTableTableManager(_db, _db.lessons);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db, _db.settings);
+  $$FamilyTodayEntriesTableTableManager get familyTodayEntries =>
+      $$FamilyTodayEntriesTableTableManager(_db, _db.familyTodayEntries);
+  $$FamilyNotesTableTableManager get familyNotes =>
+      $$FamilyNotesTableTableManager(_db, _db.familyNotes);
+  $$MonthLettersTableTableManager get monthLetters =>
+      $$MonthLettersTableTableManager(_db, _db.monthLetters);
 }

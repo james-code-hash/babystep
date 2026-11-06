@@ -20,6 +20,33 @@ abstract final class PathCopy {
     '你想好第一件事的那天，這裡會出現第一塊石頭。',
   );
 
+  // ---------------------------------------------------------------- 換個樣子（J3）
+  static const styleAsk = Line('想用什麼樣子看？', '換個樣子');
+  static const stylePath = Line('🪨 小路', '小路');
+  static const styleTree = Line('🌳 一棵樹', '一棵樹');
+  static const styleSky = Line('✨ 星空', '星空');
+
+  static const introTree = Line(
+    '每一天你想好要做什麼，樹上就多長一片葉子。',
+    '你想好要做什麼的日子，都會長成一片葉子。',
+  );
+  static const introSky = Line(
+    '每一天你想好要做什麼，天上就多亮一顆星星。',
+    '你想好要做什麼的日子，都會變成一顆星星。',
+  );
+
+  static const emptyTree = Line(
+    '你想好第一件小事的那天，樹上就會長出第一片葉子喔。',
+    '你想好第一件事的那天，樹上會長出第一片葉子。',
+  );
+  static const emptySky = Line(
+    '你想好第一件小事的那天，天上就會亮起第一顆星星喔。',
+    '你想好第一件事的那天，天上會亮起第一顆星星。',
+  );
+
+  /// 葉子／星星的提示（長按或指著看）：日期＋那天第一件事。
+  static const markTip = Line.same('{m}/{d} {task}');
+
   static const insightsTitle = Line('步步發現', '一些發現');
 
   static const mostUsedCue = Line(

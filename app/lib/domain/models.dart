@@ -92,6 +92,7 @@ class Plan {
     required this.task,
     required this.cue,
     this.why,
+    this.stuck,
     this.outcome,
   });
 
@@ -106,6 +107,9 @@ class Plan {
   /// 「如果⋯」那一槽，以「我」開頭。
   final String cue;
   final String? why;
+
+  /// 「如果卡住了，我就⋯」那一槽（簡潔模式的 MCII，可以沒有）。
+  final String? stuck;
   final Outcome? outcome;
 
   /// 「如果我吃完晚飯，我就寫數學」。
@@ -119,6 +123,7 @@ class Plan {
         task: task,
         cue: cue,
         why: why ?? this.why,
+        stuck: stuck,
         outcome: outcome ?? this.outcome,
       );
 
@@ -130,17 +135,19 @@ class Plan {
         'task': task,
         'cue': cue,
         'why': why,
+        'stuck': stuck,
         'outcome': outcome?.name,
       };
 }
 
 /// 計畫草稿（還沒存進資料庫）。
 class PlanDraft {
-  const PlanDraft({required this.emoji, required this.task, required this.cue, this.why});
+  const PlanDraft({required this.emoji, required this.task, required this.cue, this.why, this.stuck});
   final String emoji;
   final String task;
   final String cue;
   final String? why;
+  final String? stuck;
 }
 
 /// 一天的紀錄：晚上的反思原話與結束時間。
@@ -246,6 +253,9 @@ class ReminderSlot {
 }
 
 /// 設定。注意：沒有「上次開啟」之類的欄位。
+/// 成長軌跡的樣子（J3）：孩子自己選。每一種都只畫有計畫的日子，一天一個記號，沒有空洞。
+enum TrailStyle { path, tree, sky }
+
 class AppSettings {
   const AppSettings({
     this.tone = AgeTone.lively,
@@ -253,6 +263,8 @@ class AppSettings {
     this.reminderSlots = const [],
     this.parentPin,
     this.onboarded = false,
+    this.familyNotesOn = true,
+    this.trailStyle = TrailStyle.path,
   });
 
   final AgeTone tone;
@@ -263,12 +275,20 @@ class AppSettings {
   final String? parentPin;
   final bool onboarded;
 
+  /// 孩子要不要讓步步轉達家人的留言（孩子在自己的設定裡關；家長端看不到這個開關，§4.11）。
+  final bool familyNotesOn;
+
+  /// 「我的小路」用哪一種樣子畫（孩子在小路頁上自己換）。
+  final TrailStyle trailStyle;
+
   AppSettings copyWith({
     AgeTone? tone,
     bool? llmEnabled,
     List<ReminderSlot>? reminderSlots,
     String? parentPin,
     bool? onboarded,
+    bool? familyNotesOn,
+    TrailStyle? trailStyle,
   }) =>
       AppSettings(
         tone: tone ?? this.tone,
@@ -276,5 +296,67 @@ class AppSettings {
         reminderSlots: reminderSlots ?? this.reminderSlots,
         parentPin: parentPin ?? this.parentPin,
         onboarded: onboarded ?? this.onboarded,
+        familyNotesOn: familyNotesOn ?? this.familyNotesOn,
+        trailStyle: trailStyle ?? this.trailStyle,
       );
 }
+
+/// 全家一起：一位家人今天自己想做的一件事（企劃書 §9.5）。家長在家長區寫；沒有「做到了沒」。
+class FamilyToday {
+  const FamilyToday({required this.id, required this.dayKey, required this.who, required this.text});
+  final String id;
+  final String dayKey;
+
+  /// 誰（爸爸、媽媽、阿嬤⋯⋯）。
+  final String who;
+  final String text;
+
+  Map<String, Object?> toJson() => {'id': id, 'dayKey': dayKey, 'who': who, 'text': text};
+}
+
+/// 家人留給孩子的一句話，由步步轉達（文案庫 §4.11）。
+class FamilyNote {
+  const FamilyNote({
+    required this.id,
+    required this.dayKey,
+    required this.who,
+    required this.text,
+    required this.createdAt,
+    this.childRead = false,
+  });
+  final String id;
+  final String dayKey;
+  final String who;
+  final String text;
+  final DateTime createdAt;
+
+  /// 只給孩子這一端用：決定首頁還要不要轉達。家長端看不到（沒有已讀回條，底線 7）。
+  final bool childRead;
+
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'dayKey': dayKey,
+        'who': who,
+        'text': text,
+        'createdAt': createdAt.toIso8601String(),
+        'childRead': childRead,
+      };
+}
+
+/// 月回顧的信是誰寫的（J4）。
+enum LetterAuthor { child, parent }
+
+/// 月回顧的一封信：這個月孩子給家人、或家人給孩子的一句話。
+class MonthLetter {
+  const MonthLetter({required this.monthKey, required this.author, required this.text});
+
+  /// 'YYYY-MM'
+  final String monthKey;
+  final LetterAuthor author;
+  final String text;
+
+  Map<String, Object?> toJson() => {'monthKey': monthKey, 'author': author.name, 'text': text};
+}
+
+/// 'YYYY-MM'
+String monthKeyOf(DateTime t) => '${t.year.toString().padLeft(4, '0')}-${t.month.toString().padLeft(2, '0')}';

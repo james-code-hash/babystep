@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../bubu/bubu_view.dart';
+import '../../copy/family.dart';
 import '../../copy/settings.dart';
 import '../../core/routes.dart';
 import '../../core/layout.dart';
@@ -34,6 +35,16 @@ class ChildSettingsScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpace.s),
               ],
               const SizedBox(height: AppSpace.l),
+              Card(
+                child: SwitchListTile(
+                  key: const ValueKey('family-notes-switch'),
+                  title: Text(FamilyCopy.settingTitle.of(tone), style: text.titleMedium),
+                  subtitle: Text(FamilyCopy.settingHint.of(tone)),
+                  value: ref.watch(settingsProvider).value?.familyNotesOn ?? true,
+                  onChanged: (v) => ref.read(repositoryProvider).setFamilyNotesOn(v),
+                ),
+              ),
+              const SizedBox(height: AppSpace.m),
               Card(
                 child: ListTile(
                   key: const ValueKey('open-dress-up'),
@@ -89,6 +100,11 @@ class _ToneOption extends ConsumerWidget {
                       Text(label.of(option), style: text.titleMedium),
                       const SizedBox(height: AppSpace.xs),
                       Text(preview.of(option), key: ValueKey('tone-preview-${option.name}'), style: text.bodyMedium),
+                      const SizedBox(height: AppSpace.xs),
+                      Text(
+                        (option == AgeTone.lively ? SettingsCopy.livelyDetail : SettingsCopy.conciseDetail).of(option),
+                        style: text.bodySmall?.copyWith(color: AppColors.inkSoft),
+                      ),
                     ],
                   ),
                 ),

@@ -41,11 +41,14 @@ abstract final class PlanCopy {
   // ------------------------------------------------------------ 2. 選 1–3 件事（§4.3）
 
   /// `{max}` 是每天最多幾件。
-  static const chooseAsk = Line('今天你想做哪幾件事？最多 {max} 件就好，排太多會趕。', '今天想做哪幾件事？最多 {max} 件。');
+  static const chooseAsk = Line('今天你想做哪幾件事？一兩件就很夠了，最多 {max} 件。', '今天想做哪幾件事？最多 {max} 件。');
   static const sectionMine = Line('你自己寫過的', '自己寫過的');
   static const sectionPreset = Line('常見的事', '常見的事');
   static const sectionParent = Line('家長的建議，可以不選', '家長的建議，可以不選');
   static const chooseOne = Line('一件也可以，這樣比較不會趕。', '一件也可以，這樣比較不會趕。');
+
+  /// 活潑模式（6–8 歲）選到建議的件數時：軟性的提示，還是可以再加（I3）。
+  static const chooseEnough = Line('兩件就很夠了喔。想再加一件也可以。', '兩件就夠了，想加也可以。');
   static const chooseFull = Line('今天先排 {max} 件就好。想換的話，先取消一件。', '最多 {max} 件。想換的話，先取消一件。');
 
   static const customTaskHint = Line('你想做什麼？', '想做什麼？');
@@ -77,11 +80,61 @@ abstract final class PlanCopy {
   static const whyDontKnowReply = Line('有時候就是還沒想到。先做做看，說不定做完就知道了。', '還沒想到也可以。做完說不定就知道了。');
   static const whyHeard = Line('嗯，步步記住你的想法了。', '嗯，知道了。');
 
+  // ------------------------------------------------------------ 4b. 卡住的時候（簡潔模式的 MCII，可跳過；I3）
+
+  /// `{task}` 是這件事。
+  static const stuckAsk = Line(
+    '「{task}」做到一半卡住的話，你想怎麼辦？先想一個備著，不想也可以。',
+    '「{task}」如果做到一半卡住，你打算怎麼辦？先想好一個，不想也可以跳過。',
+  );
+  static const stuckSlot = Line.same('卡住的話，我就⋯');
+  static const stuckOneMinute = Line.same('先做一分鐘看看');
+  static const stuckBreathe = Line.same('先深呼吸三次');
+  static const stuckEasyFirst = Line.same('換個順序，先做簡單的');
+  static const stuckBreak = Line.same('先休息五分鐘再回來');
+  static const stuckAsk2 = Line.same('找人問一下');
+  static const stuckHint = Line('卡住的話，我就⋯', '卡住的話，我就⋯');
+  static const stuckHeard = Line('嗯，有備案了。', '有備案了。');
+
+  /// 確認頁、首頁計畫卡上的第二行。
+  static const stuckLine = Line.same('卡住的話，我就{stuck}');
+
   // ------------------------------------------------------------ 5. 確認（§4.4 完成時）
 
   static const confirmTitle = Line('好，寫下來了。這是你自己排的喔。', '好，寫下來了。這是你自己排的。');
   static const confirmSave = Line('就這樣排', '就這樣');
   static const confirmEdit = Line('回去改一下', '回去改');
+
+  // ------------------------------------------------------------ 圖像提示（活潑模式，I3）
+
+  /// 時間點的小圖示：依關鍵字猜，猜不到就不放。只是視覺提示，不改變文字。
+  static const _cueIcons = <(String, String)>[
+    ('起床', '🌅'),
+    ('早餐', '🍳'),
+    ('午餐', '🍱'),
+    ('晚飯', '🍚'),
+    ('晚餐', '🍚'),
+    ('吃完', '🍚'),
+    ('放學', '🎒'),
+    ('回到家', '🏠'),
+    ('洗完澡', '🛁'),
+    ('洗澡', '🛁'),
+    ('刷牙', '🪥'),
+    ('睡', '🌙'),
+    ('喝', '💧'),
+    ('衣服', '👕'),
+    ('功課', '📒'),
+    ('作業', '📒'),
+    ('卡通', '📺'),
+    ('電視', '📺'),
+  ];
+
+  static String? cueIcon(String cue) {
+    for (final (word, icon) in _cueIcons) {
+      if (cue.contains(word)) return icon;
+    }
+    return null;
+  }
 
   // ------------------------------------------------------------ 今天已經聊完
 

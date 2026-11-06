@@ -181,6 +181,9 @@ class _ReviewFlowScreenState extends ConsumerState<ReviewFlowScreen> {
 
   Widget _questionStep(BuildContext context, AgeTone tone, ReviewState s) {
     final text = Theme.of(context).textTheme;
+    // 分齡（I3）：簡潔模式（9–12 歲）一開始就給寫字的框，短答案是備用；
+    // 活潑模式（6–8 歲）短答案在前、帶圖示，寫字要自己點開。
+    final writing = _writing || tone == AgeTone.concise;
     final question = _BubuSays(text: s.question!.of(tone), key: const ValueKey('review-question'));
     return _Scroll(
       gap: AppSpace.l,
@@ -202,23 +205,28 @@ class _ReviewFlowScreenState extends ConsumerState<ReviewFlowScreen> {
             for (final (i, c) in s.chips.indexed)
               ActionChip(
                 key: ValueKey('review-chip-$i'),
+                avatar: tone == AgeTone.lively && ReviewCopy.chipIcon(c) != null
+                    ? Text(ReviewCopy.chipIcon(c)!)
+                    : null,
                 label: Text(c.of(tone)),
                 onPressed: _checking ? null : () => _submit(c.of(tone)),
               ),
-            ActionChip(
-              key: const ValueKey('review-write'),
-              avatar: const Icon(Icons.edit_outlined, size: 18),
-              label: Text(ReviewCopy.writeOwn.of(tone)),
-              onPressed: () => setState(() => _writing = true),
-            ),
+            // 小探險家的輸入框一直都在，不需要「寫我自己的」。
+            if (tone != AgeTone.concise)
+              ActionChip(
+                key: const ValueKey('review-write'),
+                avatar: const Icon(Icons.edit_outlined, size: 18),
+                label: Text(ReviewCopy.writeOwn.of(tone)),
+                onPressed: () => setState(() => _writing = true),
+              ),
           ],
         ),
-        if (_writing) ...[
+        if (writing) ...[
           const SizedBox(height: AppSpace.m),
           TextField(
             key: const ValueKey('review-text'),
             controller: _text,
-            autofocus: true,
+            autofocus: _writing,
             minLines: 2,
             maxLines: 4,
             inputFormatters: [LengthLimitingTextInputFormatter(AppConfig.maxReflectionChars)],
