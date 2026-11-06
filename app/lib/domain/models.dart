@@ -266,6 +266,7 @@ class AppSettings {
     this.familyNotesOn = true,
     this.trailStyle = TrailStyle.path,
     this.petName,
+    this.readAloud = false,
   });
 
   final AgeTone tone;
@@ -285,6 +286,9 @@ class AppSettings {
   /// 孩子幫步步取的名字；null ＝還叫「步步」（D6）。
   final String? petName;
 
+  /// 步步的對話泡泡旁邊要不要有「唸出來」（孩子在自己的設定裡開，I6）。
+  final bool readAloud;
+
   AppSettings copyWith({
     AgeTone? tone,
     bool? llmEnabled,
@@ -294,6 +298,7 @@ class AppSettings {
     bool? familyNotesOn,
     TrailStyle? trailStyle,
     String? petName,
+    bool? readAloud,
   }) =>
       AppSettings(
         tone: tone ?? this.tone,
@@ -304,6 +309,7 @@ class AppSettings {
         familyNotesOn: familyNotesOn ?? this.familyNotesOn,
         trailStyle: trailStyle ?? this.trailStyle,
         petName: petName ?? this.petName,
+        readAloud: readAloud ?? this.readAloud,
       );
 }
 

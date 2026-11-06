@@ -9,6 +9,7 @@ import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../providers.dart';
 import 'pet_name.dart';
+import '../read_aloud/read_aloud.dart';
 
 enum _Step { hello, name, done }
 
@@ -77,7 +78,10 @@ class _FirstMeetingScreenState extends ConsumerState<FirstMeetingScreen> {
                         borderRadius: BorderRadius.circular(AppRadius.card),
                         border: Border.all(color: AppColors.line),
                       ),
-                      child: Text(says, style: text.bodyLarge, textAlign: TextAlign.center),
+                      child: ReadAloud(
+                        text: says,
+                        child: Text(says, style: text.bodyLarge, textAlign: TextAlign.center),
+                      ),
                     ),
                     const SizedBox(height: AppSpace.l),
                     action,

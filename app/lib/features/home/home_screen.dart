@@ -20,6 +20,7 @@ import '../../domain/models.dart';
 import '../../providers.dart';
 import '../onboarding/first_meeting_screen.dart';
 import 'peek_counter.dart';
+import '../read_aloud/read_aloud.dart';
 
 /// 首頁：步步＋問候、今天的計畫卡、唯一一個主要按鈕（依今天的狀態）、安靜的次要導覽。
 ///
@@ -356,7 +357,10 @@ class _Bubble extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(color: AppColors.line),
           ),
-          child: Text(text, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
+          child: ReadAloud(
+            text: text,
+            child: Text(text, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
+          ),
         ),
       );
 }
