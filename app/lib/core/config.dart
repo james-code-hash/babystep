@@ -166,3 +166,12 @@ abstract final class ExploreConfig {
   /// 筆畫粗細（dp）。
   static const double strokeWidth = 6;
 }
+
+/// 驚喜盒（J2）。
+abstract final class SurpriseConfig {
+  /// 某一天探索角出現驚喜盒的機率（依日期決定，同一天都一樣）。
+  static const double boxChance = 0.35;
+
+  /// 首頁輕點步步後，小反應停留的毫秒數。
+  static const int pokeMs = 2200;
+}

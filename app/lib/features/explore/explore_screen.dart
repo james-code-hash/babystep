@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../bubu/bubu_view.dart';
+import '../../bubu/surprise.dart';
+import '../../copy/line.dart';
 import '../../copy/explore.dart';
+import '../../copy/surprise.dart';
 import '../../core/clock.dart';
 import '../../core/config.dart';
 import '../../core/layout.dart';
@@ -16,9 +19,10 @@ int curioIndexFor(DateTime now) {
   return day.difference(DateTime.utc(1970)).inDays % ExploreCopy.curios.length;
 }
 
-/// 探索角（企劃書模組五）：每日一個小疑問＋塗鴉送給步步。
+/// 探索角（企劃書模組五）：每日一個小疑問、有些日子的驚喜盒、塗鴉送給步步。
 ///
 /// 刻意沒有：對錯、分數、看過幾題、「完成探索」。這一頁不讀計畫、回顧、筆記，也不寫任何東西。
+/// 驚喜盒哪天出現只看日期（[surpriseBoxOn]），不是做完什麼的獎勵。
 class ExploreScreen extends ConsumerWidget {
   const ExploreScreen({super.key});
 
@@ -26,6 +30,7 @@ class ExploreScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tone = ref.watch(toneProvider);
     final text = Theme.of(context).textTheme;
+    final box = surpriseBoxOn(ref.watch(clockProvider).now());
     return Scaffold(
       appBar: AppBar(title: Text(ExploreCopy.title.of(tone))),
       body: SafeArea(
@@ -38,6 +43,10 @@ class ExploreScreen extends ConsumerWidget {
               const SizedBox(height: AppSpace.m),
               _CurioCard(tone: tone),
               const SizedBox(height: AppSpace.m),
+              if (box) ...[
+                _SurpriseCard(tone: tone),
+                const SizedBox(height: AppSpace.m),
+              ],
               _DrawCard(tone: tone),
             ],
           ),
@@ -128,6 +137,81 @@ class _CurioCardState extends ConsumerState<_CurioCard> {
                 child: Text(ExploreCopy.curioAnother.of(tone)),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ------------------------------------------------------------------ 驚喜盒
+
+class _SurpriseCard extends ConsumerStatefulWidget {
+  const _SurpriseCard({required this.tone});
+  final AgeTone tone;
+
+  @override
+  ConsumerState<_SurpriseCard> createState() => _SurpriseCardState();
+}
+
+class _SurpriseCardState extends ConsumerState<_SurpriseCard> {
+  /// 打開後看到的（只在記憶體）。
+  (Line, BubuExpression)? _inside;
+
+  void _shake() => setState(() => _inside = pickSurprise(ref.read(randomProvider)));
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = widget.tone;
+    final text = Theme.of(context).textTheme;
+    final inside = _inside;
+    return Card(
+      key: const ValueKey('surprise-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpace.m),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(SurpriseCopy.boxTitle.of(tone), style: text.titleMedium),
+            const SizedBox(height: AppSpace.s),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, a) => ScaleTransition(scale: a, child: child),
+              child: inside == null
+                  ? Column(
+                      key: const ValueKey('surprise-closed'),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(SurpriseCopy.boxHint.of(tone), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
+                        const SizedBox(height: AppSpace.s),
+                        FilledButton.tonalIcon(
+                          key: const ValueKey('surprise-box'),
+                          onPressed: _shake,
+                          icon: const Icon(Icons.card_giftcard),
+                          label: Text(SurpriseCopy.boxOpen.of(tone)),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      key: ValueKey('surprise-open-${inside.$1.lively}'),
+                      children: [
+                        BubuView(expression: inside.$2, size: 88),
+                        const SizedBox(width: AppSpace.s),
+                        Expanded(
+                          child: Text(inside.$1.of(tone), key: const ValueKey('surprise-story'), style: text.bodyLarge),
+                        ),
+                      ],
+                    ),
+            ),
+            if (inside != null)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  key: const ValueKey('surprise-again'),
+                  onPressed: _shake,
+                  child: Text(SurpriseCopy.boxAgain.of(tone)),
+                ),
+              ),
           ],
         ),
       ),

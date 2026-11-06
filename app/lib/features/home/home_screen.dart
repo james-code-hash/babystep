@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,7 @@ import '../../bubu/greeting.dart';
 import '../../copy/family.dart';
 import '../../copy/home.dart';
 import '../../copy/plan.dart';
+import '../../copy/surprise.dart';
 import '../../core/clock.dart';
 import '../../core/config.dart';
 import '../../core/layout.dart';
@@ -55,6 +58,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   /// 輸入變了、而且這次還沒探頭過，就重新決定一次（G6、H1）。
   String? _peekInputs;
 
+  /// 輕點步步的小反應（隱藏互動，J2）：一句話＋驚訝的臉，過一下就回到原樣。不記錄。
+  String? _poke;
+  Timer? _pokeTimer;
+
+  void _pokeBubu(AgeTone tone) {
+    _pokeTimer?.cancel();
+    setState(() => _poke = SurpriseCopy.pokes.pick(tone, ref.read(randomProvider)));
+    _pokeTimer = Timer(const Duration(milliseconds: SurpriseConfig.pokeMs), () {
+      if (mounted) setState(() => _poke = null);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +79,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _pokeTimer?.cancel();
     super.dispose();
   }
 
@@ -173,23 +189,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final peekVisible = loaded && _peekShown && plans.isNotEmpty && !ended;
     final peekAsking = peekVisible && _peekReply == null;
 
-    // 只看時段；探頭問題正顯示著時歪頭等回答（底線 2）。
-    final expression = peekAsking ? BubuExpression.curious : restingExpression(ref.watch(clockProvider).now());
+    // 只看時段；探頭問題正顯示著時歪頭等回答；被輕點時嚇一跳（底線 2）。
+    final poke = _poke;
+    final expression = poke != null
+        ? BubuExpression.surprised
+        : peekAsking
+            ? BubuExpression.curious
+            : restingExpression(ref.watch(clockProvider).now());
 
-    final bubbleText = ended ? HomeCopy.dayEndedBubu.of(tone) : _greetingFor(tone);
+    final bubbleText = poke ?? (ended ? HomeCopy.dayEndedBubu.of(tone) : _greetingFor(tone));
+    Widget bubu(double size) => GestureDetector(
+          key: const ValueKey('home-bubu'),
+          onTap: () => _pokeBubu(tone),
+          child: BubuView(expression: expression, size: size),
+        );
     // 窄版：和原本一樣在最上面；寬版（平板橫放）：自成一欄。
     Widget side(BuildContext context, bool wide) => Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: wide
               ? [
-                  Center(child: BubuView(expression: expression, size: LayoutConfig.bubuSidePane)),
+                  Center(child: bubu(LayoutConfig.bubuSidePane)),
                   const SizedBox(height: AppSpace.m),
                   _Bubble(text: bubbleText),
                 ]
               : [
                   const SizedBox(height: AppSpace.m),
-                  Center(child: BubuView(expression: expression, size: Layout.bubu(context, BubuSlot.hero))),
+                  Center(child: bubu(Layout.bubu(context, BubuSlot.hero))),
                   const SizedBox(height: AppSpace.m),
                   _Bubble(text: bubbleText),
                   const SizedBox(height: AppSpace.l),
