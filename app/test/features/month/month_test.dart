@@ -7,6 +7,7 @@ import 'package:little_steps/copy/month.dart';
 import 'package:little_steps/data/repository.dart';
 import 'package:little_steps/domain/models.dart';
 import 'package:little_steps/features/month/month_screen.dart';
+import 'package:little_steps/providers.dart';
 import 'package:little_steps/safety/safety_response.dart';
 
 import '../../helpers/test_app.dart';
@@ -16,6 +17,14 @@ void _tall(WidgetTester tester) {
   tester.view.physicalSize = const Size(1080, 2600);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
+}
+
+/// 存信會失敗的 repository（例如磁碟滿了）。
+class _FailingLetters extends Repository {
+  _FailingLetters(TestEnv env) : super(env.db, clock: env.clock);
+  @override
+  Future<void> saveMonthLetter(String monthKey, LetterAuthor author, String text) async =>
+      throw StateError('disk full');
 }
 
 const _read = PlanDraft(emoji: '📖', task: '看一本書', cue: '我吃完晚飯');
@@ -86,6 +95,41 @@ void main() {
     view = (await tester.runAsync(env.repo.parentView))!;
     expect(view.monthLetters, isEmpty);
     expect(find.byKey(const ValueKey('month-letter-field')), findsOneWidget);
+    await finishTest(tester, env);
+  });
+
+  testWidgets('"change it" can be cancelled: the sentence stays as it was', (tester) async {
+    _tall(tester);
+    final env = await _seeded();
+    await env.repo.saveMonthLetter('2026-10', LetterAuthor.child, '謝謝你們陪我練琴');
+    await pumpScreen(tester, env, const MonthScreen());
+    await settleAll(tester);
+    expect(find.byKey(const ValueKey('month-letter-cancel')), findsNothing, reason: 'nothing to go back to yet');
+    await tester.tap(find.byKey(const ValueKey('month-letter-edit')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('month-letter-field')), '算了');
+    await tester.tap(find.byKey(const ValueKey('month-letter-cancel')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('month-letter-field')), findsNothing);
+    expect(find.descendant(of: find.byKey(const ValueKey('month-letter-child')), matching: find.text('謝謝你們陪我練琴')),
+        findsOneWidget);
+    expect((await tester.runAsync(env.repo.monthLetters))!.single.text, '謝謝你們陪我練琴');
+    await finishTest(tester, env);
+  });
+
+  testWidgets('if saving fails, the button comes back so the child can try again', (tester) async {
+    _tall(tester);
+    final env = await _seeded();
+    await pumpScreen(tester, env, const MonthScreen(),
+        extra: [repositoryProvider.overrideWithValue(_FailingLetters(env))]);
+    await settleAll(tester);
+    await tester.enterText(find.byKey(const ValueKey('month-letter-field')), '謝謝你們陪我練琴');
+    await tester.tap(find.byKey(const ValueKey('month-letter-save')));
+    await settleAll(tester);
+    expect(tester.takeException(), isA<StateError>());
+    final save = tester.widget<FilledButton>(find.byKey(const ValueKey('month-letter-save')));
+    expect(save.onPressed, isNotNull);
+    expect(find.text('謝謝你們陪我練琴'), findsOneWidget, reason: 'the words stay so the child can try again');
     await finishTest(tester, env);
   });
 

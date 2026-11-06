@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../copy/path.dart';
@@ -126,7 +127,12 @@ class _TreePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_TreePainter old) => old.layout != layout;
+  bool shouldRepaint(_TreePainter old) =>
+      // record 的 == 對 List 只比是不是同一個物件，每次 build 都是新的 List，所以要逐一比。
+      old.layout.crown != layout.crown ||
+      old.layout.height != layout.height ||
+      old.layout.radiusY != layout.radiusY ||
+      !listEquals(old.layout.leaves, layout.leaves);
 }
 
 /// 樹上的葉子或天上的星星。同一種樣子裡每一個都長得一樣：只有那天第一件事的圖示。

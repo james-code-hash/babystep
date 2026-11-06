@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../bubu/bubu_view.dart';
+import '../../copy/common.dart';
 import '../../copy/month.dart';
 import '../../copy/path.dart';
 import '../../core/clock.dart';
@@ -204,17 +205,27 @@ class _LettersState extends ConsumerState<_Letters> {
     final text = _controller.text.trim();
     if (text.isEmpty || _busy) return;
     setState(() => _busy = true);
-    // 孩子的自由輸入：先過危機偵測，不過就不存（底線 9）。
-    final ok = await passesSafetyCheck(context, ref, text);
-    if (!mounted) return;
-    if (ok) await ref.read(repositoryProvider).saveMonthLetter(widget.month, LetterAuthor.child, text);
-    if (!mounted) return;
-    _controller.clear();
-    setState(() {
-      _busy = false;
+    try {
+      // 孩子的自由輸入：先過危機偵測，不過就不存（底線 9）。
+      final ok = await passesSafetyCheck(context, ref, text);
+      if (!mounted) return;
+      if (ok) await ref.read(repositoryProvider).saveMonthLetter(widget.month, LetterAuthor.child, text);
+      if (!mounted) return;
+      _controller.clear();
       if (ok) _editing = false;
-    });
+    } catch (e, st) {
+      // 存不進去（例如磁碟滿了）：字留在框裡，按鈕回來，可以再按一次。
+      FlutterError.reportError(FlutterErrorDetails(exception: e, stack: st, library: 'month letters'));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
+
+  /// 「改一下」之後反悔：回到原本那一句，什麼都不動。
+  void _cancelEdit() => setState(() {
+        _editing = false;
+        _controller.clear();
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -286,13 +297,21 @@ class _LettersState extends ConsumerState<_Letters> {
                 decoration: InputDecoration(labelText: MonthCopy.childField.of(tone)),
                 onSubmitted: (_) => _save(),
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton(
-                  key: const ValueKey('month-letter-save'),
-                  onPressed: _busy ? null : _save,
-                  child: Text(MonthCopy.childSave.of(tone)),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (mine != null)
+                    TextButton(
+                      key: const ValueKey('month-letter-cancel'),
+                      onPressed: _busy ? null : _cancelEdit,
+                      child: Text(CommonCopy.cancel.of(tone)),
+                    ),
+                  FilledButton(
+                    key: const ValueKey('month-letter-save'),
+                    onPressed: _busy ? null : _save,
+                    child: Text(MonthCopy.childSave.of(tone)),
+                  ),
+                ],
               ),
             ],
           ],
