@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../app_root.dart';
 import '../../copy/line.dart';
 import '../../copy/parent.dart';
+import '../../copy/parent_guide.dart';
 import '../../core/clock.dart';
 import '../../core/layout.dart';
 import '../../core/theme.dart';
@@ -12,6 +13,7 @@ import '../../domain/models.dart';
 import '../../domain/parent_view.dart';
 import '../../providers.dart';
 import 'parent_dialogs.dart';
+import 'parent_guide.dart';
 import 'parent_providers.dart';
 
 /// 家長區本體。資料只讀 [parentViewProvider]（底線 7）。
@@ -59,6 +61,12 @@ class _ParentBody extends ConsumerWidget {
           Text(pt(ParentCopy.intro), style: const TextStyle(color: AppColors.inkSoft)),
           const SizedBox(height: AppSpace.m),
           _SharedLessonsSection(lessons: view.sharedLessons),
+          const _Section(
+            id: 'guide',
+            title: ParentGuideCopy.sectionTitle,
+            note: ParentGuideCopy.sectionNote,
+            children: [ParentGuideEntries()],
+          ),
           _TaskTemplatesSection(templates: view.taskTemplates),
           _CueTemplatesSection(templates: view.cueTemplates),
           _SlotsSection(slots: view.settings.reminderSlots),

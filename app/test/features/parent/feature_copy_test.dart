@@ -24,7 +24,7 @@ void main() {
   test('every sentence in copy/path, copy/parent, copy/settings passes the copy rules (strict)', () {
     final problems = <String>[];
     var seen = 0;
-    for (final f in ['lib/copy/path.dart', 'lib/copy/parent.dart', 'lib/copy/settings.dart']) {
+    for (final f in ['lib/copy/path.dart', 'lib/copy/parent.dart', 'lib/copy/settings.dart', 'lib/copy/parent_guide.dart']) {
       for (final (n, s) in cjkLiterals(f)) {
         seen++;
         final v = rules.check(s, tone: AgeTone.concise);
