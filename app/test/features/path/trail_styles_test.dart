@@ -9,6 +9,7 @@ import 'package:little_steps/core/config.dart';
 import 'package:little_steps/data/repository.dart';
 import 'package:little_steps/domain/models.dart';
 import 'package:little_steps/features/path/path_screen.dart';
+import 'package:little_steps/features/path/map_trail.dart';
 import 'package:little_steps/features/path/path_trail.dart';
 import 'package:little_steps/features/path/sky_trail.dart';
 import 'package:little_steps/features/path/tree_trail.dart';
@@ -22,7 +23,7 @@ PlannedDay _day(int i) => PlannedDay(dayKey: '2026-${(i ~/ 28 + 1).toString().pa
     '${(i % 28 + 1).toString().padLeft(2, '0')}', emojis: const ['🎹'], tasks: const ['練習樂器'], cues: const ['我放學回到家']);
 
 void main() {
-  for (final (style, kind) in [(TrailStyle.tree, 'leaf'), (TrailStyle.sky, 'star')]) {
+  for (final (style, kind) in [(TrailStyle.tree, 'leaf'), (TrailStyle.sky, 'star'), (TrailStyle.map, 'place')]) {
     group('$style', () {
       testWidgets('one $kind per planned day, nothing for the days in between', (tester) async {
         useTallSurface(tester);
@@ -101,6 +102,56 @@ void main() {
     expect(find.byKey(const ValueKey('trail-style-path')), findsOneWidget);
     await unmount(tester);
     await tester.runAsync(env.dispose);
+  });
+
+  // 地圖（J5）：一個月一章，新的在上；沒排事的月份不會變成空白地圖。
+  group('map', () {
+    PlannedDay d(String k) => PlannedDay(dayKey: k, emojis: const ['🎹'], tasks: const ['練習樂器'], cues: const []);
+
+    test('chapters are months that have planned days, newest first, dates in order inside', () {
+      final c = MapTrail.chapters([d('2026-08-30'), d('2026-10-02'), d('2026-10-20'), d('2026-10-11')]);
+      expect(c.map((x) => x.month), ['2026-10', '2026-08'], reason: 'September had nothing: no empty map');
+      expect(c.first.days.map((x) => x.dayKey), ['2026-10-02', '2026-10-11', '2026-10-20']);
+    });
+
+    test('titles name the month; the first is 出發; no chapter numbers', () {
+      String t(String m, {bool first = false, bool year = false}) =>
+          MapTrail.chapterTitle(m, first: first, withYear: year, tone: AgeTone.lively);
+      expect(t('2026-08', first: true), '8月：出發');
+      expect(t('2026-10'), '10月的旅程');
+      expect(t('2027-01', year: true), '2027年1月的旅程');
+      for (final l in [PathCopy.chapter, PathCopy.chapterFirst, PathCopy.chapterWithYear, PathCopy.chapterFirstWithYear]) {
+        expect(l.lively, isNot(contains('第')), reason: 'not a level or a count');
+      }
+    });
+
+    testWidgets('the page shows one titled map per month', (tester) async {
+      useTallSurface(tester);
+      final env = TestEnv();
+      await env.seed();
+      await env.repo.setTrailStyle(TrailStyle.map);
+      for (final k in ['2026-08-30', '2026-10-08', '2026-10-15']) {
+        await env.repo.savePlans(k, _draft);
+      }
+      await pumpScreen(tester, env, const PathScreen());
+      expect(find.byKey(const ValueKey('map-chapter-2026-10')), findsOneWidget);
+      expect(find.byKey(const ValueKey('map-chapter-2026-08')), findsOneWidget);
+      expect(find.byKey(const ValueKey('map-chapter-2026-09')), findsNothing);
+      expect(find.text('8月：出發'), findsOneWidget);
+      expect(tester.getTopLeft(find.text('10月的旅程')).dy, lessThan(tester.getTopLeft(find.text('8月：出發')).dy));
+      await unmount(tester);
+      await tester.runAsync(env.dispose);
+    });
+
+    test('places stay inside the map', () {
+      for (final width in [320.0, 600.0]) {
+        for (final p in MapTrail.placeCenters(31, width)) {
+          expect(p.dx - TrailConfig.mapPlaceSize / 2, greaterThanOrEqualTo(0));
+          expect(p.dx + TrailConfig.mapPlaceSize / 2, lessThanOrEqualTo(width));
+          expect(p.dy - TrailConfig.mapPlaceSize / 2, greaterThanOrEqualTo(0));
+        }
+      }
+    });
   });
 
   group('layout', () {

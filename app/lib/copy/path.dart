@@ -25,6 +25,7 @@ abstract final class PathCopy {
   static const stylePath = Line('🪨 小路', '小路');
   static const styleTree = Line('🌳 一棵樹', '一棵樹');
   static const styleSky = Line('✨ 星空', '星空');
+  static const styleMap = Line('🗺️ 地圖', '地圖');
 
   static const introTree = Line(
     '每一天你想好要做什麼，樹上就多長一片葉子。',
@@ -33,6 +34,22 @@ abstract final class PathCopy {
   static const introSky = Line(
     '每一天你想好要做什麼，天上就多亮一顆星星。',
     '你想好要做什麼的日子，都會變成一顆星星。',
+  );
+
+  static const introMap = Line(
+    '每一天你想好要做什麼，地圖上就多一個地方。一個月是一段旅程。',
+    '你想好要做什麼的日子，都是地圖上的一個地方，一個月一段旅程。',
+  );
+
+  /// 地圖的章名（一個月一章）。只說月份，不編號。
+  static const chapterFirst = Line.same('{m}月：出發');
+  static const chapterFirstWithYear = Line.same('{y}年{m}月：出發');
+  static const chapter = Line.same('{m}月的旅程');
+  static const chapterWithYear = Line.same('{y}年{m}月的旅程');
+
+  static const emptyMap = Line(
+    '你想好第一件小事的那天，地圖上就會出現第一個地方喔。',
+    '你想好第一件事的那天，地圖上會出現第一個地方。',
   );
 
   static const emptyTree = Line(

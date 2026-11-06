@@ -135,7 +135,7 @@ class TrailMark extends StatelessWidget {
   final PlannedDay day;
   final AgeTone tone;
 
-  /// 'leaf' 或 'star'（也是 key 的前綴）。
+  /// 'leaf'、'star' 或 'place'（地圖，也是 key 的前綴）。
   final String kind;
 
   @override
@@ -145,7 +145,12 @@ class TrailMark extends StatelessWidget {
     final emoji = day.emojis.isEmpty ? '' : day.emojis.first;
     final task = day.tasks.isEmpty ? '' : day.tasks.first;
     final star = kind == 'star';
-    final size = star ? TrailConfig.starSize : TrailConfig.leafSize;
+    final place = kind == 'place';
+    final size = star
+        ? TrailConfig.starSize
+        : place
+            ? TrailConfig.mapPlaceSize
+            : TrailConfig.leafSize;
     return Tooltip(
       message: PathCopy.markTip.fill(tone, {...md, 'task': task}),
       child: Semantics(
@@ -156,7 +161,14 @@ class TrailMark extends StatelessWidget {
           width: size,
           height: size,
           alignment: Alignment.center,
-          decoration: star
+          decoration: place
+              ? BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.card,
+                  border: Border.all(color: AppColors.accent, width: 3),
+                  boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 4, offset: Offset(0, 2))],
+                )
+              : star
               ? BoxDecoration(
                   shape: BoxShape.circle,
                   color: const Color(0xFFFFE9A8),
