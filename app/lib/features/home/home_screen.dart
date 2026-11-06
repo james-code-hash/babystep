@@ -50,6 +50,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   bool _peekShown = false;
   _PeekReply? _peekReply;
   int _peekVariant = 0;
+  DateTime? _peekAt;
 
   /// 這次進到首頁時，孩子對哪些家人留言說了「等一下」（只在記憶體，下次進來再問一次）。
   final Set<String> _notesLater = {};
@@ -133,6 +134,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     if (!show) return;
     _peekShown = true;
     _peekVariant = ref.read(randomProvider).nextInt(HomeCopy.peek.length);
+    _peekAt = ref.read(clockProvider).now();
     // 在 build 裡不能改 provider；下一個 frame 再記一次。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) counter.markShown(day);
@@ -281,7 +283,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           children.addAll([
             _PeekCard(
               tone: tone,
-              plan: plans.first,
+              pick: pickPeek(_peekAt ?? ref.read(clockProvider).now(), plans),
               variant: _peekVariant,
               reply: _peekReply,
               onReply: (r) => setState(() => _peekReply = r),
@@ -394,14 +396,14 @@ class _PlanCard extends StatelessWidget {
 class _PeekCard extends StatelessWidget {
   const _PeekCard({
     required this.tone,
-    required this.plan,
+    required this.pick,
     required this.variant,
     required this.reply,
     required this.onReply,
   });
 
   final AgeTone tone;
-  final Plan plan;
+  final ({Plan plan, bool withCue}) pick;
   final int variant;
   final _PeekReply? reply;
   final ValueChanged<_PeekReply> onReply;
@@ -423,8 +425,9 @@ class _PeekCard extends StatelessWidget {
         ),
       );
     }
-    final text = HomeCopy.peek.lines[variant % HomeCopy.peek.length]
-        .fill(tone, {'cue': PlanCopy.cueBody(plan.cue), 'task': plan.task});
+    final pool = pick.withCue ? HomeCopy.peek : HomeCopy.peekNoCue;
+    final text = pool.lines[variant % pool.length]
+        .fill(tone, {'cue': PlanCopy.cueBody(pick.plan.cue), 'task': pick.plan.task});
     Widget option(_PeekReply value, String label, String key) => Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs),
@@ -444,7 +447,7 @@ class _PeekCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text(plan.emoji, style: const TextStyle(fontSize: 24)),
+                Text(pick.plan.emoji, style: const TextStyle(fontSize: 24)),
                 const SizedBox(width: AppSpace.s),
                 Expanded(child: Text(text, style: Theme.of(context).textTheme.bodyLarge)),
               ],

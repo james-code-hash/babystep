@@ -5,6 +5,7 @@ import 'line.dart';
 /// 問候的規則（底線 2、3）：
 /// - 只依時段、季節抽，不論隔多久沒開，句子都一樣；絕不提「多久沒來」。
 /// - 只打招呼、提問、分享步步自己看到的東西；不催、不命令、不評價。
+/// - 不問「今天想做什麼」：首頁有沒有計畫都會抽到同一池（步步不能讀計畫），問了會跟已排好的計畫打架。
 abstract final class BubuCopy {
   /// 通用問候（任何時段都可以用）。
   static const greetings = LinePool([
@@ -14,7 +15,7 @@ abstract final class BubuCopy {
 
   static const greetingsMorning = LinePool([
     Line('早安～步步在這裡！', '早。今天如何？'),
-    Line('早安！今天想做什麼呀？', '早安。今天有什麼想做的？'),
+    Line('早安！我剛剛伸了一個大懶腰～', '早安。我剛伸了個懶腰。'),
     Line('早～我剛剛在想事情耶。', '早。我剛剛在想事情。'),
     Line('嗨！早上的空氣香香的～', '嗨。早上的空氣滿清爽的。'),
   ]);
@@ -22,7 +23,7 @@ abstract final class BubuCopy {
   static const greetingsDay = LinePool([
     Line('嗨～步步在這裡！', '嗨。今天如何？'),
     Line('你來了！今天過得怎麼樣？', '你來了。今天怎麼樣？'),
-    Line('嗨！今天你想安排什麼呀？', '嗨。今天想安排什麼？'),
+    Line('嗨！我剛剛在看雲耶。', '嗨。我剛在看雲。'),
     Line('午安～我在曬太陽耶。', '午安。我在曬太陽。'),
   ]);
 

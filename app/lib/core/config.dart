@@ -63,6 +63,16 @@ abstract final class AppConfig {
 }
 
 /// 分齡（I3）。lively ≈ 小樹苗（6–8 歲）、concise ≈ 小探險家（9–12 歲）；畫面上不標年齡（B5）。
+/// 時間點範本大概落在一天的哪一段（從 0:00 算的分鐘，[start, end)）。
+/// 探頭時只拿落在「現在」的時間點來問「現在方便嗎？」（README 已知問題 1）。
+abstract final class CueTimeConfig {
+  static const morning = (start: 5 * 60, end: 11 * 60);
+  static const noon = (start: 11 * 60, end: 14 * 60);
+  static const afterSchool = (start: 15 * 60, end: 19 * 60);
+  static const dinner = (start: 18 * 60, end: 21 * 60 + 30);
+  static const night = (start: 19 * 60, end: 23 * 60);
+}
+
 abstract final class AgeConfig {
   /// 小樹苗建議一天 1–2 件（軟性提示；硬性上限仍是 [AppConfig.maxPlansPerDay]）。
   static const int sproutSuggestedPlans = 2;

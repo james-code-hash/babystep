@@ -19,6 +19,14 @@ abstract final class PlanCopy {
     return t.startsWith(_i) ? t.substring(_i.length) : t;
   }
 
+  /// 時間點裡有這些字，就看得出大概是一天的哪一段（探頭用，不顯示給孩子）。
+  /// 看不出來的（「我喝完水」、孩子自己寫的）就當作隨時都可能。
+  static const cueHintsMorning = ['早餐', '早飯', '起床', '早上'];
+  static const cueHintsNoon = ['午餐', '午飯', '中午'];
+  static const cueHintsDinner = ['晚飯', '晚餐'];
+  static const cueHintsNight = ['澡', '睡前', '睡覺', '晚上'];
+  static const cueHintsAfterSchool = ['放學', '下課', '回到家', '回家'];
+
   // ------------------------------------------------------------ 1. 心情暖身（C2：不存）
 
   static const moodAsk = Line('早安！今天心情怎麼樣？', '今天心情怎麼樣？');
