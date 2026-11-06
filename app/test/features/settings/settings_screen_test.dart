@@ -58,6 +58,8 @@ void main() {
       child: MaterialApp.router(theme: buildTheme(), routerConfig: router),
     ));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('open-dress-up')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('open-dress-up')));
     await tester.pumpAndSettle();
     expect(find.byType(DressUpScreen), findsOneWidget);

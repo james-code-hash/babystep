@@ -47,6 +47,11 @@ Future<void> runFullDay(WidgetTester tester, Outcome outcome) async {
   await tester.pumpAndSettle();
   expect(find.byType(HomeScreen), findsOneWidget);
 
+  // 剛安裝：先和步步見面（不取名字，D6）。
+  await _tap(tester, 'hello-next');
+  await _tap(tester, 'pet-name-keep');
+  await _tap(tester, 'hello-done');
+
   // 早上：心情暖身（不存）→ 選一件事 → 如果⋯我就⋯ → 為什麼（跳過）→ 確認。
   await _tap(tester, 'home-plan');
   await _tap(tester, 'mood-happy');

@@ -7,6 +7,7 @@ import 'core/age_text_scale.dart';
 import 'core/layout.dart';
 import 'core/theme.dart';
 import 'domain/models.dart';
+import 'features/onboarding/pet_name.dart';
 import 'router.dart';
 
 class LittleStepsApp extends StatefulWidget {
@@ -35,7 +36,7 @@ class _LittleStepsAppState extends State<LittleStepsApp> {
         // 平板上字、按鈕、選項大一號（E12）；手機和原本一樣。
         builder: (context, child) => Theme(
           data: Layout.isTablet(context) ? _tabletTheme : Theme.of(context),
-          child: AgeTextScale(child: child ?? const SizedBox.shrink()),
+          child: PetNameScope(child: AgeTextScale(child: child ?? const SizedBox.shrink())),
         ),
       );
 }

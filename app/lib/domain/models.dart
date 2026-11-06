@@ -265,6 +265,7 @@ class AppSettings {
     this.onboarded = false,
     this.familyNotesOn = true,
     this.trailStyle = TrailStyle.path,
+    this.petName,
   });
 
   final AgeTone tone;
@@ -281,6 +282,9 @@ class AppSettings {
   /// 「我的小路」用哪一種樣子畫（孩子在小路頁上自己換）。
   final TrailStyle trailStyle;
 
+  /// 孩子幫步步取的名字；null ＝還叫「步步」（D6）。
+  final String? petName;
+
   AppSettings copyWith({
     AgeTone? tone,
     bool? llmEnabled,
@@ -289,6 +293,7 @@ class AppSettings {
     bool? onboarded,
     bool? familyNotesOn,
     TrailStyle? trailStyle,
+    String? petName,
   }) =>
       AppSettings(
         tone: tone ?? this.tone,
@@ -298,6 +303,7 @@ class AppSettings {
         onboarded: onboarded ?? this.onboarded,
         familyNotesOn: familyNotesOn ?? this.familyNotesOn,
         trailStyle: trailStyle ?? this.trailStyle,
+        petName: petName ?? this.petName,
       );
 }
 

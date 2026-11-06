@@ -47,6 +47,18 @@ class ChildSettingsScreen extends ConsumerWidget {
               const SizedBox(height: AppSpace.m),
               Card(
                 child: ListTile(
+                  key: const ValueKey('open-pet-name'),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.m, vertical: AppSpace.s),
+                  leading: const Icon(Icons.edit_outlined),
+                  title: Text(SettingsCopy.nameEntry.of(tone), style: text.titleMedium),
+                  subtitle: Text(SettingsCopy.nameEntryHint.of(tone)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(Routes.petName),
+                ),
+              ),
+              const SizedBox(height: AppSpace.m),
+              Card(
+                child: ListTile(
                   key: const ValueKey('open-dress-up'),
                   contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.m, vertical: AppSpace.s),
                   leading: const BubuView(size: 56),
