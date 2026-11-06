@@ -517,6 +517,7 @@ class _QuietNav extends StatelessWidget {
           children: [
             item(Icons.menu_book_outlined, HomeCopy.notebook.of(tone), Routes.notebook, 'nav-notebook'),
             item(Icons.route_outlined, HomeCopy.path.of(tone), Routes.path, 'nav-path'),
+            item(Icons.explore_outlined, HomeCopy.explore.of(tone), Routes.explore, 'nav-explore'),
             item(Icons.tune, HomeCopy.settings.of(tone), Routes.settings, 'nav-settings'),
           ],
         ),

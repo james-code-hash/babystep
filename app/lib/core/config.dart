@@ -157,3 +157,12 @@ abstract final class LayoutConfig {
   /// 家長 PIN 畫面的最大寬度（鍵盤置中，不撐滿大螢幕）。
   static const double pinMaxWidth = 420;
 }
+
+/// 探索角（J1）。
+abstract final class ExploreConfig {
+  /// 塗鴉牆畫布高度（dp）。
+  static const double canvasHeight = 320;
+
+  /// 筆畫粗細（dp）。
+  static const double strokeWidth = 6;
+}

@@ -40,6 +40,7 @@ abstract final class HomeCopy {
 
   static const notebook = Line('步步的筆記本', '筆記本');
   static const path = Line.same('我的小路');
+  static const explore = Line.same('探索角');
   static const settings = Line.same('我的設定');
   static const parent = Line.same('家長區');
 }

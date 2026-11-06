@@ -111,7 +111,7 @@ void main() {
       await finish(tester, env);
     });
 
-    testWidgets('quiet navigation reaches notebook, path, settings and parent; no badges', (tester) async {
+    testWidgets('quiet navigation reaches notebook, path, explore, settings and parent; no badges', (tester) async {
       tallScreen(tester);
       env = TestEnv();
       await pumpApp(tester, env);
@@ -119,6 +119,7 @@ void main() {
       for (final (key, target) in [
         ('nav-notebook', Routes.notebook),
         ('nav-path', Routes.path),
+        ('nav-explore', Routes.explore),
         ('nav-settings', Routes.settings),
         ('nav-parent', Routes.parent),
       ]) {
