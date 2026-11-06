@@ -160,6 +160,22 @@ void main() {
     expect(j['settings'], isNot(contains('familyNotesOn')));
   });
 
+  // 匯出是家長在家長區按的，所以匯出檔也不能變成已讀回條（決策 I2）。
+  test('the export file carries no "child read it" or "child turned it off" signal either', () async {
+    await buildParentJson();
+    final j = jsonDecode(await env.repo.exportJson()) as Map<String, Object?>;
+    // 連名字換了的欄位也不行：留言裡沒有任何已讀之類的欄位，設定裡沒有任何跟留言有關的開關。
+    final noteKeys = collectKeys(j['familyNotes']).map((k) => k.toLowerCase());
+    for (final fragment in ['read', 'seen', 'opened']) {
+      expect(noteKeys.where((k) => k.contains(fragment)), isEmpty, reason: 'family notes carry "$fragment"');
+    }
+    final settingKeys = collectKeys(j['settings']).map((k) => k.toLowerCase());
+    expect(settingKeys.where((k) => k.contains('note')), isEmpty, reason: 'settings say whether notes are relayed');
+    final notes = (j['familyNotes']! as List).cast<Map<String, Object?>>();
+    expect(notes.map((n) => n['text']), containsAll(['我看到你自己把書包整理好了', '今天的晚餐有你喜歡的湯']),
+        reason: 'the notes themselves are still exported in full');
+  });
+
   test('month letters: the child\'s sentence only when the child wrote one; no story numbers', () async {
     final j = await buildParentJson();
     final letters = (j['monthLetters'] as List).cast<Map<String, Object?>>();
