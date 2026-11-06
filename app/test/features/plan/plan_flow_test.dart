@@ -4,6 +4,7 @@ import 'package:little_steps/safety/safety_response.dart';
 import 'package:little_steps/copy/plan.dart';
 import 'package:little_steps/core/clock.dart';
 import 'package:little_steps/core/config.dart';
+import 'package:little_steps/core/theme.dart';
 import 'package:little_steps/domain/models.dart';
 import 'package:little_steps/features/home/home_screen.dart';
 import 'package:little_steps/features/plan/plan_screen.dart';
@@ -124,6 +125,34 @@ void main() {
     await _tap(tester, 'task-preset-task-${AppConfig.maxPlansPerDay}');
     expect(tester.widgetList<FilterChip>(find.byType(FilterChip)).where((c) => c.selected).length,
         AppConfig.maxPlansPerDay);
+    await _finish(tester, env);
+  });
+
+  // I4（企劃書模組一）：家長建議的事是另一個顏色；孩子選了就變成和自己選的一樣。
+  testWidgets('a parent suggestion has its own colour until the child picks it', (tester) async {
+    final env = TestEnv();
+    await env.seed();
+    final suggestion = await env.repo.addTaskTemplate(emoji: '🧺', text: '收衣服', origin: TemplateOrigin.parent);
+    await _openPlan(tester, env);
+    await _tap(tester, 'mood-unsaid');
+    await _tap(tester, 'plan-next');
+
+    FilterChip chip(String id) => tester.widget<FilterChip>(find.byKey(ValueKey('task-$id')));
+    final parentKey = suggestion.id;
+    expect(chip(parentKey).backgroundColor, AppColors.suggestSoft);
+    expect(chip(parentKey).side?.color, AppColors.suggestLine);
+    expect(chip('preset-task-0').backgroundColor, isNull, reason: 'other choices keep the theme colour');
+
+    await _tap(tester, 'task-$parentKey');
+    await _tap(tester, 'task-preset-task-0');
+    final picked = chip(parentKey), mine = chip('preset-task-0');
+    expect(picked.selected, isTrue);
+    expect((picked.backgroundColor, picked.side), (mine.backgroundColor, mine.side),
+        reason: 'once picked it looks like any other thing the child chose');
+
+    // 再取消，就回到建議的顏色。
+    await _tap(tester, 'task-$parentKey');
+    expect(chip(parentKey).backgroundColor, AppColors.suggestSoft);
     await _finish(tester, env);
   });
 
