@@ -41,6 +41,9 @@ class Plans extends Table {
   TextColumn get cue => text()();
   TextColumn get why => text().nullable()();
 
+  /// 「如果卡住了，我就⋯」（MCII，簡潔模式才問，可跳過）。v3 加入。
+  TextColumn get stuckPlan => text().nullable()();
+
   /// done / partly / notToday；還沒回顧是 null。
   TextColumn get outcome => text().nullable()();
 
@@ -119,7 +122,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -130,6 +133,8 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(familyTodayEntries);
             await m.createTable(familyNotes);
           }
+          // v3：卡住的時候的計畫（I3）。
+          if (from < 3) await m.addColumn(plans, plans.stuckPlan);
         },
         // 刪掉的資料列要真的被覆寫成 0，不能只標成空閒頁面還留在檔案裡（底線 8）。
         beforeOpen: (_) => customStatement('PRAGMA secure_delete = ON'),

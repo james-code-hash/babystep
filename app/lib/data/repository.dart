@@ -237,6 +237,7 @@ class Repository {
         task: r.task,
         cue: r.cue,
         why: r.why,
+        stuck: r.stuckPlan,
         outcome: r.outcome == null ? null : enumByName(Outcome.values, r.outcome!, Outcome.notToday),
       );
 
@@ -266,6 +267,7 @@ class Repository {
           task: d.task.trim(),
           cue: CueTemplate.normalize(d.cue),
           why: (d.why?.trim().isEmpty ?? true) ? null : d.why!.trim(),
+          stuck: (d.stuck?.trim().isEmpty ?? true) ? null : d.stuck!.trim(),
         );
         await _db.into(_db.plans).insert(PlansCompanion.insert(
               id: plan.id,
@@ -275,6 +277,7 @@ class Repository {
               task: plan.task,
               cue: plan.cue,
               why: Value(plan.why),
+              stuckPlan: Value(plan.stuck),
             ));
         saved.add(plan);
       }

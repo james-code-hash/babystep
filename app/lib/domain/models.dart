@@ -92,6 +92,7 @@ class Plan {
     required this.task,
     required this.cue,
     this.why,
+    this.stuck,
     this.outcome,
   });
 
@@ -106,6 +107,9 @@ class Plan {
   /// 「如果⋯」那一槽，以「我」開頭。
   final String cue;
   final String? why;
+
+  /// 「如果卡住了，我就⋯」那一槽（簡潔模式的 MCII，可以沒有）。
+  final String? stuck;
   final Outcome? outcome;
 
   /// 「如果我吃完晚飯，我就寫數學」。
@@ -119,6 +123,7 @@ class Plan {
         task: task,
         cue: cue,
         why: why ?? this.why,
+        stuck: stuck,
         outcome: outcome ?? this.outcome,
       );
 
@@ -130,17 +135,19 @@ class Plan {
         'task': task,
         'cue': cue,
         'why': why,
+        'stuck': stuck,
         'outcome': outcome?.name,
       };
 }
 
 /// 計畫草稿（還沒存進資料庫）。
 class PlanDraft {
-  const PlanDraft({required this.emoji, required this.task, required this.cue, this.why});
+  const PlanDraft({required this.emoji, required this.task, required this.cue, this.why, this.stuck});
   final String emoji;
   final String task;
   final String cue;
   final String? why;
+  final String? stuck;
 }
 
 /// 一天的紀錄：晚上的反思原話與結束時間。

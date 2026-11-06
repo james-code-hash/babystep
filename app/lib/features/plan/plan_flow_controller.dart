@@ -2,16 +2,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config.dart';
 import '../../domain/models.dart';
+import '../../providers.dart';
 
 /// 早上排計畫的步驟。心情不在這裡：心情只活在畫面的 State 裡，用完就丟（C2）。
-enum PlanStep { mood, choose, ifThen, why, confirm }
+/// [PlanStep.stuck]（「如果卡住了，我就⋯」，MCII）只在簡潔模式（9–12 歲）出現，可以跳過（I3）。
+enum PlanStep { mood, choose, ifThen, why, stuck, confirm }
 
 /// 選擇步驟下方的那句話。
 enum ChooseNotice { none, one, full }
 
 /// 孩子挑的一件事（還沒存）。
 class PlanItem {
-  const PlanItem({required this.templateId, required this.emoji, required this.task, this.cue, this.why});
+  const PlanItem({required this.templateId, required this.emoji, required this.task, this.cue, this.why, this.stuck});
 
   final String templateId;
   final String emoji;
@@ -23,15 +25,27 @@ class PlanItem {
   final String? cue;
   final String? why;
 
-  PlanItem copyWith({String? task, String? cue, String? why, bool clearWhy = false}) => PlanItem(
+  /// 「如果卡住了，我就⋯」；沒想就是 null。
+  final String? stuck;
+
+  PlanItem copyWith({
+    String? task,
+    String? cue,
+    String? why,
+    bool clearWhy = false,
+    String? stuck,
+    bool clearStuck = false,
+  }) =>
+      PlanItem(
         templateId: templateId,
         emoji: emoji,
         task: task ?? this.task,
         cue: cue ?? this.cue,
         why: clearWhy ? null : (why ?? this.why),
+        stuck: clearStuck ? null : (stuck ?? this.stuck),
       );
 
-  PlanDraft toDraft() => PlanDraft(emoji: emoji, task: task, cue: cue ?? '', why: why);
+  PlanDraft toDraft() => PlanDraft(emoji: emoji, task: task, cue: cue ?? '', why: why, stuck: stuck);
 }
 
 class PlanFlowState {
@@ -123,6 +137,22 @@ class PlanFlowController extends Notifier<PlanFlowState> {
     _updateCurrent((i) => clean.isEmpty ? i.copyWith(clearWhy: true) : i.copyWith(why: clean));
   }
 
+  /// null 或空字串 = 不想（跳過）。
+  void setStuck(String? stuck) {
+    final clean = stuck?.trim() ?? '';
+    _updateCurrent((i) => clean.isEmpty ? i.copyWith(clearStuck: true) : i.copyWith(stuck: clean));
+  }
+
+  /// 簡潔模式（9–12 歲）才多問「卡住的時候」（I3）。
+  bool get _asksStuck => ref.read(toneProvider) == AgeTone.concise;
+
+  /// 一件事的最後一步（why 或 stuck）之後：下一件的「如果⋯」，或確認。
+  PlanFlowState _afterItem(PlanFlowState s) => s.index + 1 < s.items.length
+      ? s.copyWith(step: PlanStep.ifThen, index: s.index + 1)
+      : s.copyWith(step: PlanStep.confirm);
+
+  PlanStep get _lastItemStep => _asksStuck ? PlanStep.stuck : PlanStep.why;
+
   /// 往下一步。條件不夠（還沒選、還沒挑時間點）時什麼都不做。
   void next() {
     final s = state;
@@ -134,9 +164,9 @@ class PlanFlowController extends Notifier<PlanFlowState> {
       case PlanStep.ifThen:
         if ((s.current?.cue ?? '').isNotEmpty) state = s.copyWith(step: PlanStep.why);
       case PlanStep.why:
-        state = s.index + 1 < s.items.length
-            ? s.copyWith(step: PlanStep.ifThen, index: s.index + 1)
-            : s.copyWith(step: PlanStep.confirm);
+        state = _asksStuck ? s.copyWith(step: PlanStep.stuck) : _afterItem(s);
+      case PlanStep.stuck:
+        state = _afterItem(s);
       case PlanStep.confirm:
         break;
     }
@@ -153,11 +183,13 @@ class PlanFlowController extends Notifier<PlanFlowState> {
       case PlanStep.ifThen:
         state = s.index == 0
             ? s.copyWith(step: PlanStep.choose)
-            : s.copyWith(step: PlanStep.why, index: s.index - 1);
+            : s.copyWith(step: _lastItemStep, index: s.index - 1);
       case PlanStep.why:
         state = s.copyWith(step: PlanStep.ifThen);
+      case PlanStep.stuck:
+        state = s.copyWith(step: PlanStep.why);
       case PlanStep.confirm:
-        state = s.copyWith(step: PlanStep.why, index: s.items.length - 1);
+        state = s.copyWith(step: _lastItemStep, index: s.items.length - 1);
     }
     return true;
   }

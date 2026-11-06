@@ -100,6 +100,11 @@ class _ToneOption extends ConsumerWidget {
                       Text(label.of(option), style: text.titleMedium),
                       const SizedBox(height: AppSpace.xs),
                       Text(preview.of(option), key: ValueKey('tone-preview-${option.name}'), style: text.bodyMedium),
+                      const SizedBox(height: AppSpace.xs),
+                      Text(
+                        (option == AgeTone.lively ? SettingsCopy.livelyDetail : SettingsCopy.conciseDetail).of(option),
+                        style: text.bodySmall?.copyWith(color: AppColors.inkSoft),
+                      ),
                     ],
                   ),
                 ),

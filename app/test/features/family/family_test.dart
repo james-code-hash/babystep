@@ -119,15 +119,20 @@ void main() {
     });
   });
 
-  test('a v1 database upgrades to v2 with the family tables and keeps its data', () async {
+  test('a v1 database upgrades to the current schema (family tables, stuck plan) and keeps its data', () async {
     final raw = NativeDatabase.memory(setup: (db) {
       db.execute('CREATE TABLE settings (key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)');
       db.execute("INSERT INTO settings VALUES ('tone', 'concise')");
+      db.execute('CREATE TABLE plans (id TEXT NOT NULL PRIMARY KEY, day_key TEXT NOT NULL, position INTEGER NOT NULL, '
+          'emoji TEXT NOT NULL, task TEXT NOT NULL, cue TEXT NOT NULL, why TEXT NULL, outcome TEXT NULL)');
+      db.execute("INSERT INTO plans VALUES ('p1', '2026-10-01', 0, '✏️', '寫數學', '我吃完晚飯', NULL, 'done')");
       db.execute('PRAGMA user_version = 1');
     });
     final db = AppDatabase(DatabaseConnection(raw));
-    final rows = await db.select(db.settings).get();
-    expect(rows.single.value, 'concise');
+    expect((await db.select(db.settings).get()).single.value, 'concise');
+    final plan = (await db.select(db.plans).get()).single;
+    expect(plan.task, '寫數學');
+    expect(plan.stuckPlan, isNull);
     expect(await db.select(db.familyTodayEntries).get(), isEmpty);
     expect(await db.select(db.familyNotes).get(), isEmpty);
     await db.close();

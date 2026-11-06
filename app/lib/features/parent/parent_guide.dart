@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../copy/line.dart';
 import '../../copy/parent_guide.dart';
+import '../../core/age_text_scale.dart';
 import '../../core/clock.dart';
 import '../../core/layout.dart';
 import '../../core/theme.dart';
@@ -63,14 +64,14 @@ class ParentPage extends StatelessWidget {
   final Key? listKey;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => AgeTextScale.unscaled(context, Scaffold(
         appBar: AppBar(title: Text(pt(title))),
         body: SafeArea(
           child: AdaptiveFrame(
             child: ListView(key: listKey, padding: const EdgeInsets.all(AppSpace.m), children: children),
           ),
         ),
-      );
+      ));
 }
 
 // ------------------------------------------------------------------ 話術轉譯器

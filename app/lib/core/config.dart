@@ -59,6 +59,15 @@ abstract final class AppConfig {
   static const int minQuoteChars = 2;
 }
 
+/// 分齡（I3）。lively ≈ 小樹苗（6–8 歲）、concise ≈ 小探險家（9–12 歲）；畫面上不標年齡（B5）。
+abstract final class AgeConfig {
+  /// 小樹苗建議一天 1–2 件（軟性提示；硬性上限仍是 [AppConfig.maxPlansPerDay]）。
+  static const int sproutSuggestedPlans = 2;
+
+  /// 小樹苗的字放大倍數（企劃書 §10.1「大字」）。家長區不放大。
+  static const double sproutTextScale = 1.12;
+}
+
 /// 步步的時段、動畫節奏。
 abstract final class BubuConfig {
   /// 一天的四個時段（含起始小時，24 小時制）。

@@ -37,6 +37,7 @@ class PlanFlowScreen extends ConsumerWidget {
         PlanStep.choose => const ChooseStep(),
         PlanStep.ifThen => IfThenStep(key: ValueKey('plan-ifthen-$index')),
         PlanStep.why => WhyStep(key: ValueKey('plan-why-$index')),
+        PlanStep.stuck => StuckStep(key: ValueKey('plan-stuck-$index')),
         PlanStep.confirm => const ConfirmStep(),
       };
     }

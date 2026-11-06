@@ -727,6 +727,17 @@ class $PlansTable extends Plans with TableInfo<$PlansTable, PlanRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _stuckPlanMeta = const VerificationMeta(
+    'stuckPlan',
+  );
+  @override
+  late final GeneratedColumn<String> stuckPlan = GeneratedColumn<String>(
+    'stuck_plan',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _outcomeMeta = const VerificationMeta(
     'outcome',
   );
@@ -747,6 +758,7 @@ class $PlansTable extends Plans with TableInfo<$PlansTable, PlanRow> {
     task,
     cue,
     why,
+    stuckPlan,
     outcome,
   ];
   @override
@@ -812,6 +824,12 @@ class $PlansTable extends Plans with TableInfo<$PlansTable, PlanRow> {
         why.isAcceptableOrUnknown(data['why']!, _whyMeta),
       );
     }
+    if (data.containsKey('stuck_plan')) {
+      context.handle(
+        _stuckPlanMeta,
+        stuckPlan.isAcceptableOrUnknown(data['stuck_plan']!, _stuckPlanMeta),
+      );
+    }
     if (data.containsKey('outcome')) {
       context.handle(
         _outcomeMeta,
@@ -855,6 +873,10 @@ class $PlansTable extends Plans with TableInfo<$PlansTable, PlanRow> {
         DriftSqlType.string,
         data['${effectivePrefix}why'],
       ),
+      stuckPlan: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stuck_plan'],
+      ),
       outcome: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}outcome'],
@@ -877,6 +899,9 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
   final String cue;
   final String? why;
 
+  /// 「如果卡住了，我就⋯」（MCII，簡潔模式才問，可跳過）。v3 加入。
+  final String? stuckPlan;
+
   /// done / partly / notToday；還沒回顧是 null。
   final String? outcome;
   const PlanRow({
@@ -887,6 +912,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
     required this.task,
     required this.cue,
     this.why,
+    this.stuckPlan,
     this.outcome,
   });
   @override
@@ -900,6 +926,9 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
     map['cue'] = Variable<String>(cue);
     if (!nullToAbsent || why != null) {
       map['why'] = Variable<String>(why);
+    }
+    if (!nullToAbsent || stuckPlan != null) {
+      map['stuck_plan'] = Variable<String>(stuckPlan);
     }
     if (!nullToAbsent || outcome != null) {
       map['outcome'] = Variable<String>(outcome);
@@ -916,6 +945,9 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
       task: Value(task),
       cue: Value(cue),
       why: why == null && nullToAbsent ? const Value.absent() : Value(why),
+      stuckPlan: stuckPlan == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stuckPlan),
       outcome: outcome == null && nullToAbsent
           ? const Value.absent()
           : Value(outcome),
@@ -935,6 +967,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
       task: serializer.fromJson<String>(json['task']),
       cue: serializer.fromJson<String>(json['cue']),
       why: serializer.fromJson<String?>(json['why']),
+      stuckPlan: serializer.fromJson<String?>(json['stuckPlan']),
       outcome: serializer.fromJson<String?>(json['outcome']),
     );
   }
@@ -949,6 +982,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
       'task': serializer.toJson<String>(task),
       'cue': serializer.toJson<String>(cue),
       'why': serializer.toJson<String?>(why),
+      'stuckPlan': serializer.toJson<String?>(stuckPlan),
       'outcome': serializer.toJson<String?>(outcome),
     };
   }
@@ -961,6 +995,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
     String? task,
     String? cue,
     Value<String?> why = const Value.absent(),
+    Value<String?> stuckPlan = const Value.absent(),
     Value<String?> outcome = const Value.absent(),
   }) => PlanRow(
     id: id ?? this.id,
@@ -970,6 +1005,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
     task: task ?? this.task,
     cue: cue ?? this.cue,
     why: why.present ? why.value : this.why,
+    stuckPlan: stuckPlan.present ? stuckPlan.value : this.stuckPlan,
     outcome: outcome.present ? outcome.value : this.outcome,
   );
   PlanRow copyWithCompanion(PlansCompanion data) {
@@ -981,6 +1017,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
       task: data.task.present ? data.task.value : this.task,
       cue: data.cue.present ? data.cue.value : this.cue,
       why: data.why.present ? data.why.value : this.why,
+      stuckPlan: data.stuckPlan.present ? data.stuckPlan.value : this.stuckPlan,
       outcome: data.outcome.present ? data.outcome.value : this.outcome,
     );
   }
@@ -995,14 +1032,24 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
           ..write('task: $task, ')
           ..write('cue: $cue, ')
           ..write('why: $why, ')
+          ..write('stuckPlan: $stuckPlan, ')
           ..write('outcome: $outcome')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, dayKey, position, emoji, task, cue, why, outcome);
+  int get hashCode => Object.hash(
+    id,
+    dayKey,
+    position,
+    emoji,
+    task,
+    cue,
+    why,
+    stuckPlan,
+    outcome,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1014,6 +1061,7 @@ class PlanRow extends DataClass implements Insertable<PlanRow> {
           other.task == this.task &&
           other.cue == this.cue &&
           other.why == this.why &&
+          other.stuckPlan == this.stuckPlan &&
           other.outcome == this.outcome);
 }
 
@@ -1025,6 +1073,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
   final Value<String> task;
   final Value<String> cue;
   final Value<String?> why;
+  final Value<String?> stuckPlan;
   final Value<String?> outcome;
   final Value<int> rowid;
   const PlansCompanion({
@@ -1035,6 +1084,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
     this.task = const Value.absent(),
     this.cue = const Value.absent(),
     this.why = const Value.absent(),
+    this.stuckPlan = const Value.absent(),
     this.outcome = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1046,6 +1096,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
     required String task,
     required String cue,
     this.why = const Value.absent(),
+    this.stuckPlan = const Value.absent(),
     this.outcome = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1062,6 +1113,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
     Expression<String>? task,
     Expression<String>? cue,
     Expression<String>? why,
+    Expression<String>? stuckPlan,
     Expression<String>? outcome,
     Expression<int>? rowid,
   }) {
@@ -1073,6 +1125,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
       if (task != null) 'task': task,
       if (cue != null) 'cue': cue,
       if (why != null) 'why': why,
+      if (stuckPlan != null) 'stuck_plan': stuckPlan,
       if (outcome != null) 'outcome': outcome,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1086,6 +1139,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
     Value<String>? task,
     Value<String>? cue,
     Value<String?>? why,
+    Value<String?>? stuckPlan,
     Value<String?>? outcome,
     Value<int>? rowid,
   }) {
@@ -1097,6 +1151,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
       task: task ?? this.task,
       cue: cue ?? this.cue,
       why: why ?? this.why,
+      stuckPlan: stuckPlan ?? this.stuckPlan,
       outcome: outcome ?? this.outcome,
       rowid: rowid ?? this.rowid,
     );
@@ -1126,6 +1181,9 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
     if (why.present) {
       map['why'] = Variable<String>(why.value);
     }
+    if (stuckPlan.present) {
+      map['stuck_plan'] = Variable<String>(stuckPlan.value);
+    }
     if (outcome.present) {
       map['outcome'] = Variable<String>(outcome.value);
     }
@@ -1145,6 +1203,7 @@ class PlansCompanion extends UpdateCompanion<PlanRow> {
           ..write('task: $task, ')
           ..write('cue: $cue, ')
           ..write('why: $why, ')
+          ..write('stuckPlan: $stuckPlan, ')
           ..write('outcome: $outcome, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3338,6 +3397,7 @@ typedef $$PlansTableCreateCompanionBuilder = PlansCompanion Function({
   required String task,
   required String cue,
   Value<String?> why,
+  Value<String?> stuckPlan,
   Value<String?> outcome,
   Value<int> rowid,
 });
@@ -3349,6 +3409,7 @@ typedef $$PlansTableUpdateCompanionBuilder = PlansCompanion Function({
   Value<String> task,
   Value<String> cue,
   Value<String?> why,
+  Value<String?> stuckPlan,
   Value<String?> outcome,
   Value<int> rowid,
 });
@@ -3393,6 +3454,11 @@ class $$PlansTableFilterComposer extends Composer<_$AppDatabase, $PlansTable> {
 
   ColumnFilters<String> get why => $composableBuilder(
     column: $table.why,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stuckPlan => $composableBuilder(
+    column: $table.stuckPlan,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3446,6 +3512,11 @@ class $$PlansTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get stuckPlan => $composableBuilder(
+    column: $table.stuckPlan,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get outcome => $composableBuilder(
     column: $table.outcome,
     builder: (column) => ColumnOrderings(column),
@@ -3481,6 +3552,9 @@ class $$PlansTableAnnotationComposer
 
   GeneratedColumn<String> get why =>
       $composableBuilder(column: $table.why, builder: (column) => column);
+
+  GeneratedColumn<String> get stuckPlan =>
+      $composableBuilder(column: $table.stuckPlan, builder: (column) => column);
 
   GeneratedColumn<String> get outcome =>
       $composableBuilder(column: $table.outcome, builder: (column) => column);
@@ -3521,6 +3595,7 @@ class $$PlansTableTableManager
                 Value<String> task = const Value.absent(),
                 Value<String> cue = const Value.absent(),
                 Value<String?> why = const Value.absent(),
+                Value<String?> stuckPlan = const Value.absent(),
                 Value<String?> outcome = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PlansCompanion(
@@ -3531,6 +3606,7 @@ class $$PlansTableTableManager
                 task: task,
                 cue: cue,
                 why: why,
+                stuckPlan: stuckPlan,
                 outcome: outcome,
                 rowid: rowid,
               ),
@@ -3543,6 +3619,7 @@ class $$PlansTableTableManager
                 required String task,
                 required String cue,
                 Value<String?> why = const Value.absent(),
+                Value<String?> stuckPlan = const Value.absent(),
                 Value<String?> outcome = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PlansCompanion.insert(
@@ -3553,6 +3630,7 @@ class $$PlansTableTableManager
                 task: task,
                 cue: cue,
                 why: why,
+                stuckPlan: stuckPlan,
                 outcome: outcome,
                 rowid: rowid,
               ),

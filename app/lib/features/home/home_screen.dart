@@ -329,9 +329,19 @@ class _PlanCard extends StatelessWidget {
               Text(plan.emoji, style: const TextStyle(fontSize: 28)),
               const SizedBox(width: AppSpace.m),
               Expanded(
-                child: Text(
-                  PlanCopy.ifThen.fill(tone, {'cue': plan.cue, 'task': plan.task}),
-                  style: Theme.of(context).textTheme.bodyLarge,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      PlanCopy.ifThen.fill(tone, {'cue': plan.cue, 'task': plan.task}),
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    if (plan.stuck != null)
+                      Text(
+                        PlanCopy.stuckLine.fill(tone, {'stuck': plan.stuck!}),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.inkSoft),
+                      ),
+                  ],
                 ),
               ),
             ],
