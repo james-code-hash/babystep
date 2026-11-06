@@ -254,7 +254,7 @@ class ReminderSlot {
 
 /// 設定。注意：沒有「上次開啟」之類的欄位。
 /// 成長軌跡的樣子（J3）：孩子自己選。每一種都只畫有計畫的日子，一天一個記號，沒有空洞。
-enum TrailStyle { path, tree, sky }
+enum TrailStyle { path, tree, sky, map }
 
 class AppSettings {
   const AppSettings({
@@ -265,6 +265,8 @@ class AppSettings {
     this.onboarded = false,
     this.familyNotesOn = true,
     this.trailStyle = TrailStyle.path,
+    this.petName,
+    this.readAloud = false,
   });
 
   final AgeTone tone;
@@ -281,6 +283,12 @@ class AppSettings {
   /// 「我的小路」用哪一種樣子畫（孩子在小路頁上自己換）。
   final TrailStyle trailStyle;
 
+  /// 孩子幫步步取的名字；null ＝還叫「步步」（D6）。
+  final String? petName;
+
+  /// 步步的對話泡泡旁邊要不要有「唸出來」（孩子在自己的設定裡開，I6）。
+  final bool readAloud;
+
   AppSettings copyWith({
     AgeTone? tone,
     bool? llmEnabled,
@@ -289,6 +297,8 @@ class AppSettings {
     bool? onboarded,
     bool? familyNotesOn,
     TrailStyle? trailStyle,
+    String? petName,
+    bool? readAloud,
   }) =>
       AppSettings(
         tone: tone ?? this.tone,
@@ -298,6 +308,8 @@ class AppSettings {
         onboarded: onboarded ?? this.onboarded,
         familyNotesOn: familyNotesOn ?? this.familyNotesOn,
         trailStyle: trailStyle ?? this.trailStyle,
+        petName: petName ?? this.petName,
+        readAloud: readAloud ?? this.readAloud,
       );
 }
 

@@ -17,6 +17,7 @@ import '../../safety/safety_response.dart';
 import '../notebook/note_paper.dart';
 import 'outcome_buttons.dart';
 import 'review_controller.dart';
+import '../read_aloud/read_aloud.dart';
 
 /// 晚上回顧：開場 → 每件事的狀態 → 歷程問題 → 步步學到 → 要不要記 → 結束。
 ///
@@ -360,7 +361,10 @@ class _BubuSays extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.card),
       border: Border.all(color: AppColors.line),
     ),
-    child: Text(text, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
+    child: ReadAloud(
+      text: text,
+      child: Text(text, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
+    ),
   );
 }
 

@@ -31,6 +31,9 @@ abstract final class AppConfig {
   /// 自由輸入的字數上限（自訂事情、時間點、為什麼、反思）。
   static const int maxTaskChars = 20;
   static const int maxCueChars = 20;
+
+  /// 孩子幫步步取的名字最多幾個字（D6）。
+  static const int maxPetNameChars = 6;
   static const int maxWhyChars = 60;
   static const int maxReflectionChars = 120;
 
@@ -70,6 +73,15 @@ abstract final class CueTimeConfig {
   static const afterSchool = (start: 15 * 60, end: 19 * 60);
   static const dinner = (start: 18 * 60, end: 21 * 60 + 30);
   static const night = (start: 19 * 60, end: 23 * 60);
+}
+
+/// 朗讀（I6）：裝置內建語音的設定。
+abstract final class ReadAloudConfig {
+  static const language = 'zh-TW';
+
+  /// 0–1；比預設慢一點，給剛開始識字的孩子。
+  static const double rate = 0.42;
+  static const double pitch = 1.05;
 }
 
 /// 分齡（I3）。lively ≈ 小樹苗（6–8 歲）、concise ≈ 小探險家（9–12 歲）；畫面上不標年齡（B5）。
@@ -235,4 +247,24 @@ abstract final class TrailConfig {
 
   /// 一顆星的大小（dp）。
   static const double starSize = 40;
+
+  /// 地圖一列幾個地方、一列多高、一個地方多大（dp）。
+  static const int mapPerRow = 3;
+  static const double mapRowHeight = 96;
+  static const double mapPlaceSize = 48;
+
+  /// 同一列裡上下起伏的幅度（一列高度的比例）與頻率。
+  static const double mapWaveFraction = 0.12;
+  static const double mapWaveStep = 1.7;
+
+  /// 虛線的路：一段長、間隔（一段＋空白）、粗細。
+  static const double mapDash = 7;
+  static const double mapDashPeriod = 14;
+  static const double mapRouteWidth = 3;
+
+  /// 風景：每多少平方 dp 一個小山或小樹；小山的半寬與高、小樹的半徑。
+  static const double mapSceneryArea = 9000;
+  static const double mapHillHalfWidth = 14;
+  static const double mapHillHeight = 12;
+  static const double mapTreeRadius = 5;
 }

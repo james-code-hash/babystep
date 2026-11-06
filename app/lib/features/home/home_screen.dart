@@ -8,6 +8,7 @@ import '../../bubu/bubu_view.dart';
 import '../../bubu/greeting.dart';
 import '../../copy/family.dart';
 import '../../copy/home.dart';
+import '../../copy/line.dart';
 import '../../copy/plan.dart';
 import '../../copy/surprise.dart';
 import '../../core/clock.dart';
@@ -17,7 +18,9 @@ import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../providers.dart';
+import '../onboarding/first_meeting_screen.dart';
 import 'peek_counter.dart';
+import '../read_aloud/read_aloud.dart';
 
 /// 首頁：步步＋問候、今天的計畫卡、唯一一個主要按鈕（依今天的狀態）、安靜的次要導覽。
 ///
@@ -44,6 +47,7 @@ enum _PeekReply { go, later, notToday }
 class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   String? _greeting;
   AgeTone? _greetingTone;
+  String? _greetingName;
 
   /// 這次進到首頁時決定一次要不要探頭（每次進來最多一張卡）。
   bool _peekDecided = false;
@@ -112,9 +116,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   }
 
   String _greetingFor(AgeTone tone) {
-    if (_greeting == null || _greetingTone != tone) {
+    // 名字換了（D6）也重抽：快取的句子裡還是舊名字。
+    if (_greeting == null || _greetingTone != tone || _greetingName != PetName.current) {
       _greeting = greeting(tone, ref.read(clockProvider).now(), ref.read(randomProvider));
       _greetingTone = tone;
+      _greetingName = PetName.current;
     }
     return _greeting!;
   }
@@ -180,6 +186,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final plansAsync = ref.watch(todayPlansProvider);
     final recordAsync = ref.watch(todayRecordProvider);
     final loaded = settings.hasValue && plansAsync.hasValue && recordAsync.hasValue;
+    // 第一次打開（或家長刪除全部資料之後）：先見面、取名字（D6）。
+    if (settings.hasValue && !settings.value!.onboarded) return const FirstMeetingScreen();
 
     final plans = plansAsync.value ?? const <Plan>[];
     final record = recordAsync.value;
@@ -349,7 +357,10 @@ class _Bubble extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(color: AppColors.line),
           ),
-          child: Text(text, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
+          child: ReadAloud(
+            text: text,
+            child: Text(text, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
+          ),
         ),
       );
 }

@@ -10,6 +10,7 @@ import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../providers.dart';
+import '../read_aloud/read_aloud.dart';
 
 /// 孩子自己的「我的設定」：步步說話的方式（B5，不標年齡）＋裝扮入口。
 class ChildSettingsScreen extends ConsumerWidget {
@@ -42,6 +43,31 @@ class ChildSettingsScreen extends ConsumerWidget {
                   subtitle: Text(FamilyCopy.settingHint.of(tone)),
                   value: ref.watch(settingsProvider).value?.familyNotesOn ?? true,
                   onChanged: (v) => ref.read(repositoryProvider).setFamilyNotesOn(v),
+                ),
+              ),
+              if (ref.watch(speakerProvider).available) ...[
+                const SizedBox(height: AppSpace.m),
+                Card(
+                  child: SwitchListTile(
+                    key: const ValueKey('read-aloud-switch'),
+                    secondary: const Icon(Icons.volume_up_outlined),
+                    title: Text(SettingsCopy.readAloudTitle.of(tone), style: text.titleMedium),
+                    subtitle: Text(SettingsCopy.readAloudHint.of(tone)),
+                    value: ref.watch(settingsProvider).value?.readAloud ?? false,
+                    onChanged: (v) => ref.read(repositoryProvider).setReadAloud(v),
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpace.m),
+              Card(
+                child: ListTile(
+                  key: const ValueKey('open-pet-name'),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.m, vertical: AppSpace.s),
+                  leading: const Icon(Icons.edit_outlined),
+                  title: Text(SettingsCopy.nameEntry.of(tone), style: text.titleMedium),
+                  subtitle: Text(SettingsCopy.nameEntryHint.of(tone)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(Routes.petName),
                 ),
               ),
               const SizedBox(height: AppSpace.m),
