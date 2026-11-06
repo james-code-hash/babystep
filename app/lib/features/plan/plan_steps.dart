@@ -15,6 +15,7 @@ import '../../safety/safety_gate.dart';
 import 'plan_flow_controller.dart';
 import 'plan_hint.dart';
 import 'plan_nav.dart';
+import '../read_aloud/read_aloud.dart';
 
 /// 孩子自己寫事情時可以挑的圖案（不是文字，不需要放 copy/）。
 const customTaskEmojis = ['⭐', '📚', '🎨', '⚽', '🎵', '🧩', '🌱', '🐾', '🧸', '🚲'];
@@ -78,7 +79,7 @@ class _Bubble extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(color: AppColors.line),
         ),
-        child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
+        child: ReadAloud(text: text, child: Text(text, style: Theme.of(context).textTheme.bodyLarge)),
       );
 }
 

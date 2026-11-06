@@ -75,6 +75,15 @@ abstract final class CueTimeConfig {
   static const night = (start: 19 * 60, end: 23 * 60);
 }
 
+/// 朗讀（I6）：裝置內建語音的設定。
+abstract final class ReadAloudConfig {
+  static const language = 'zh-TW';
+
+  /// 0–1；比預設慢一點，給剛開始識字的孩子。
+  static const double rate = 0.42;
+  static const double pitch = 1.05;
+}
+
 /// 分齡（I3）。lively ≈ 小樹苗（6–8 歲）、concise ≈ 小探險家（9–12 歲）；畫面上不標年齡（B5）。
 abstract final class AgeConfig {
   /// 小樹苗建議一天 1–2 件（軟性提示；硬性上限仍是 [AppConfig.maxPlansPerDay]）。

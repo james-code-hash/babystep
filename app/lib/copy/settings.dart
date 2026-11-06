@@ -19,6 +19,11 @@ abstract final class SettingsCopy {
   static const previewLively = Line.same('嗨～我是步步！今天想做點什麼呢？');
   static const previewConcise = Line.same('嗨，我是步步。今天想做什麼？');
 
+  /// 朗讀（I6）。
+  static const readAloudTitle = Line('步步說的話，唸給我聽', '朗讀步步說的話');
+  static const readAloudHint = Line('打開後，步步說話的地方會多一個喇叭，點了就唸出來。', '打開後，對話旁邊會有喇叭，點了才唸。');
+  static const readAloudButton = Line.same('唸出來');
+
   /// 取名字（D6）。顯示時「步步」會換成現在的名字。
   static const nameEntry = Line('幫步步取名字', '幫步步取名字');
   static const nameEntryHint = Line('想叫什麼都可以，隨時都能改。', '叫什麼都可以，隨時能改。');
