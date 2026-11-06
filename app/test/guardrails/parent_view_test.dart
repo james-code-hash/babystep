@@ -160,6 +160,18 @@ void main() {
     expect(j['settings'], isNot(contains('familyNotesOn')));
   });
 
+  // 匯出是家長在家長區按的，所以匯出檔也不能變成已讀回條（決策 I2）。
+  test('the export file carries no "child read it" or "child turned it off" signal either', () async {
+    await buildParentJson();
+    final j = jsonDecode(await env.repo.exportJson()) as Map<String, Object?>;
+    final keys = collectKeys(j);
+    expect(keys, isNot(contains('childRead')));
+    expect(keys, isNot(contains('familyNotesOn')));
+    final notes = (j['familyNotes']! as List).cast<Map<String, Object?>>();
+    expect(notes.map((n) => n['text']), containsAll(['我看到你自己把書包整理好了', '今天的晚餐有你喜歡的湯']),
+        reason: 'the notes themselves are still exported in full');
+  });
+
   test('month letters: the child\'s sentence only when the child wrote one; no story numbers', () async {
     final j = await buildParentJson();
     final letters = (j['monthLetters'] as List).cast<Map<String, Object?>>();

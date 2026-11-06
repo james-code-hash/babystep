@@ -630,7 +630,7 @@ class Repository {
 
   // ---------------------------------------------------------------- 匯出與刪除
 
-  /// 完整匯出（底線 8）。家長 PIN 不匯出。
+  /// 完整匯出（底線 8）。家長 PIN 不匯出；匯出是家長按的，所以孩子有沒有讀留言、有沒有關掉轉達也不匯出（決策 I2）。
   Future<String> exportJson() async {
     final s = await settings();
     final data = {
@@ -642,7 +642,6 @@ class Repository {
         'llmEnabled': s.llmEnabled,
         'reminderSlots': [for (final r in s.reminderSlots) r.toJson()],
         'dressUp': (await dressUp()).toJson(),
-        'familyNotesOn': s.familyNotesOn,
         'trailStyle': s.trailStyle.name,
       },
       'taskTemplates': [for (final t in await taskTemplates()) t.toJson()],

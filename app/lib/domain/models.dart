@@ -330,16 +330,16 @@ class FamilyNote {
   final String text;
   final DateTime createdAt;
 
-  /// 只給孩子這一端用：決定首頁還要不要轉達。家長端看不到（沒有已讀回條，底線 7）。
+  /// 只給孩子這一端用：決定首頁還要不要轉達。家長端看不到，匯出檔也沒有（沒有已讀回條，底線 7）。
   final bool childRead;
 
+  /// 匯出用；刻意不含 [childRead]（決策 I2）。
   Map<String, Object?> toJson() => {
         'id': id,
         'dayKey': dayKey,
         'who': who,
         'text': text,
         'createdAt': createdAt.toIso8601String(),
-        'childRead': childRead,
       };
 }
 
