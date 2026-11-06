@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../app_root.dart';
+import '../../copy/family.dart';
 import '../../copy/line.dart';
 import '../../copy/parent.dart';
+import '../../copy/parent_guide.dart';
 import '../../core/clock.dart';
 import '../../core/layout.dart';
 import '../../core/theme.dart';
@@ -11,6 +14,8 @@ import '../../domain/models.dart';
 import '../../domain/parent_view.dart';
 import '../../providers.dart';
 import 'parent_dialogs.dart';
+import 'parent_family.dart';
+import 'parent_guide.dart';
 import 'parent_providers.dart';
 
 /// 家長區本體。資料只讀 [parentViewProvider]（底線 7）。
@@ -58,6 +63,18 @@ class _ParentBody extends ConsumerWidget {
           Text(pt(ParentCopy.intro), style: const TextStyle(color: AppColors.inkSoft)),
           const SizedBox(height: AppSpace.m),
           _SharedLessonsSection(lessons: view.sharedLessons),
+          const _Section(
+            id: 'guide',
+            title: ParentGuideCopy.sectionTitle,
+            note: ParentGuideCopy.sectionNote,
+            children: [ParentGuideEntries()],
+          ),
+          _Section(
+            id: 'family',
+            title: FamilyCopy.sectionTitle,
+            note: FamilyCopy.sectionNote,
+            children: [FamilySection(today: view.familyToday, notes: view.familyNotes, letters: view.monthLetters)],
+          ),
           _TaskTemplatesSection(templates: view.taskTemplates),
           _CueTemplatesSection(templates: view.cueTemplates),
           _SlotsSection(slots: view.settings.reminderSlots),
@@ -404,11 +421,15 @@ class _DataSection extends ConsumerWidget {
       );
       if (!first || !context.mounted) return;
       final second = await confirmDeleteAllTyped(context);
-      if (!second) return;
-      await ref.read(deleteAllDataProvider)();
-      ref.invalidate(parentViewProvider);
-      if (!context.mounted) return;
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(pt(ParentCopy.deleted))));
+      if (!second || !context.mounted) return;
+      // 刪除會換掉整個資料庫，所有 provider（含家長區自己）都會重建，這個 widget 也可能被拆掉；
+      // 先拿好要用的東西，刪完之後不再碰這個 widget 的 ref／context（H2）。
+      final delete = ref.read(deleteAllDataProvider);
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      // 裝置上：整個 App 收掉、刪檔重開，再回到剛安裝的首頁（H2）。
+      final startOver = AppRoot.startOverOf(context);
+      await delete(startOver: startOver);
+      if (startOver == null) messenger?.showSnackBar(SnackBar(content: Text(pt(ParentCopy.deleted))));
     }
 
     return _Section(

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 import 'copy/common.dart';
+import 'core/age_text_scale.dart';
 import 'core/theme.dart';
 import 'domain/models.dart';
 import 'router.dart';
@@ -29,5 +30,6 @@ class _LittleStepsAppState extends State<LittleStepsApp> {
         locale: const Locale('zh', 'TW'),
         supportedLocales: const [Locale('zh', 'TW'), Locale('en')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        builder: (context, child) => AgeTextScale(child: child ?? const SizedBox.shrink()),
       );
 }

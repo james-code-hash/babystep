@@ -33,6 +33,9 @@ final settingsProvider = StreamProvider<AppSettings>((ref) => ref.watch(reposito
 /// 步步說話的方式；設定還沒載入時用活潑。
 final toneProvider = Provider<AgeTone>((ref) => ref.watch(settingsProvider).value?.tone ?? AgeTone.lively);
 
+final trailStyleProvider =
+    Provider<TrailStyle>((ref) => ref.watch(settingsProvider).value?.trailStyle ?? TrailStyle.path);
+
 final dressUpProvider = StreamProvider<DressUp>((ref) => ref.watch(repositoryProvider).watchDressUp());
 
 final todayPlansProvider = StreamProvider<List<Plan>>(
@@ -46,6 +49,18 @@ final todayRecordProvider = StreamProvider<DayRecord?>(
 final lessonsProvider = StreamProvider<List<Lesson>>((ref) => ref.watch(repositoryProvider).watchLessons());
 
 final plannedDaysProvider = StreamProvider<List<PlannedDay>>((ref) => ref.watch(repositoryProvider).watchPlannedDays());
+
+/// 全家一起：家人今天自己想做的事（I2）。
+final familyTodayProvider = StreamProvider<List<FamilyToday>>(
+  (ref) => ref.watch(repositoryProvider).watchFamilyToday(ref.watch(todayKeyProvider)),
+);
+
+/// 孩子還沒看過的家人留言（孩子關掉轉達時是空的）。
+final unreadFamilyNotesProvider = StreamProvider<List<FamilyNote>>((ref) {
+  final on = ref.watch(settingsProvider.select((s) => s.value?.familyNotesOn ?? true));
+  if (!on) return Stream.value(const []);
+  return ref.watch(repositoryProvider).watchUnreadFamilyNotes();
+});
 
 /// 孩子挑事情用：預設、家長建議、孩子自己的事情庫。
 final taskChoicesProvider = StreamProvider<List<TaskTemplate>>((ref) => ref.watch(repositoryProvider).watchTaskChoices());
@@ -72,3 +87,12 @@ final lessonServiceProvider = Provider<LessonService>((ref) {
     crisisDetector: ref.watch(crisisDetectorProvider),
   );
 });
+
+/// 月回顧的信（J4，新的月份在前）。
+final monthLettersProvider =
+    StreamProvider<List<MonthLetter>>((ref) => ref.watch(repositoryProvider).watchMonthLetters());
+
+/// 某個月家人寫過的「今天的我」（月回顧用）。
+final familyMonthProvider = StreamProvider.family<List<FamilyToday>, String>(
+  (ref, monthKey) => ref.watch(repositoryProvider).watchFamilyTodayInMonth(monthKey),
+);

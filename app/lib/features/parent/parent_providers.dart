@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../app_root.dart';
 import '../../data/database_store.dart';
 import '../../domain/parent_view.dart';
 import '../../providers.dart';
@@ -23,13 +24,17 @@ final parentShareProvider = Provider<ParentShare>(
 );
 
 /// 「刪除全部資料」（底線 8）。先清掉所有資料列（secure_delete＋VACUUM），
-/// 裝置上再把整個資料庫檔刪掉、開一個新的，並讓所有 provider 換到新資料庫——App 不用重開。
-typedef DeleteAllData = Future<void> Function();
+/// 裝置上再把整個資料庫檔刪掉、開一個新的——App 不用重開。
+///
+/// 有 [startOver]（App 由 `AppRoot` 掛起來，裝置上一定有）：交給它先收掉整個 App、再刪檔重開、
+/// 再從首頁重建（H2）。沒有的時候（直接掛 ProviderScope 的測試）就地換資料庫並 invalidate。
+typedef DeleteAllData = Future<void> Function({StartOver? startOver});
 
 final deleteAllDataProvider = Provider<DeleteAllData>(
-  (ref) => () async {
+  (ref) => ({StartOver? startOver}) async {
     await ref.read(repositoryProvider).deleteAll();
     final store = ref.read(databaseStoreProvider);
+    if (startOver != null) return startOver(store);
     if (store == null) return;
     await store.reset();
     ref.invalidate(databaseProvider);

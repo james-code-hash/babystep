@@ -291,6 +291,9 @@ void main() {
     await seedPlans(env, count: 1);
     await pumpReview(tester, env, CountingLessonService());
     await reviewOutcomes(tester, [Outcome.done], 1);
+    // 簡潔模式一開始就有輸入框，不另外放「寫我自己的」。
+    expect(hasKey('review-text'), isTrue);
+    expect(hasKey('review-write'), isFalse);
     await tapKey(tester, 'review-skip');
     await tapKey(tester, 'review-save-no');
     expect(find.text(ReviewCopy.ending.concise), findsOneWidget);

@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../bubu/bubu_view.dart';
 import '../../bubu/greeting.dart';
+import '../../copy/family.dart';
 import '../../copy/home.dart';
 import '../../copy/plan.dart';
+import '../../copy/surprise.dart';
 import '../../core/clock.dart';
 import '../../core/config.dart';
 import '../../core/layout.dart';
@@ -47,8 +51,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   _PeekReply? _peekReply;
   int _peekVariant = 0;
 
-  /// 上一次載入完成時今天有沒有計畫（null = 還沒載入過）。
-  bool? _hadPlans;
+  /// 這次進到首頁時，孩子對哪些家人留言說了「等一下」（只在記憶體，下次進來再問一次）。
+  final Set<String> _notesLater = {};
+
+  /// 上一次決定探頭時看到的輸入（提醒時段、今天有沒有計畫、聊完了沒）。
+  /// 輸入變了、而且這次還沒探頭過，就重新決定一次（G6、H1）。
+  String? _peekInputs;
+
+  /// 輕點步步的小反應（隱藏互動，J2）：一句話＋驚訝的臉，過一下就回到原樣。不記錄。
+  String? _poke;
+  Timer? _pokeTimer;
+
+  void _pokeBubu(AgeTone tone) {
+    _pokeTimer?.cancel();
+    setState(() => _poke = SurpriseCopy.pokes.pick(tone, ref.read(randomProvider)));
+    _pokeTimer = Timer(const Duration(milliseconds: SurpriseConfig.pokeMs), () {
+      if (mounted) setState(() => _poke = null);
+    });
+  }
 
   @override
   void initState() {
@@ -59,6 +79,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _pokeTimer?.cancel();
     super.dispose();
   }
 
@@ -72,11 +93,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     _newVisit();
   }
 
-  /// 又一次「進到首頁」（從背景回來、從別的畫面回來）：重新決定要不要探頭。
+  /// 又一次「進到首頁」（從背景回來、從別的畫面回來）：重新決定要不要探頭，家人留言也再問一次。
   /// 卡片正顯示著、還沒回答時就留著，不重抽也不多算一次。
   void _newVisit() {
     if (!mounted) return;
-    if (_peekShown && _peekReply == null) return;
+    // 家人留言的「等一下」只算這一次：回到首頁就再問一次。
+    _notesLater.clear();
+    if (_peekShown && _peekReply == null) {
+      setState(() {});
+      return;
+    }
     setState(() {
       _peekDecided = false;
       _peekShown = false;
@@ -113,6 +139,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     });
   }
 
+  static String _peekInputsOf(AppSettings settings, List<Plan> plans, bool ended) => [
+        for (final s in settings.reminderSlots) '${s.startMinute}-${s.endMinute}',
+        plans.isNotEmpty,
+        ended,
+      ].join('|');
+
+  /// 打開一則家人留言：原封不動顯示，步步不加評論（§4.11）。看過就不再轉達這一則。
+  Future<void> _openNote(FamilyNote note, AgeTone tone) async {
+    await ref.read(repositoryProvider).markFamilyNoteRead(note.id);
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        key: const ValueKey('family-note-dialog'),
+        title: Text(FamilyCopy.noteFrom.fill(tone, {'who': note.who})),
+        content: Text(note.text, key: const ValueKey('family-note-text'), style: Theme.of(context).textTheme.bodyLarge),
+        actions: [
+          FilledButton(
+            key: const ValueKey('family-note-close'),
+            onPressed: () => Navigator.pop(context),
+            child: Text(FamilyCopy.noteClose.of(tone)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _open(String route) async {
     await GoRouter.of(context).push(route);
     _newVisit();
@@ -130,31 +183,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final record = recordAsync.value;
     final ended = record?.ended ?? false;
     if (loaded) {
-      // 今天的計畫從無到有（例如在別的地方存好計畫）→ 這次還沒探頭過就重新決定。
-      if (_hadPlans == false && plans.isNotEmpty && !_peekShown) _peekDecided = false;
-      _hadPlans = plans.isNotEmpty;
+      // 輸入變了（例如今天的計畫從無到有、家長剛加了提醒時段）→ 這次還沒探頭過就重新決定。
+      // 從別的畫面回來的第一個 frame 可能還是舊的設定（畫面被蓋住時 provider 會暫停），
+      // 新的設定一到就會在這裡重新決定（H1）。
+      final inputs = _peekInputsOf(settings.value!, plans, ended);
+      if (inputs != _peekInputs && !_peekShown) _peekDecided = false;
+      _peekInputs = inputs;
       _decidePeek(settings.value!, plans, record);
     }
     final peekVisible = loaded && _peekShown && plans.isNotEmpty && !ended;
     final peekAsking = peekVisible && _peekReply == null;
 
-    // 只看時段；探頭問題正顯示著時歪頭等回答（底線 2）。
-    final expression = peekAsking ? BubuExpression.curious : restingExpression(ref.watch(clockProvider).now());
+    // 只看時段；探頭問題正顯示著時歪頭等回答；被輕點時嚇一跳（底線 2）。
+    final poke = _poke;
+    final expression = poke != null
+        ? BubuExpression.surprised
+        : peekAsking
+            ? BubuExpression.curious
+            : restingExpression(ref.watch(clockProvider).now());
 
-    final bubbleText = ended ? HomeCopy.dayEndedBubu.of(tone) : _greetingFor(tone);
+    final bubbleText = poke ?? (ended ? HomeCopy.dayEndedBubu.of(tone) : _greetingFor(tone));
+    Widget bubu(double size) => GestureDetector(
+          key: const ValueKey('home-bubu'),
+          onTap: () => _pokeBubu(tone),
+          child: BubuView(expression: expression, size: size),
+        );
     // 窄版：和原本一樣在最上面；寬版（平板橫放）：自成一欄。
     Widget side(BuildContext context, bool wide) => Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: wide
               ? [
-                  Center(child: BubuView(expression: expression, size: LayoutConfig.bubuSidePane)),
+                  Center(child: bubu(LayoutConfig.bubuSidePane)),
                   const SizedBox(height: AppSpace.m),
                   _Bubble(text: bubbleText),
                 ]
               : [
                   const SizedBox(height: AppSpace.m),
-                  Center(child: BubuView(expression: expression, size: Layout.bubu(context, BubuSlot.hero))),
+                  Center(child: bubu(Layout.bubu(context, BubuSlot.hero))),
                   const SizedBox(height: AppSpace.m),
                   _Bubble(text: bubbleText),
                   const SizedBox(height: AppSpace.l),
@@ -162,6 +228,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         );
 
     final children = <Widget>[];
+
+    // 家人的留言：一次問一則，孩子可以先不看（§4.11）。
+    final notes = ref.watch(unreadFamilyNotesProvider).value ?? const <FamilyNote>[];
+    final note = notes.where((n) => !_notesLater.contains(n.id)).firstOrNull;
+    if (loaded && note != null) {
+      children.addAll([
+        _FamilyNoteInvite(
+          tone: tone,
+          note: note,
+          onOpen: () => _openNote(note, tone),
+          onLater: () => setState(() => _notesLater.add(note.id)),
+        ),
+        const SizedBox(height: AppSpace.m),
+      ]);
+    }
 
     if (loaded) {
       if (ended) {
@@ -222,6 +303,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       }
     }
 
+    final family = ref.watch(familyTodayProvider).value ?? const <FamilyToday>[];
+    if (loaded && family.isNotEmpty) {
+      children.addAll([
+        const SizedBox(height: AppSpace.l),
+        _FamilyTodayCard(tone: tone, family: family),
+      ]);
+    }
+
     children.addAll([
       const SizedBox(height: AppSpace.xl),
       _QuietNav(tone: tone, onOpen: _open),
@@ -271,9 +360,19 @@ class _PlanCard extends StatelessWidget {
               Text(plan.emoji, style: const TextStyle(fontSize: 28)),
               const SizedBox(width: AppSpace.m),
               Expanded(
-                child: Text(
-                  PlanCopy.ifThen.fill(tone, {'cue': plan.cue, 'task': plan.task}),
-                  style: Theme.of(context).textTheme.bodyLarge,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      PlanCopy.ifThen.fill(tone, {'cue': plan.cue, 'task': plan.task}),
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    if (plan.stuck != null)
+                      Text(
+                        PlanCopy.stuckLine.fill(tone, {'stuck': plan.stuck!}),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.inkSoft),
+                      ),
+                  ],
                 ),
               ),
             ],
@@ -356,6 +455,76 @@ class _PeekCard extends StatelessWidget {
   }
 }
 
+/// 「某某有留話給你喔，要看嗎？」兩個選項份量相同。
+class _FamilyNoteInvite extends StatelessWidget {
+  const _FamilyNoteInvite({required this.tone, required this.note, required this.onOpen, required this.onLater});
+  final AgeTone tone;
+  final FamilyNote note;
+  final VoidCallback onOpen;
+  final VoidCallback onLater;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        key: const ValueKey('home-family-note'),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.m),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(FamilyCopy.noteInvite.fill(tone, {'who': note.who}), style: Theme.of(context).textTheme.bodyLarge),
+              const SizedBox(height: AppSpace.s),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      key: const ValueKey('family-note-open'),
+                      onPressed: onOpen,
+                      child: Text(FamilyCopy.noteOpen.of(tone)),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpace.s),
+                  Expanded(
+                    child: OutlinedButton(
+                      key: const ValueKey('family-note-later'),
+                      onPressed: onLater,
+                      child: Text(FamilyCopy.noteLater.of(tone)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+/// 家人今天自己想做的事：只列出來，不計數、不比較、沒有做到了沒。
+class _FamilyTodayCard extends StatelessWidget {
+  const _FamilyTodayCard({required this.tone, required this.family});
+  final AgeTone tone;
+  final List<FamilyToday> family;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        key: const ValueKey('home-family-today'),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.m),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(FamilyCopy.homeTitle.of(tone), style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: AppSpace.xs),
+              for (final f in family)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpace.xs),
+                  child: Text(FamilyCopy.homeItem.fill(tone, {'who': f.who, 'text': f.text})),
+                ),
+            ],
+          ),
+        ),
+      );
+}
+
 /// 安靜的次要導覽：沒有數字、沒有小紅點。
 class _QuietNav extends StatelessWidget {
   const _QuietNav({required this.tone, required this.onOpen});
@@ -379,6 +548,7 @@ class _QuietNav extends StatelessWidget {
           children: [
             item(Icons.menu_book_outlined, HomeCopy.notebook.of(tone), Routes.notebook, 'nav-notebook'),
             item(Icons.route_outlined, HomeCopy.path.of(tone), Routes.path, 'nav-path'),
+            item(Icons.explore_outlined, HomeCopy.explore.of(tone), Routes.explore, 'nav-explore'),
             item(Icons.tune, HomeCopy.settings.of(tone), Routes.settings, 'nav-settings'),
           ],
         ),

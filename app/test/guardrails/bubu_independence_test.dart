@@ -134,4 +134,17 @@ void main() {
       expect(s.paramTypes, ['DressUp', 'DateTime'], reason: '$s');
     }
   });
+
+  test('the surprise box and its contents only look at the date or chance (J2)', () {
+    final box = findInBubu({'surpriseBoxOn'});
+    expect(box, isNotEmpty);
+    for (final s in box) {
+      expect(s.paramTypes, ['DateTime'], reason: '$s');
+    }
+    final inside = findInBubu({'pickSurprise'});
+    expect(inside, isNotEmpty);
+    for (final s in inside) {
+      expect(s.paramTypes, ['Random'], reason: '$s');
+    }
+  });
 }

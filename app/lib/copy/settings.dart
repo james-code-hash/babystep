@@ -7,6 +7,10 @@ abstract final class SettingsCopy {
   static const toneTitle = Line('步步說話的方式', '步步說話的方式');
   static const toneHint = Line('你喜歡哪一種，就選哪一種。隨時都可以換。', '選你喜歡的，隨時可以換。');
 
+  /// 兩種方式在流程上的差別（I3）。
+  static const livelyDetail = Line.same('字大一點、圖多一點，用點的就能排好。');
+  static const conciseDetail = Line.same('可以自己多寫一點，還能先想好「卡住的話怎麼辦」。');
+
   /// 不標年齡（B5）。
   static const toneLively = Line.same('活潑');
   static const toneConcise = Line.same('簡潔');

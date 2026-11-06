@@ -34,6 +34,13 @@ abstract final class AppConfig {
   static const int maxWhyChars = 60;
   static const int maxReflectionChars = 120;
 
+  /// 全家一起：「你是誰」、家人留言的字數上限（I2）。
+  static const int maxFamilyWhoChars = 6;
+  static const int maxFamilyNoteChars = 40;
+
+  /// 月回顧的信（孩子或家人寫的一句話）最多幾個字。
+  static const int maxLetterChars = 40;
+
   /// 家長 PIN 的位數。
   static const int parentPinLength = 4;
 
@@ -53,6 +60,15 @@ abstract final class AppConfig {
 
   /// 範本引擎願意引用的孩子原話最短字數。
   static const int minQuoteChars = 2;
+}
+
+/// 分齡（I3）。lively ≈ 小樹苗（6–8 歲）、concise ≈ 小探險家（9–12 歲）；畫面上不標年齡（B5）。
+abstract final class AgeConfig {
+  /// 小樹苗建議一天 1–2 件（軟性提示；硬性上限仍是 [AppConfig.maxPlansPerDay]）。
+  static const int sproutSuggestedPlans = 2;
+
+  /// 小樹苗的字放大倍數（企劃書 §10.1「大字」）。家長區不放大。
+  static const double sproutTextScale = 1.12;
 }
 
 /// 步步的時段、動畫節奏。
@@ -143,4 +159,43 @@ abstract final class LayoutConfig {
 
   /// 家長 PIN 畫面的最大寬度（鍵盤置中，不撐滿大螢幕）。
   static const double pinMaxWidth = 420;
+}
+
+/// 探索角（J1）。
+abstract final class ExploreConfig {
+  /// 塗鴉牆畫布高度（dp）。
+  static const double canvasHeight = 320;
+
+  /// 筆畫粗細（dp）。
+  static const double strokeWidth = 6;
+}
+
+/// 驚喜盒（J2）。
+abstract final class SurpriseConfig {
+  /// 某一天探索角出現驚喜盒的機率（依日期決定，同一天都一樣）。
+  static const double boxChance = 0.35;
+
+  /// 首頁輕點步步後，小反應停留的毫秒數。
+  static const int pokeMs = 2200;
+}
+
+/// 成長軌跡的另外兩種樣子（J3）：樹與星空。
+abstract final class TrailConfig {
+  /// 一片葉子的直徑（dp）。
+  static const double leafSize = 44;
+
+  /// 相鄰兩片葉子中心的距離（dp，蜂巢格）。
+  static const double leafSpacing = 46;
+
+  /// 樹幹的高度（dp）。
+  static const double trunkHeight = 120;
+
+  /// 星空一列幾顆星。
+  static const int starsPerRow = 4;
+
+  /// 星空一列的高度（dp）。
+  static const double starRowHeight = 88;
+
+  /// 一顆星的大小（dp）。
+  static const double starSize = 40;
 }

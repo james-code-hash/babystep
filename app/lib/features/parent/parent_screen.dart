@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../copy/line.dart';
 import '../../copy/parent.dart';
+import '../../core/age_text_scale.dart';
 import '../../core/config.dart';
 import '../../core/layout.dart';
 import '../../core/theme.dart';
@@ -87,8 +88,11 @@ class _ParentGateScreenState extends ConsumerState<ParentGateScreen> {
     }
   }
 
+  /// 家長區用系統原本的字級（小樹苗的放大只給孩子的畫面，I3）。
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => AgeTextScale.unscaled(context, Builder(builder: _build));
+
+  Widget _build(BuildContext context) {
     String t(Line l) => l.of(AgeTone.concise);
     if (_stage == _Stage.open) return const ParentHome();
     final settings = ref.watch(settingsProvider);
