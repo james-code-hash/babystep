@@ -47,8 +47,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   _PeekReply? _peekReply;
   int _peekVariant = 0;
 
-  /// 上一次載入完成時今天有沒有計畫（null = 還沒載入過）。
-  bool? _hadPlans;
+  /// 上一次決定探頭時看到的輸入（提醒時段、今天有沒有計畫、聊完了沒）。
+  /// 輸入變了、而且這次還沒探頭過，就重新決定一次（G6、H1）。
+  String? _peekInputs;
 
   @override
   void initState() {
@@ -113,6 +114,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     });
   }
 
+  static String _peekInputsOf(AppSettings settings, List<Plan> plans, bool ended) => [
+        for (final s in settings.reminderSlots) '${s.startMinute}-${s.endMinute}',
+        plans.isNotEmpty,
+        ended,
+      ].join('|');
+
   Future<void> _open(String route) async {
     await GoRouter.of(context).push(route);
     _newVisit();
@@ -130,9 +137,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final record = recordAsync.value;
     final ended = record?.ended ?? false;
     if (loaded) {
-      // 今天的計畫從無到有（例如在別的地方存好計畫）→ 這次還沒探頭過就重新決定。
-      if (_hadPlans == false && plans.isNotEmpty && !_peekShown) _peekDecided = false;
-      _hadPlans = plans.isNotEmpty;
+      // 輸入變了（例如今天的計畫從無到有、家長剛加了提醒時段）→ 這次還沒探頭過就重新決定。
+      // 從別的畫面回來的第一個 frame 可能還是舊的設定（畫面被蓋住時 provider 會暫停），
+      // 新的設定一到就會在這裡重新決定（H1）。
+      final inputs = _peekInputsOf(settings.value!, plans, ended);
+      if (inputs != _peekInputs && !_peekShown) _peekDecided = false;
+      _peekInputs = inputs;
       _decidePeek(settings.value!, plans, record);
     }
     final peekVisible = loaded && _peekShown && plans.isNotEmpty && !ended;

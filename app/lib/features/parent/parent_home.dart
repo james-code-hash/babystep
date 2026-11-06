@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../app_root.dart';
 import '../../copy/line.dart';
 import '../../copy/parent.dart';
 import '../../core/clock.dart';
@@ -404,11 +405,15 @@ class _DataSection extends ConsumerWidget {
       );
       if (!first || !context.mounted) return;
       final second = await confirmDeleteAllTyped(context);
-      if (!second) return;
-      await ref.read(deleteAllDataProvider)();
-      ref.invalidate(parentViewProvider);
-      if (!context.mounted) return;
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(pt(ParentCopy.deleted))));
+      if (!second || !context.mounted) return;
+      // 刪除會換掉整個資料庫，所有 provider（含家長區自己）都會重建，這個 widget 也可能被拆掉；
+      // 先拿好要用的東西，刪完之後不再碰這個 widget 的 ref／context（H2）。
+      final delete = ref.read(deleteAllDataProvider);
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      // 裝置上：整個 App 收掉、刪檔重開，再回到剛安裝的首頁（H2）。
+      final startOver = AppRoot.startOverOf(context);
+      await delete(startOver: startOver);
+      if (startOver == null) messenger?.showSnackBar(SnackBar(content: Text(pt(ParentCopy.deleted))));
     }
 
     return _Section(

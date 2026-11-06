@@ -384,6 +384,27 @@ void main() {
       await finish(tester, env);
     });
 
+    testWidgets('a reminder slot added on another screen → back on Home → card appears (audit bug 2)', (tester) async {
+      tallScreen(tester);
+      env = TestEnv(); // 19:30
+      await _plan(env);
+      await env.repo.setReminderSlots(const []);
+      await pumpApp(tester, env);
+      expect(find.byKey(const ValueKey('home-peek')), findsNothing);
+      await tester.ensureVisible(find.byKey(const ValueKey('nav-notebook')));
+      await tester.tap(find.byKey(const ValueKey('nav-notebook')));
+      await settleAll(tester);
+      // 家長在別的畫面新增了一個涵蓋現在的時段。
+      await tester.runAsync(() => env.repo.setReminderSlots(const [
+            ReminderSlot(id: 'new', label: '晚上', startMinute: 19 * 60, endMinute: 21 * 60),
+          ]));
+      await settleAll(tester);
+      GoRouter.of(tester.element(find.byType(HomeScreen, skipOffstage: false))).pop();
+      await settleAll(tester);
+      expect(find.byKey(const ValueKey('home-peek')), findsOneWidget);
+      await finish(tester, env);
+    });
+
     testWidgets('returning to Home from another screen re-checks', (tester) async {
       tallScreen(tester);
       env = TestEnv(now: DateTime(2026, 10, 23, 10, 0));
