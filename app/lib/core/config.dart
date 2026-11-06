@@ -62,7 +62,6 @@ abstract final class AppConfig {
   static const int minQuoteChars = 2;
 }
 
-/// 分齡（I3）。lively ≈ 小樹苗（6–8 歲）、concise ≈ 小探險家（9–12 歲）；畫面上不標年齡（B5）。
 /// 時間點範本大概落在一天的哪一段（從 0:00 算的分鐘，[start, end)）。
 /// 探頭時只拿落在「現在」的時間點來問「現在方便嗎？」（README 已知問題 1）。
 abstract final class CueTimeConfig {
@@ -73,6 +72,7 @@ abstract final class CueTimeConfig {
   static const night = (start: 19 * 60, end: 23 * 60);
 }
 
+/// 分齡（I3）。lively ≈ 小樹苗（6–8 歲）、concise ≈ 小探險家（9–12 歲）；畫面上不標年齡（B5）。
 abstract final class AgeConfig {
   /// 小樹苗建議一天 1–2 件（軟性提示；硬性上限仍是 [AppConfig.maxPlansPerDay]）。
   static const int sproutSuggestedPlans = 2;
@@ -142,8 +142,7 @@ abstract final class LayoutConfig {
   /// 可用寬度至少這麼寬才把步步放到旁邊（平板橫放）。
   static const double twoPaneMinWidth = 900;
 
-  /// 雙欄時旁邊那一欄（步步＋對話泡泡）的寬度，與兩欄之間的距離。
-  static const double sidePaneWidth = 340;
+  /// 兩欄之間的距離（舞台的寬度見 [stageFraction]）。
   static const double paneGap = 32;
 
   /// 內容外側再留的左右邊距（手機為 0，維持原本版面）。

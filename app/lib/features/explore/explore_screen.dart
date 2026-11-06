@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -72,20 +73,24 @@ class ExploreScreen extends ConsumerWidget {
                 ),
               )
             : AdaptiveFrame(
-                child: ListView(
+                // 不用 ListView：滑出畫面的卡片會被收掉，畫到一半的圖、翻開的答案都會不見。
+                child: SingleChildScrollView(
                   key: const ValueKey('explore-list'),
                   padding: const EdgeInsets.all(AppSpace.m),
-                  children: [
-                    Text(ExploreCopy.intro.of(tone), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
-                    const SizedBox(height: AppSpace.m),
-                    _CurioCard(tone: tone),
-                    const SizedBox(height: AppSpace.m),
-                    if (box) ...[
-                      _SurpriseCard(tone: tone),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(ExploreCopy.intro.of(tone), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
                       const SizedBox(height: AppSpace.m),
+                      _CurioCard(tone: tone),
+                      const SizedBox(height: AppSpace.m),
+                      if (box) ...[
+                        _SurpriseCard(tone: tone),
+                        const SizedBox(height: AppSpace.m),
+                      ],
+                      _DrawCard(tone: tone),
                     ],
-                    _DrawCard(tone: tone),
-                  ],
+                  ),
                 ),
               ),
       ),
@@ -323,10 +328,18 @@ class _DrawCardState extends ConsumerState<_DrawCard> {
                 child: Container(
                   height: Layout.isTablet(context) ? ExploreConfig.canvasHeightTablet : ExploreConfig.canvasHeight,
                   decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.line)),
-                  child: GestureDetector(
+                  // 一碰到畫布就歸畫畫：一般的 pan 要滑 36px 才算數，
+                  // 外面的捲動 18px 就搶走，直的線會變成捲頁面。
+                  child: RawGestureDetector(
                     key: const ValueKey('draw-canvas'),
-                    onPanStart: (d) => _start(d.localPosition),
-                    onPanUpdate: (d) => _extend(d.localPosition),
+                    gestures: {
+                      _EagerPan: GestureRecognizerFactoryWithHandlers<_EagerPan>(
+                        _EagerPan.new,
+                        (r) => r
+                          ..onStart = ((d) => _start(d.localPosition))
+                          ..onUpdate = ((d) => _extend(d.localPosition)),
+                      ),
+                    },
                     child: CustomPaint(painter: _StrokesPainter(_strokes), size: Size.infinite),
                   ),
                 ),
@@ -434,4 +447,15 @@ class _StrokesPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_StrokesPainter old) => true;
+}
+
+/// 手指一放上畫布就贏得手勢，不和外面的捲動比誰先滑夠遠。
+class _EagerPan extends PanGestureRecognizer {
+  _EagerPan({super.debugOwner});
+
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    super.addAllowedPointer(event);
+    resolve(GestureDisposition.accepted);
+  }
 }
