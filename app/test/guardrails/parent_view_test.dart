@@ -22,6 +22,8 @@ const allowedKeys = {
   'dayKey',
   // 全家一起（I2）：家長自己寫的「今天的我」與留言
   'familyToday', 'familyNotes', 'who',
+  // 月回顧的信（J4）：孩子自己寫給家人的一句、家人寫給孩子的一句
+  'monthLetters', 'month', 'child', 'parent',
 };
 
 const forbiddenKeyFragments = [
@@ -105,6 +107,10 @@ void main() {
     await env.repo.markFamilyNoteRead(read.id);
     await env.repo.setFamilyNotesOn(false);
 
+    // 月回顧：這個月孩子寫了一句給家人；上個月只有家長寫。
+    await env.repo.saveMonthLetter('2026-10', LetterAuthor.child, '謝謝你們陪我');
+    await env.repo.saveMonthLetter('2026-09', LetterAuthor.parent, '我看到你自己整理書包');
+
     final view = await env.repo.parentView();
     // 走一次 JSON 編碼，確保拿到的是真的會被序列化的東西。
     return jsonDecode(jsonEncode(view.toJson())) as Map<String, Object?>;
@@ -152,6 +158,15 @@ void main() {
       expect(n.keys.toSet(), {'id', 'dayKey', 'who', 'text'});
     }
     expect(j['settings'], isNot(contains('familyNotesOn')));
+  });
+
+  test('month letters: the child\'s sentence only when the child wrote one; no story numbers', () async {
+    final j = await buildParentJson();
+    final letters = (j['monthLetters'] as List).cast<Map<String, Object?>>();
+    expect(letters, [
+      {'month': '2026-10', 'child': '謝謝你們陪我'},
+      {'month': '2026-09', 'parent': '我看到你自己整理書包'},
+    ]);
   });
 
   test('child-origin templates are not included', () async {

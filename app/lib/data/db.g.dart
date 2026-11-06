@@ -2962,6 +2962,271 @@ class FamilyNotesCompanion extends UpdateCompanion<FamilyNoteRow> {
   }
 }
 
+class $MonthLettersTable extends MonthLetters
+    with TableInfo<$MonthLettersTable, MonthLetterRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MonthLettersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _monthKeyMeta = const VerificationMeta(
+    'monthKey',
+  );
+  @override
+  late final GeneratedColumn<String> monthKey = GeneratedColumn<String>(
+    'month_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _authorMeta = const VerificationMeta('author');
+  @override
+  late final GeneratedColumn<String> author = GeneratedColumn<String>(
+    'author',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [monthKey, author, body];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'month_letters';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MonthLetterRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('month_key')) {
+      context.handle(
+        _monthKeyMeta,
+        monthKey.isAcceptableOrUnknown(data['month_key']!, _monthKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_monthKeyMeta);
+    }
+    if (data.containsKey('author')) {
+      context.handle(
+        _authorMeta,
+        author.isAcceptableOrUnknown(data['author']!, _authorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_authorMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {monthKey, author};
+  @override
+  MonthLetterRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MonthLetterRow(
+      monthKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}month_key'],
+      )!,
+      author: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}author'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+    );
+  }
+
+  @override
+  $MonthLettersTable createAlias(String alias) {
+    return $MonthLettersTable(attachedDatabase, alias);
+  }
+}
+
+class MonthLetterRow extends DataClass implements Insertable<MonthLetterRow> {
+  /// 'YYYY-MM'
+  final String monthKey;
+
+  /// 'child' 或 'parent'
+  final String author;
+  final String body;
+  const MonthLetterRow({
+    required this.monthKey,
+    required this.author,
+    required this.body,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['month_key'] = Variable<String>(monthKey);
+    map['author'] = Variable<String>(author);
+    map['body'] = Variable<String>(body);
+    return map;
+  }
+
+  MonthLettersCompanion toCompanion(bool nullToAbsent) {
+    return MonthLettersCompanion(
+      monthKey: Value(monthKey),
+      author: Value(author),
+      body: Value(body),
+    );
+  }
+
+  factory MonthLetterRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MonthLetterRow(
+      monthKey: serializer.fromJson<String>(json['monthKey']),
+      author: serializer.fromJson<String>(json['author']),
+      body: serializer.fromJson<String>(json['body']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'monthKey': serializer.toJson<String>(monthKey),
+      'author': serializer.toJson<String>(author),
+      'body': serializer.toJson<String>(body),
+    };
+  }
+
+  MonthLetterRow copyWith({String? monthKey, String? author, String? body}) =>
+      MonthLetterRow(
+        monthKey: monthKey ?? this.monthKey,
+        author: author ?? this.author,
+        body: body ?? this.body,
+      );
+  MonthLetterRow copyWithCompanion(MonthLettersCompanion data) {
+    return MonthLetterRow(
+      monthKey: data.monthKey.present ? data.monthKey.value : this.monthKey,
+      author: data.author.present ? data.author.value : this.author,
+      body: data.body.present ? data.body.value : this.body,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MonthLetterRow(')
+          ..write('monthKey: $monthKey, ')
+          ..write('author: $author, ')
+          ..write('body: $body')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(monthKey, author, body);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MonthLetterRow &&
+          other.monthKey == this.monthKey &&
+          other.author == this.author &&
+          other.body == this.body);
+}
+
+class MonthLettersCompanion extends UpdateCompanion<MonthLetterRow> {
+  final Value<String> monthKey;
+  final Value<String> author;
+  final Value<String> body;
+  final Value<int> rowid;
+  const MonthLettersCompanion({
+    this.monthKey = const Value.absent(),
+    this.author = const Value.absent(),
+    this.body = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MonthLettersCompanion.insert({
+    required String monthKey,
+    required String author,
+    required String body,
+    this.rowid = const Value.absent(),
+  }) : monthKey = Value(monthKey),
+       author = Value(author),
+       body = Value(body);
+  static Insertable<MonthLetterRow> custom({
+    Expression<String>? monthKey,
+    Expression<String>? author,
+    Expression<String>? body,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (monthKey != null) 'month_key': monthKey,
+      if (author != null) 'author': author,
+      if (body != null) 'body': body,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MonthLettersCompanion copyWith({
+    Value<String>? monthKey,
+    Value<String>? author,
+    Value<String>? body,
+    Value<int>? rowid,
+  }) {
+    return MonthLettersCompanion(
+      monthKey: monthKey ?? this.monthKey,
+      author: author ?? this.author,
+      body: body ?? this.body,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (monthKey.present) {
+      map['month_key'] = Variable<String>(monthKey.value);
+    }
+    if (author.present) {
+      map['author'] = Variable<String>(author.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MonthLettersCompanion(')
+          ..write('monthKey: $monthKey, ')
+          ..write('author: $author, ')
+          ..write('body: $body, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2974,6 +3239,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FamilyTodayEntriesTable familyTodayEntries =
       $FamilyTodayEntriesTable(this);
   late final $FamilyNotesTable familyNotes = $FamilyNotesTable(this);
+  late final $MonthLettersTable monthLetters = $MonthLettersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2987,6 +3253,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     settings,
     familyTodayEntries,
     familyNotes,
+    monthLetters,
   ];
 }
 
@@ -4681,6 +4948,177 @@ typedef $$FamilyNotesTableProcessedTableManager =
       FamilyNoteRow,
       PrefetchHooks Function()
     >;
+typedef $$MonthLettersTableCreateCompanionBuilder =
+    MonthLettersCompanion Function({
+      required String monthKey,
+      required String author,
+      required String body,
+      Value<int> rowid,
+    });
+typedef $$MonthLettersTableUpdateCompanionBuilder =
+    MonthLettersCompanion Function({
+      Value<String> monthKey,
+      Value<String> author,
+      Value<String> body,
+      Value<int> rowid,
+    });
+
+class $$MonthLettersTableFilterComposer
+    extends Composer<_$AppDatabase, $MonthLettersTable> {
+  $$MonthLettersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get monthKey => $composableBuilder(
+    column: $table.monthKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get author => $composableBuilder(
+    column: $table.author,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MonthLettersTableOrderingComposer
+    extends Composer<_$AppDatabase, $MonthLettersTable> {
+  $$MonthLettersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get monthKey => $composableBuilder(
+    column: $table.monthKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get author => $composableBuilder(
+    column: $table.author,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MonthLettersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MonthLettersTable> {
+  $$MonthLettersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get monthKey =>
+      $composableBuilder(column: $table.monthKey, builder: (column) => column);
+
+  GeneratedColumn<String> get author =>
+      $composableBuilder(column: $table.author, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+}
+
+class $$MonthLettersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MonthLettersTable,
+          MonthLetterRow,
+          $$MonthLettersTableFilterComposer,
+          $$MonthLettersTableOrderingComposer,
+          $$MonthLettersTableAnnotationComposer,
+          $$MonthLettersTableCreateCompanionBuilder,
+          $$MonthLettersTableUpdateCompanionBuilder,
+          (
+            MonthLetterRow,
+            BaseReferences<_$AppDatabase, $MonthLettersTable, MonthLetterRow>,
+          ),
+          MonthLetterRow,
+          PrefetchHooks Function()
+        > {
+  $$MonthLettersTableTableManager(_$AppDatabase db, $MonthLettersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MonthLettersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MonthLettersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MonthLettersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> monthKey = const Value.absent(),
+                Value<String> author = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MonthLettersCompanion(
+                monthKey: monthKey,
+                author: author,
+                body: body,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String monthKey,
+                required String author,
+                required String body,
+                Value<int> rowid = const Value.absent(),
+              }) => MonthLettersCompanion.insert(
+                monthKey: monthKey,
+                author: author,
+                body: body,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$MonthLettersTable, MonthLetterRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $MonthLettersTable,
+                    MonthLetterRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MonthLettersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MonthLettersTable,
+      MonthLetterRow,
+      $$MonthLettersTableFilterComposer,
+      $$MonthLettersTableOrderingComposer,
+      $$MonthLettersTableAnnotationComposer,
+      $$MonthLettersTableCreateCompanionBuilder,
+      $$MonthLettersTableUpdateCompanionBuilder,
+      (
+        MonthLetterRow,
+        BaseReferences<_$AppDatabase, $MonthLettersTable, MonthLetterRow>,
+      ),
+      MonthLetterRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4701,4 +5139,6 @@ class $AppDatabaseManager {
       $$FamilyTodayEntriesTableTableManager(_db, _db.familyTodayEntries);
   $$FamilyNotesTableTableManager get familyNotes =>
       $$FamilyNotesTableTableManager(_db, _db.familyNotes);
+  $$MonthLettersTableTableManager get monthLetters =>
+      $$MonthLettersTableTableManager(_db, _db.monthLetters);
 }

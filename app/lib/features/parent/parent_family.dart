@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../copy/family.dart';
+import '../../copy/line.dart';
+import '../../copy/month.dart';
 import '../../copy/parent.dart';
 import '../../core/clock.dart';
 import '../../core/config.dart';
@@ -23,9 +25,12 @@ String? familyTextProblem(CopyRules rules, String text) {
 ///
 /// 刻意沒有：孩子看過留言了沒、孩子有沒有關掉轉達、家人的事做到了沒。
 class FamilySection extends ConsumerWidget {
-  const FamilySection({super.key, required this.today, required this.notes});
+  const FamilySection({super.key, required this.today, required this.notes, this.letters = const []});
   final List<FamilyTodayView> today;
   final List<FamilyNoteView> notes;
+
+  /// 月回顧的信（J4）。孩子那一句只有孩子自己寫了才有。
+  final List<MonthLettersView> letters;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,6 +48,25 @@ class FamilySection extends ConsumerWidget {
       if (r == null) return;
       await repo.addFamilyNote(who: r.$1, text: r.$2);
     }
+
+    final thisMonth = monthKeyOf(ref.read(clockProvider).now());
+    final current = letters.where((l) => l.month == thisMonth).firstOrNull;
+    final earlier = letters.where((l) => l.month != thisMonth).toList();
+
+    Future<void> writeLetter() async {
+      final r = await showLetterDialog(context, initial: current?.parent ?? '');
+      if (r == null) return;
+      await repo.saveMonthLetter(thisMonth, LetterAuthor.parent, r);
+    }
+
+    String monthLabel(String m) =>
+        MonthParentCopy.monthLabel.fill(AgeTone.concise, {'y': m.substring(0, 4), 'm': '${int.parse(m.substring(5))}'});
+
+    Widget letterLine(String key, Line label, String body) => Padding(
+          key: ValueKey(key),
+          padding: const EdgeInsets.only(top: AppSpace.xs),
+          child: Text('${pt(label)}$body', style: text.bodyLarge),
+        );
 
     String date(String dayKey) {
       final d = dateOfDayKey(dayKey);
@@ -92,6 +116,107 @@ class FamilySection extends ConsumerWidget {
               onPressed: () => repo.deleteFamilyNote(n.id),
             ),
           ),
+        const SizedBox(height: AppSpace.m),
+        subTitle(pt(MonthParentCopy.title), 'month-letter-write', writeLetter,
+            pt(current?.parent == null ? MonthParentCopy.write : MonthParentCopy.edit)),
+        Text(pt(MonthParentCopy.note), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
+        if (current == null) Text(pt(MonthParentCopy.empty), key: const ValueKey('month-letters-empty')),
+        if (current?.child != null) letterLine('parent-month-child', MonthParentCopy.childSaid, current!.child!),
+        if (current?.parent != null) letterLine('parent-month-parent', MonthParentCopy.yourLetter, current!.parent!),
+        if (earlier.isNotEmpty) ...[
+          const SizedBox(height: AppSpace.s),
+          Text(pt(MonthParentCopy.earlier), style: text.titleSmall?.copyWith(color: AppColors.inkSoft)),
+          for (final l in earlier)
+            Padding(
+              key: ValueKey('parent-month-${l.month}'),
+              padding: const EdgeInsets.only(top: AppSpace.xs),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(monthLabel(l.month), style: text.labelLarge),
+                  if (l.child != null) Text('${pt(MonthParentCopy.childSaid)}${l.child}'),
+                  if (l.parent != null) Text('${pt(MonthParentCopy.yourLetter)}${l.parent}'),
+                ],
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+/// 寫一句給孩子（月回顧的信）。和留言一樣要過文案規則，不過就留在對話框裡說明被擋的詞。
+Future<String?> showLetterDialog(BuildContext context, {String initial = ''}) =>
+    showDialog<String>(context: context, builder: (_) => _LetterDialog(initial: initial));
+
+class _LetterDialog extends ConsumerStatefulWidget {
+  const _LetterDialog({required this.initial});
+  final String initial;
+
+  @override
+  ConsumerState<_LetterDialog> createState() => _LetterDialogState();
+}
+
+class _LetterDialogState extends ConsumerState<_LetterDialog> {
+  late final _text = TextEditingController(text: widget.initial);
+  String? _blocked;
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final text = _text.text.trim();
+    if (text.isEmpty) return;
+    final problem = familyTextProblem(ref.read(copyRulesProvider), text);
+    if (problem != null) {
+      setState(() => _blocked = problem);
+      return;
+    }
+    Navigator.pop(context, text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final blocked = _blocked;
+    return AlertDialog(
+      title: Text(pt(MonthParentCopy.title)),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              key: const ValueKey('letter-field'),
+              controller: _text,
+              maxLength: AppConfig.maxLetterChars,
+              autofocus: true,
+              onChanged: (_) {
+                if (_blocked != null) setState(() => _blocked = null);
+              },
+              decoration: InputDecoration(
+                labelText: pt(MonthParentCopy.field),
+                helperText: pt(MonthParentCopy.example),
+                helperMaxLines: 2,
+              ),
+            ),
+            if (blocked != null)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpace.s),
+                child: Text(
+                  FamilyCopy.blocked.fill(AgeTone.concise, {'word': blocked}),
+                  key: const ValueKey('letter-blocked'),
+                  style: const TextStyle(color: AppColors.inkSoft),
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(pt(ParentCopy.cancel))),
+        FilledButton(key: const ValueKey('letter-save'), onPressed: _save, child: Text(pt(ParentCopy.save))),
       ],
     );
   }

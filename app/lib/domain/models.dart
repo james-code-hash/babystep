@@ -342,3 +342,21 @@ class FamilyNote {
         'childRead': childRead,
       };
 }
+
+/// 月回顧的信是誰寫的（J4）。
+enum LetterAuthor { child, parent }
+
+/// 月回顧的一封信：這個月孩子給家人、或家人給孩子的一句話。
+class MonthLetter {
+  const MonthLetter({required this.monthKey, required this.author, required this.text});
+
+  /// 'YYYY-MM'
+  final String monthKey;
+  final LetterAuthor author;
+  final String text;
+
+  Map<String, Object?> toJson() => {'monthKey': monthKey, 'author': author.name, 'text': text};
+}
+
+/// 'YYYY-MM'
+String monthKeyOf(DateTime t) => '${t.year.toString().padLeft(4, '0')}-${t.month.toString().padLeft(2, '0')}';

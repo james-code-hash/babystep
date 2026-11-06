@@ -38,6 +38,9 @@ abstract final class AppConfig {
   static const int maxFamilyWhoChars = 6;
   static const int maxFamilyNoteChars = 40;
 
+  /// 月回顧的信（孩子或家人寫的一句話）最多幾個字。
+  static const int maxLetterChars = 40;
+
   /// 家長 PIN 的位數。
   static const int parentPinLength = 4;
 

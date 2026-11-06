@@ -107,6 +107,21 @@ class FamilyNotes extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// 月回顧的信（J4）：每個月孩子寫一句給家人、家人寫一句給孩子，一個月各一封（再寫就覆蓋）。
+/// 孩子寫的那句是孩子主動要給家人看的；家人寫的要先過文案規則。
+@DataClassName('MonthLetterRow')
+class MonthLetters extends Table {
+  /// 'YYYY-MM'
+  TextColumn get monthKey => text()();
+
+  /// 'child' 或 'parent'
+  TextColumn get author => text()();
+  TextColumn get body => text()();
+
+  @override
+  Set<Column> get primaryKey => {monthKey, author};
+}
+
 /// 簡單的 key-value 設定（tone、llmEnabled、reminderSlots、parentPin、dressUp、onboarded）。
 @DataClassName('SettingRow')
 class Settings extends Table {
@@ -117,12 +132,12 @@ class Settings extends Table {
   Set<Column> get primaryKey => {key};
 }
 
-@DriftDatabase(tables: [TaskTemplates, CueTemplates, Plans, DayRecords, Lessons, Settings, FamilyTodayEntries, FamilyNotes])
+@DriftDatabase(tables: [TaskTemplates, CueTemplates, Plans, DayRecords, Lessons, Settings, FamilyTodayEntries, FamilyNotes, MonthLetters])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -135,6 +150,8 @@ class AppDatabase extends _$AppDatabase {
           }
           // v3：卡住的時候的計畫（I3）。
           if (from < 3) await m.addColumn(plans, plans.stuckPlan);
+          // v4：月回顧的信（J4）。
+          if (from < 4) await m.createTable(monthLetters);
         },
         // 刪掉的資料列要真的被覆寫成 0，不能只標成空閒頁面還留在檔案裡（底線 8）。
         beforeOpen: (_) => customStatement('PRAGMA secure_delete = ON'),

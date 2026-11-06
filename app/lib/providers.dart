@@ -87,3 +87,12 @@ final lessonServiceProvider = Provider<LessonService>((ref) {
     crisisDetector: ref.watch(crisisDetectorProvider),
   );
 });
+
+/// 月回顧的信（J4，新的月份在前）。
+final monthLettersProvider =
+    StreamProvider<List<MonthLetter>>((ref) => ref.watch(repositoryProvider).watchMonthLetters());
+
+/// 某個月家人寫過的「今天的我」（月回顧用）。
+final familyMonthProvider = StreamProvider.family<List<FamilyToday>, String>(
+  (ref, monthKey) => ref.watch(repositoryProvider).watchFamilyTodayInMonth(monthKey),
+);

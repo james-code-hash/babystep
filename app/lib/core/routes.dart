@@ -6,6 +6,7 @@ abstract final class Routes {
   static const notebook = '/notebook';
   static const path = '/path';
   static const explore = '/explore';
+  static const month = '/month';
   static const settings = '/settings';
   static const dressUp = '/settings/dress-up';
   static const parent = '/parent';

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../bubu/bubu_view.dart';
 import '../../copy/line.dart';
+import '../../copy/month.dart';
 import '../../copy/path.dart';
 import '../../core/clock.dart';
 import '../../core/layout.dart';
+import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../data/repository.dart';
 import '../../domain/models.dart';
@@ -27,7 +30,16 @@ class PathScreen extends ConsumerWidget {
     final now = ref.watch(clockProvider).now();
     final style = ref.watch(trailStyleProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(PathCopy.title.of(tone))),
+      appBar: AppBar(
+        title: Text(PathCopy.title.of(tone)),
+        actions: [
+          TextButton(
+            key: const ValueKey('open-month'),
+            onPressed: () => context.push(Routes.month),
+            child: Text(MonthCopy.entry.of(tone)),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: switch (days) {
           AsyncData(:final value) when value.isNotEmpty => _PathBody(days: value, tone: tone, now: now, style: style),

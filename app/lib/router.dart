@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'core/routes.dart';
 import 'features/explore/explore_routes.dart';
 import 'features/home/home_routes.dart';
+import 'features/month/month_routes.dart';
 import 'features/notebook/notebook_routes.dart';
 import 'features/parent/parent_routes.dart';
 import 'features/path/path_routes.dart';
@@ -19,6 +20,7 @@ GoRouter buildRouter() => GoRouter(
         ...notebookRoutes,
         ...pathRoutes,
         ...exploreRoutes,
+        ...monthRoutes,
         ...settingsRoutes,
         ...parentRoutes,
       ],

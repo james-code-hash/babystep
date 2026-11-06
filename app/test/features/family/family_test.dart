@@ -119,7 +119,7 @@ void main() {
     });
   });
 
-  test('a v1 database upgrades to the current schema (family tables, stuck plan) and keeps its data', () async {
+  test('a v1 database upgrades to the current schema (family tables, stuck plan, month letters) and keeps its data', () async {
     final raw = NativeDatabase.memory(setup: (db) {
       db.execute('CREATE TABLE settings (key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)');
       db.execute("INSERT INTO settings VALUES ('tone', 'concise')");
@@ -135,6 +135,7 @@ void main() {
     expect(plan.stuckPlan, isNull);
     expect(await db.select(db.familyTodayEntries).get(), isEmpty);
     expect(await db.select(db.familyNotes).get(), isEmpty);
+    expect(await db.select(db.monthLetters).get(), isEmpty);
     await db.close();
   });
 }

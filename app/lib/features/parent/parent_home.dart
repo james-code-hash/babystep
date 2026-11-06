@@ -73,7 +73,7 @@ class _ParentBody extends ConsumerWidget {
             id: 'family',
             title: FamilyCopy.sectionTitle,
             note: FamilyCopy.sectionNote,
-            children: [FamilySection(today: view.familyToday, notes: view.familyNotes)],
+            children: [FamilySection(today: view.familyToday, notes: view.familyNotes, letters: view.monthLetters)],
           ),
           _TaskTemplatesSection(templates: view.taskTemplates),
           _CueTemplatesSection(templates: view.cueTemplates),

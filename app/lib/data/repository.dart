@@ -444,6 +444,13 @@ class Repository {
     });
   }
 
+  /// 這個月家人寫過的「今天的我」（月回顧用，舊的在前）。
+  Stream<List<FamilyToday>> watchFamilyTodayInMonth(String monthKey) => (_db.select(_db.familyTodayEntries)
+        ..where((f) => f.dayKey.like('$monthKey-%'))
+        ..orderBy([(f) => OrderingTerm(expression: f.dayKey), (f) => OrderingTerm(expression: f.who)]))
+      .map(_familyToday)
+      .watch();
+
   Future<void> deleteFamilyToday(String id) => (_db.delete(_db.familyTodayEntries)..where((f) => f.id.equals(id))).go();
 
   Future<FamilyNote> addFamilyNote({required String who, required String text}) async {
@@ -475,6 +482,29 @@ class Repository {
   /// 孩子看過了。只影響首頁要不要再轉達，家長端看不到。
   Future<void> markFamilyNoteRead(String id) => (_db.update(_db.familyNotes)..where((n) => n.id.equals(id)))
       .write(const FamilyNotesCompanion(childRead: Value(true)));
+
+  // ---------------------------------------------------------------- 月回顧的信（J4）
+
+  Selectable<MonthLetter> _lettersQuery() => (_db.select(_db.monthLetters)
+        ..orderBy([(l) => OrderingTerm(expression: l.monthKey, mode: OrderingMode.desc)]))
+      .map((r) => MonthLetter(
+            monthKey: r.monthKey,
+            author: enumByName(LetterAuthor.values, r.author, LetterAuthor.parent),
+            text: r.body,
+          ));
+
+  Stream<List<MonthLetter>> watchMonthLetters() => _lettersQuery().watch();
+
+  Future<List<MonthLetter>> monthLetters() => _lettersQuery().get();
+
+  /// 一個月每個人一封：再寫就覆蓋。
+  Future<void> saveMonthLetter(String monthKey, LetterAuthor author, String text) => _db
+      .into(_db.monthLetters)
+      .insertOnConflictUpdate(MonthLettersCompanion.insert(monthKey: monthKey, author: author.name, body: text.trim()));
+
+  Future<void> deleteMonthLetter(String monthKey, LetterAuthor author) => (_db.delete(_db.monthLetters)
+        ..where((l) => l.monthKey.equals(monthKey) & l.author.equals(author.name)))
+      .go();
 
   // ---------------------------------------------------------------- 設定
 
@@ -550,12 +580,29 @@ class Repository {
     yield await parentView();
     final updates = _db.tableUpdates(
       TableUpdateQuery.onAllTables(
-        [_db.taskTemplates, _db.cueTemplates, _db.settings, _db.lessons, _db.familyTodayEntries, _db.familyNotes],
+        [
+          _db.taskTemplates,
+          _db.cueTemplates,
+          _db.settings,
+          _db.lessons,
+          _db.familyTodayEntries,
+          _db.familyNotes,
+          _db.monthLetters,
+        ],
       ),
     );
     await for (final _ in updates) {
       yield await parentView();
     }
+  }
+
+  static List<MonthLettersView> _lettersByMonth(List<MonthLetter> letters) {
+    final months = <String, (String?, String?)>{};
+    for (final l in letters) {
+      final (c, p) = months[l.monthKey] ?? (null, null);
+      months[l.monthKey] = l.author == LetterAuthor.child ? (l.text, p) : (c, l.text);
+    }
+    return [for (final e in months.entries) MonthLettersView(month: e.key, child: e.value.$1, parent: e.value.$2)];
   }
 
   Future<ParentView> parentView() async {
@@ -577,6 +624,7 @@ class Repository {
         for (final n in (await familyNotes()).reversed)
           FamilyNoteView(id: n.id, dayKey: n.dayKey, who: n.who, text: n.text),
       ],
+      monthLetters: _lettersByMonth(await monthLetters()),
     );
   }
 
@@ -604,6 +652,7 @@ class Repository {
       'lessons': [for (final r in await _db.select(_db.lessons).get()) _lesson(r).toJson()],
       'familyToday': [for (final r in await _db.select(_db.familyTodayEntries).get()) _familyToday(r).toJson()],
       'familyNotes': [for (final r in await _db.select(_db.familyNotes).get()) _familyNote(r).toJson()],
+      'monthLetters': [for (final l in await monthLetters()) l.toJson()],
     };
     return const JsonEncoder.withIndent('  ').convert(data);
   }

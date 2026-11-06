@@ -24,7 +24,7 @@ void main() {
   test('every sentence in copy/path, copy/parent, copy/settings passes the copy rules (strict)', () {
     final problems = <String>[];
     var seen = 0;
-    for (final f in ['lib/copy/path.dart', 'lib/copy/parent.dart', 'lib/copy/settings.dart', 'lib/copy/parent_guide.dart', 'lib/copy/family.dart', 'lib/copy/explore.dart', 'lib/copy/surprise.dart']) {
+    for (final f in ['lib/copy/path.dart', 'lib/copy/parent.dart', 'lib/copy/settings.dart', 'lib/copy/parent_guide.dart', 'lib/copy/family.dart', 'lib/copy/explore.dart', 'lib/copy/surprise.dart', 'lib/copy/month.dart']) {
       for (final (n, s) in cjkLiterals(f)) {
         seen++;
         final v = rules.check(s, tone: AgeTone.concise);
@@ -37,7 +37,7 @@ void main() {
 
   test('feature screens keep their Chinese sentences in lib/copy/', () {
     final found = <String>[];
-    for (final dir in ['lib/features/path', 'lib/features/parent', 'lib/features/settings', 'lib/features/explore']) {
+    for (final dir in ['lib/features/path', 'lib/features/parent', 'lib/features/settings', 'lib/features/explore', 'lib/features/month']) {
       for (final f in Directory(dir).listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart'))) {
         for (final (n, s) in cjkLiterals(f.path)) {
           found.add('${f.path}:$n $s');
