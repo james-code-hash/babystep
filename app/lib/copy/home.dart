@@ -27,6 +27,13 @@ abstract final class HomeCopy {
     Line('嗨～只是提一下：你說{cue}要{task}。', '只是提一下：你說{cue}要{task}。'),
   ]);
 
+  /// 每件事的時間點都對不上現在（例如早上、時間點是「吃完晚飯」），就不提時間點。
+  /// 長度和 [peek] 一樣，抽到的第幾句兩邊對得上。
+  static const peekNoCue = LinePool([
+    Line('你說今天要{task}，現在方便嗎？', '你說今天要{task}。現在方便嗎？'),
+    Line('嗨～只是提一下：你說今天要{task}。', '只是提一下：你說今天要{task}。'),
+  ]);
+
   static const peekGo = Line.same('去做');
   static const peekLater = Line.same('等一下');
   static const peekNotToday = Line.same('今天算了');

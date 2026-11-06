@@ -16,11 +16,11 @@ List<String> allTexts(WidgetTester tester) => [
   for (final w in tester.widgetList<Text>(find.byType(Text))) w.data ?? w.textSpan?.toPlainText() ?? '',
 ];
 
-Future<Lesson> addLesson(TestEnv env, DateTime at, String text) async {
+Future<Lesson> addLesson(TestEnv env, DateTime at, String text, {String? quote}) async {
   env.clock.fixed = at;
   final l = await env.repo.saveLesson(
     dayKeyOf(at),
-    LessonResult(text: text, kind: LessonKind.method, source: LessonSource.template),
+    LessonResult(text: text, kind: LessonKind.method, source: LessonSource.template, sourceQuote: quote),
   );
   return l!;
 }
@@ -61,6 +61,20 @@ void main() {
     // 也不該有進度條或目標。
     expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  // README 已知問題 3：步步那句話已經引用了原話，就不再多一行「你說：」。
+  dbTestWidgets('the child’s words show once: no extra quote line when the lesson already quotes them', (tester) async {
+    await env.seed();
+    await addLesson(env, DateTime(2026, 10, 22, 20), '你說『先整理桌子』，我記下來了。', quote: '先整理桌子');
+    await addLesson(env, DateTime(2026, 10, 23, 20), '原來分段做比較順。', quote: '分成三段做');
+    await pumpScreen(tester, env, const NotebookScreen());
+    await settle(tester);
+
+    expect(find.textContaining('先整理桌子'), findsOneWidget);
+    expect(find.text(NotebookCopy.quote.fill(AgeTone.lively, {'quote': '先整理桌子'})), findsNothing);
+    // 句子裡沒有原話時，原話照樣另外寫一行。
+    expect(find.text(NotebookCopy.quote.fill(AgeTone.lively, {'quote': '分成三段做'})), findsOneWidget);
   });
 
   dbTestWidgets('favorite heart persists and the 只看愛心 filter uses it', (tester) async {

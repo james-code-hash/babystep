@@ -80,6 +80,18 @@ void main() {
       }
     });
 
+    // README 已知問題 2：問候不看計畫，所以不能問「今天想做／安排什麼」，有計畫時會打架。
+    test('never asks what the child plans to do today', () {
+      const planning = ['想做什麼', '想安排', '要做什麼', '有什麼想做'];
+      for (final pool in allGreetingPools) {
+        for (final line in pool.lines) {
+          for (final w in planning) {
+            expect(line.lively + line.concise, isNot(contains(w)), reason: line.lively);
+          }
+        }
+      }
+    });
+
     test('never refers to absence or how long since last visit', () {
       const absence = ['好久', '終於', '等你', '幾天', '沒來', '又來', '回來了', '想你'];
       for (final pool in allGreetingPools) {

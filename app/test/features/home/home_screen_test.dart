@@ -213,6 +213,52 @@ void main() {
     }
   });
 
+  // README 已知問題 1：探頭只拿落在「現在」的時間點來問，對不上就不提時間點。
+  group('pickPeek matches the plan’s cue to the time of day', () {
+    Plan p(String id, String cue) => Plan(id: id, dayKey: 'd', order: 0, emoji: '✏️', task: id, cue: cue);
+    final dinner = p('dinner', '我吃完晚飯');
+    final bath = p('bath', '我洗完澡');
+    final water = p('water', '我喝完水');
+    final breakfast = p('breakfast', '我吃完早餐');
+    final school = p('school', '我放學回到家');
+    DateTime at(int h, [int m = 0]) => DateTime(2026, 10, 23, h, m);
+
+    test('the plan whose cue is now wins, even if it is not first', () {
+      expect(pickPeek(at(19, 30), [breakfast, dinner]), (plan: dinner, withCue: true));
+      expect(pickPeek(at(7), [dinner, breakfast]), (plan: breakfast, withCue: true));
+      expect(pickPeek(at(16, 30), [bath, school]), (plan: school, withCue: true));
+    });
+
+    test('the default cues land where expected', () {
+      expect(cueWindow('我吃完早餐'), CueTimeConfig.morning);
+      expect(cueWindow('我放學回到家'), CueTimeConfig.afterSchool);
+      expect(cueWindow('我吃完晚飯'), CueTimeConfig.dinner);
+      expect(cueWindow('我洗完澡'), CueTimeConfig.night);
+      expect(cueWindow('我喝完水'), isNull);
+      expect(cueWindow('我換好衣服'), isNull);
+    });
+
+    test('a cue with no time of day can be asked about any time', () {
+      expect(pickPeek(at(7), [dinner, water]), (plan: water, withCue: true));
+      expect(cueWindow('我做完一件事'), isNull);
+    });
+
+    test('in the morning, 吃完晚飯 is never asked about as if it were now', () {
+      expect(pickPeek(at(8), [dinner, bath]), (plan: dinner, withCue: false));
+    });
+  });
+
+  testWidgets('peek before dinner leaves out the dinner cue', (tester) async {
+    tallScreen(tester);
+    final env = TestEnv(now: DateTime(2026, 10, 23, 16, 30)); // 「放學後」時段
+    await _plan(env);
+    await pumpApp(tester, env);
+    expect(find.byKey(const ValueKey('home-peek')), findsOneWidget);
+    expect(find.textContaining('吃完晚飯要'), findsNothing);
+    expect(find.textContaining('今天要寫數學作業'), findsOneWidget);
+    await finish(tester, env);
+  });
+
   test('shouldPeek is false once the day has ended', () {
     final slots = [const ReminderSlot(id: 's', label: 'x', startMinute: 0, endMinute: 24 * 60)];
     const plan = Plan(id: 'p', dayKey: 'd', order: 0, emoji: '✏️', task: 't', cue: 'c');

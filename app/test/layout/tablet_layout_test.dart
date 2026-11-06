@@ -1,5 +1,6 @@
-// 平板版面（docs/decisions.md E11）：每個主要畫面在平板直放／橫放、Android 平板、手機上
-// 都不溢出、內容不超過設定的最大寬度、只有寬螢幕才出現雙欄、回顧三顆按鈕在每個寬度都一樣大。
+// 平板版面（docs/decisions.md E11、E12）：每個主要畫面在平板直放／橫放、Android 平板、手機上
+// 都不溢出、內容不超過設定的最大寬度、只有寬螢幕才出現雙欄（舞台＋紙）、平板直放時步步在上方舞台、
+// 手機沒有舞台、回顧三顆按鈕在每個寬度都一樣大。
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -76,20 +77,39 @@ Future<void> open(WidgetTester tester, String route) async {
   await settleDb(tester);
 }
 
-/// 版面檢查：沒有例外／溢出、寬度上限、雙欄只在寬螢幕。
-void expectLayout(WidgetTester tester, Size size, String where, {required bool twoPaneScreen, bool wideFrame = false}) {
+/// 版面檢查：沒有例外／溢出、寬度上限、雙欄只在寬螢幕、舞台只在平板。
+///
+/// [framed]：這個畫面在這個寬度用 [AdaptiveFrame]（寬螢幕自己排兩欄的家長區、探索角不用）。
+void expectLayout(
+  WidgetTester tester,
+  Size size,
+  String where, {
+  required bool twoPaneScreen,
+  bool wideFrame = false,
+  bool framed = true,
+  bool? stage,
+}) {
   expect(tester.takeException(), isNull, reason: '$where: no exception or overflow');
   final single = isTablet(size) ? LayoutConfig.contentMaxWidthTablet : LayoutConfig.contentMaxWidthPhone;
   final frames = find.byKey(AdaptiveFrame.frameKey);
-  expect(frames, findsAtLeastNWidgets(1), reason: '$where: content sits in an AdaptiveFrame');
   final twoPane = twoPaneScreen && isWide(size);
   if (twoPane) {
     expect(find.byKey(TwoPaneRow.rowKey), findsOneWidget, reason: '$where: Bubu beside the content');
+    expect(find.byKey(TwoPaneRow.sheetKey), findsOneWidget, reason: '$where: content sits on a sheet');
     final main = tester.getSize(find.byKey(TwoPaneRow.mainKey)).width;
-    expect(main, lessThanOrEqualTo(LayoutConfig.contentMaxWidthTablet), reason: '$where: main pane width');
-    expect(tester.getSize(find.byKey(TwoPaneRow.sideKey)).width, LayoutConfig.sidePaneWidth);
+    expect(main, lessThanOrEqualTo(LayoutConfig.stageMainMaxWidth), reason: '$where: main pane width');
+    final side = tester.getSize(find.byKey(TwoPaneRow.sideKey)).width;
+    expect(side, TwoPaneRow.sideWidth(size.width - 2 * LayoutConfig.stageInset), reason: '$where: stage width');
+    expect(side, inInclusiveRange(LayoutConfig.stageMinWidth, LayoutConfig.stageMaxWidth));
   } else {
     expect(find.byKey(TwoPaneRow.rowKey), findsNothing, reason: '$where: single column on ${size.width} wide');
+    if (framed) expect(frames, findsAtLeastNWidgets(1), reason: '$where: content sits in an AdaptiveFrame');
+  }
+  if ((stage ?? twoPaneScreen) && isTablet(size)) {
+    expect(find.byKey(StagePanel.panelKey), findsAtLeastNWidgets(1), reason: '$where: Bubu on a stage on tablets');
+  }
+  if (!isTablet(size)) {
+    expect(find.byKey(StagePanel.panelKey), findsNothing, reason: '$where: phones keep the original layout');
   }
   for (final e in frames.evaluate()) {
     final w = tester.getSize(find.byWidget(e.widget)).width;
@@ -121,8 +141,21 @@ void main() {
         expectLayout(tester, size, 'home', twoPaneScreen: true);
         final expected = isWide(size)
             ? LayoutConfig.bubuSidePane
-            : (isTablet(size) ? LayoutConfig.bubuHeroTablet : LayoutConfig.bubuHeroPhone);
-        expect(largestBubu(tester), expected, reason: 'Bubu is larger on tablets');
+            : (isTablet(size) ? LayoutConfig.bubuBannerTablet : LayoutConfig.bubuHeroPhone);
+        expect(largestBubu(tester), expected, reason: 'Bubu sits on the stage on tablets');
+        // 平板：四張入口卡片一樣大、主要按鈕大一號；手機：文字連結和原本一樣。
+        final tiles = [
+          for (final k in ['nav-notebook', 'nav-path', 'nav-explore', 'nav-settings'])
+            tester.getSize(find.byKey(ValueKey(k))),
+        ];
+        if (isTablet(size)) {
+          expect(tiles.toSet(), hasLength(1), reason: 'nav entries share one size');
+          expect(tester.widget(find.byKey(const ValueKey('nav-notebook'))), isA<InkWell>());
+          expect(tester.getSize(find.byKey(const ValueKey('home-review'))).height,
+              greaterThanOrEqualTo(LayoutConfig.tabletButtonHeight));
+        } else {
+          expect(tester.widget(find.byKey(const ValueKey('nav-notebook'))), isA<TextButton>());
+        }
         await finishTest(tester, env);
       });
 
@@ -192,7 +225,7 @@ void main() {
       testWidgets('path', (tester) async {
         await start(tester);
         await open(tester, Routes.path);
-        expectLayout(tester, size, 'path', twoPaneScreen: true);
+        expectLayout(tester, size, 'path', twoPaneScreen: true, stage: false);
         expect(find.byKey(const ValueKey('insight-task')), findsOneWidget);
         await finishTest(tester, env);
       });
@@ -222,7 +255,31 @@ void main() {
         }
         await settleDb(tester);
         expect(find.byType(ParentHome), findsOneWidget);
-        expectLayout(tester, size, 'parent home', twoPaneScreen: false);
+        expectLayout(tester, size, 'parent home', twoPaneScreen: false, framed: !isWide(size));
+        // 平板橫放：孩子與家人一欄、設定一欄。
+        if (isWide(size)) {
+          final shared = tester.getTopLeft(find.byKey(const ValueKey('section-shared')));
+          final tasks = tester.getTopLeft(find.byKey(const ValueKey('section-tasks')));
+          expect(tasks.dx, greaterThan(shared.dx), reason: 'settings in their own column');
+          expect(tasks.dy, shared.dy);
+        }
+        await finishTest(tester, env);
+      });
+
+      testWidgets('explore: canvas beside the curio on wide screens', (tester) async {
+        await start(tester);
+        await open(tester, Routes.explore);
+        expectLayout(tester, size, 'explore', twoPaneScreen: false, framed: !isWide(size));
+        final curio = tester.getTopLeft(find.byKey(const ValueKey('curio-question'), skipOffstage: false));
+        final canvas = tester.getTopLeft(find.byKey(const ValueKey('draw-canvas'), skipOffstage: false));
+        if (isWide(size)) {
+          expect(canvas.dx, greaterThan(curio.dx), reason: 'drawing in its own column');
+        } else {
+          expect(canvas.dy, greaterThan(curio.dy));
+        }
+        final height = tester.getSize(find.byKey(const ValueKey('draw-canvas'), skipOffstage: false)).height;
+        // 畫布外面有一圈 1dp 的框。
+        expect(height, closeTo(isTablet(size) ? ExploreConfig.canvasHeightTablet : ExploreConfig.canvasHeight, 2));
         await finishTest(tester, env);
       });
 

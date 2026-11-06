@@ -320,20 +320,31 @@ class _Centered extends StatelessWidget {
     child: Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpace.l),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            bubu,
-            const SizedBox(height: AppSpace.l),
-            if (line != null) _BubuSays(text: line!, key: lineKey),
-            const SizedBox(height: AppSpace.l),
-            ...actions,
-          ],
+        child: _stage(
+          context,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              bubu,
+              const SizedBox(height: AppSpace.l),
+              if (line != null) _BubuSays(text: line!, key: lineKey),
+              const SizedBox(height: AppSpace.l),
+              ...actions,
+            ],
+          ),
         ),
       ),
     ),
   );
 }
+
+/// 平板上，開場與結尾這種「只有步步和一句話」的畫面放在一塊舞台上（E12）；手機不變。
+Widget _stage(BuildContext context, Widget child) => Layout.isTablet(context)
+    ? ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: LayoutConfig.stageMainMaxWidth),
+        child: StagePanel(padding: const EdgeInsets.all(AppSpace.xl), child: child),
+      )
+    : child;
 
 /// 步步說的一句話（對話泡泡）。
 class _BubuSays extends StatelessWidget {

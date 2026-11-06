@@ -50,6 +50,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   bool _peekShown = false;
   _PeekReply? _peekReply;
   int _peekVariant = 0;
+  DateTime? _peekAt;
 
   /// 這次進到首頁時，孩子對哪些家人留言說了「等一下」（只在記憶體，下次進來再問一次）。
   final Set<String> _notesLater = {};
@@ -133,6 +134,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     if (!show) return;
     _peekShown = true;
     _peekVariant = ref.read(randomProvider).nextInt(HomeCopy.peek.length);
+    _peekAt = ref.read(clockProvider).now();
     // 在 build 裡不能改 provider；下一個 frame 再記一次。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) counter.markShown(day);
@@ -209,13 +211,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           child: BubuView(expression: expression, size: size),
         );
     // 窄版：和原本一樣在最上面；寬版（平板橫放）：自成一欄。
-    Widget side(BuildContext context, bool wide) => Column(
+    Widget side(BuildContext context, bool wide) => !wide && Layout.isTablet(context)
+        // 平板直放：上方舞台裡步步在左、泡泡在右（E12）。
+        ? Row(
+            children: [
+              bubu(LayoutConfig.bubuBannerTablet),
+              const SizedBox(width: AppSpace.l),
+              Expanded(child: Align(alignment: Alignment.centerLeft, child: _Bubble(text: bubbleText))),
+            ],
+          )
+        : Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: wide
               ? [
                   Center(child: bubu(LayoutConfig.bubuSidePane)),
-                  const SizedBox(height: AppSpace.m),
+                  const SizedBox(height: AppSpace.l),
                   _Bubble(text: bubbleText),
                 ]
               : [
@@ -272,7 +283,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           children.addAll([
             _PeekCard(
               tone: tone,
-              plan: plans.first,
+              pick: pickPeek(_peekAt ?? ref.read(clockProvider).now(), plans),
               variant: _peekVariant,
               reply: _peekReply,
               onReply: (r) => setState(() => _peekReply = r),
@@ -385,14 +396,14 @@ class _PlanCard extends StatelessWidget {
 class _PeekCard extends StatelessWidget {
   const _PeekCard({
     required this.tone,
-    required this.plan,
+    required this.pick,
     required this.variant,
     required this.reply,
     required this.onReply,
   });
 
   final AgeTone tone;
-  final Plan plan;
+  final ({Plan plan, bool withCue}) pick;
   final int variant;
   final _PeekReply? reply;
   final ValueChanged<_PeekReply> onReply;
@@ -414,8 +425,9 @@ class _PeekCard extends StatelessWidget {
         ),
       );
     }
-    final text = HomeCopy.peek.lines[variant % HomeCopy.peek.length]
-        .fill(tone, {'cue': PlanCopy.cueBody(plan.cue), 'task': plan.task});
+    final pool = pick.withCue ? HomeCopy.peek : HomeCopy.peekNoCue;
+    final text = pool.lines[variant % pool.length]
+        .fill(tone, {'cue': PlanCopy.cueBody(pick.plan.cue), 'task': pick.plan.task});
     Widget option(_PeekReply value, String label, String key) => Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs),
@@ -435,7 +447,7 @@ class _PeekCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text(plan.emoji, style: const TextStyle(fontSize: 24)),
+                Text(pick.plan.emoji, style: const TextStyle(fontSize: 24)),
                 const SizedBox(width: AppSpace.s),
                 Expanded(child: Text(text, style: Theme.of(context).textTheme.bodyLarge)),
               ],
@@ -533,12 +545,46 @@ class _QuietNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget item(IconData icon, String label, String route, String key) => TextButton.icon(
-          key: ValueKey(key),
-          onPressed: () => onOpen(route),
-          icon: Icon(icon),
-          label: Text(label),
-        );
+    final entries = [
+      (Icons.menu_book_outlined, HomeCopy.notebook.of(tone), Routes.notebook, 'nav-notebook'),
+      (Icons.route_outlined, HomeCopy.path.of(tone), Routes.path, 'nav-path'),
+      (Icons.explore_outlined, HomeCopy.explore.of(tone), Routes.explore, 'nav-explore'),
+      (Icons.tune, HomeCopy.settings.of(tone), Routes.settings, 'nav-settings'),
+    ];
+    final parent = TextButton.icon(
+      key: const ValueKey('nav-parent'),
+      onPressed: () => onOpen(Routes.parent),
+      style: TextButton.styleFrom(textStyle: Theme.of(context).textTheme.bodyMedium),
+      icon: const Icon(Icons.lock_outline, size: 18),
+      label: Text(HomeCopy.parent.of(tone)),
+    );
+    // 平板：四張一樣大的入口卡片（E12）；手機：一排安靜的文字連結（和原本一樣）。
+    if (Layout.isTablet(context)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final perRow = constraints.maxWidth >= 4 * LayoutConfig.navTileMinWidth + 3 * AppSpace.m ? 4 : 2;
+              final width = (constraints.maxWidth - (perRow - 1) * AppSpace.m) / perRow;
+              return Wrap(
+                spacing: AppSpace.m,
+                runSpacing: AppSpace.m,
+                children: [
+                  for (final (icon, label, route, key) in entries)
+                    SizedBox(
+                      width: width,
+                      child: _NavTile(icon: icon, label: label, onTap: () => onOpen(route), tileKey: key),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: AppSpace.m),
+          Center(child: parent),
+        ],
+      );
+    }
     return Column(
       children: [
         Wrap(
@@ -546,21 +592,48 @@ class _QuietNav extends StatelessWidget {
           spacing: AppSpace.s,
           runSpacing: AppSpace.xs,
           children: [
-            item(Icons.menu_book_outlined, HomeCopy.notebook.of(tone), Routes.notebook, 'nav-notebook'),
-            item(Icons.route_outlined, HomeCopy.path.of(tone), Routes.path, 'nav-path'),
-            item(Icons.explore_outlined, HomeCopy.explore.of(tone), Routes.explore, 'nav-explore'),
-            item(Icons.tune, HomeCopy.settings.of(tone), Routes.settings, 'nav-settings'),
+            for (final (icon, label, route, key) in entries)
+              TextButton.icon(key: ValueKey(key), onPressed: () => onOpen(route), icon: Icon(icon), label: Text(label)),
           ],
         ),
         const SizedBox(height: AppSpace.m),
-        TextButton.icon(
-          key: const ValueKey('nav-parent'),
-          onPressed: () => onOpen(Routes.parent),
-          style: TextButton.styleFrom(textStyle: Theme.of(context).textTheme.bodyMedium),
-          icon: const Icon(Icons.lock_outline, size: 18),
-          label: Text(HomeCopy.parent.of(tone)),
-        ),
+        parent,
       ],
     );
   }
+}
+
+/// 平板首頁的一張入口卡片：圖示在圓底上、名字在旁邊。四張一樣大，沒有數字、沒有小紅點。
+class _NavTile extends StatelessWidget {
+  const _NavTile({required this.icon, required this.label, required this.onTap, required this.tileKey});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final String tileKey;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        margin: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: ValueKey(tileKey),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpace.m),
+            child: Row(
+              children: [
+                DecoratedBox(
+                  decoration: const BoxDecoration(color: AppColors.accentSoft, shape: BoxShape.circle),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpace.s + 2),
+                    child: Icon(icon, size: 26, color: AppColors.ink),
+                  ),
+                ),
+                const SizedBox(width: AppSpace.m),
+                Expanded(child: Text(label, style: Theme.of(context).textTheme.titleMedium)),
+              ],
+            ),
+          ),
+        ),
+      );
 }

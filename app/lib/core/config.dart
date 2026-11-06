@@ -62,6 +62,16 @@ abstract final class AppConfig {
   static const int minQuoteChars = 2;
 }
 
+/// 時間點範本大概落在一天的哪一段（從 0:00 算的分鐘，[start, end)）。
+/// 探頭時只拿落在「現在」的時間點來問「現在方便嗎？」（README 已知問題 1）。
+abstract final class CueTimeConfig {
+  static const morning = (start: 5 * 60, end: 11 * 60);
+  static const noon = (start: 11 * 60, end: 14 * 60);
+  static const afterSchool = (start: 15 * 60, end: 19 * 60);
+  static const dinner = (start: 18 * 60, end: 21 * 60 + 30);
+  static const night = (start: 19 * 60, end: 23 * 60);
+}
+
 /// 分齡（I3）。lively ≈ 小樹苗（6–8 歲）、concise ≈ 小探險家（9–12 歲）；畫面上不標年齡（B5）。
 abstract final class AgeConfig {
   /// 小樹苗建議一天 1–2 件（軟性提示；硬性上限仍是 [AppConfig.maxPlansPerDay]）。
@@ -132,8 +142,7 @@ abstract final class LayoutConfig {
   /// 可用寬度至少這麼寬才把步步放到旁邊（平板橫放）。
   static const double twoPaneMinWidth = 900;
 
-  /// 雙欄時旁邊那一欄（步步＋對話泡泡）的寬度，與兩欄之間的距離。
-  static const double sidePaneWidth = 340;
+  /// 兩欄之間的距離（舞台的寬度見 [stageFraction]）。
   static const double paneGap = 32;
 
   /// 內容外側再留的左右邊距（手機為 0，維持原本版面）。
@@ -150,8 +159,33 @@ abstract final class LayoutConfig {
   static const double bubuEmptyPhone = 140;
   static const double bubuEmptyTablet = 196;
 
-  /// 步步在旁邊那一欄時的大小。
-  static const double bubuSidePane = 200;
+  /// 步步在旁邊那一欄（舞台）時的大小。
+  static const double bubuSidePane = 280;
+
+  /// 平板橫放的「舞台」：步步那一欄佔可用寬度的比例，以及上下限（E12）。
+  static const double stageFraction = 0.38;
+  static const double stageMinWidth = 340;
+  static const double stageMaxWidth = 460;
+
+  /// 平板橫放時，主要內容那一欄的最大寬度。
+  static const double stageMainMaxWidth = 600;
+
+  /// 平板上整個畫面四周留的邊（舞台不貼螢幕邊）。
+  static const double stageInset = 20;
+
+  /// 平板直放時，步步在上方那條舞台的最大高度比例（其餘留給內容）。
+  static const double bannerMaxHeightFraction = 0.4;
+
+  /// 平板的按鈕與選項（比手機大一號，給手指和小孩的手）。
+  static const double tabletButtonHeight = 64;
+  static const double tabletButtonMinWidth = 260;
+
+  /// 平板直放時，首頁上方舞台裡步步的大小。
+  static const double bubuBannerTablet = 168;
+
+  /// 平板首頁的入口卡片：一張至少這麼寬。
+  static const double navTileMinWidth = 200;
+
 
   /// 筆記本：平板上一頁至少要這麼寬，最多排幾欄。
   static const double notebookColumnMinWidth = 340;
@@ -165,6 +199,9 @@ abstract final class LayoutConfig {
 abstract final class ExploreConfig {
   /// 塗鴉牆畫布高度（dp）。
   static const double canvasHeight = 320;
+
+  /// 平板上的畫布高度（畫布在旁邊一欄，可以大一點）。
+  static const double canvasHeightTablet = 460;
 
   /// 筆畫粗細（dp）。
   static const double strokeWidth = 6;

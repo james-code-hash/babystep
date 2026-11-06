@@ -85,11 +85,21 @@ class DressUpScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     const SizedBox(height: AppSpace.s),
-                    Center(child: preview),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpace.m, vertical: AppSpace.s),
-                      child: intro,
-                    ),
+                    if (Layout.isTablet(context))
+                      // 平板直放：預覽放在上方舞台裡（E12）。
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpace.m),
+                        child: StagePanel(
+                          child: Column(children: [preview, const SizedBox(height: AppSpace.s), intro]),
+                        ),
+                      )
+                    else ...[
+                      Center(child: preview),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpace.m, vertical: AppSpace.s),
+                        child: intro,
+                      ),
+                    ],
                     Expanded(child: list),
                   ],
                 ),

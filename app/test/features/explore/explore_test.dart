@@ -92,6 +92,27 @@ void main() {
     await finishTest(tester, env);
   });
 
+  // 畫布在會捲動的頁面裡：直的一筆要畫在畫布上，不能變成捲頁面。
+  testWidgets('a straight-down stroke draws instead of scrolling the page', (tester) async {
+    tester.view.physicalSize = const Size(412, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final env = TestEnv();
+    await pumpScreen(tester, env, const ExploreScreen());
+
+    await tester.ensureVisible(find.byKey(const ValueKey('draw-canvas')));
+    await tester.pumpAndSettle();
+    final scroll = Scrollable.of(tester.element(find.byKey(const ValueKey('draw-canvas')))).position;
+    final offset = scroll.pixels;
+    await tester.drag(find.byKey(const ValueKey('draw-canvas')), const Offset(0, 120));
+    await tester.pumpAndSettle();
+
+    expect(scroll.pixels, offset, reason: 'the page did not scroll');
+    expect(tester.widget<FilledButton>(find.byKey(const ValueKey('draw-give'))).onPressed, isNotNull,
+        reason: 'the stroke landed on the canvas');
+    await finishTest(tester, env);
+  });
+
   test('explore never reads what the child planned, reviewed or taught, and never writes', () {
     final forbidden = RegExp(r'\b(repositoryProvider|todayPlansProvider|todayRecordProvider|lessonsProvider|'
         r'plannedDaysProvider|databaseProvider|watchPlans|setOutcome)\b');

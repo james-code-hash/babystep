@@ -8,6 +8,7 @@ import '../../copy/line.dart';
 import '../../copy/parent.dart';
 import '../../copy/parent_guide.dart';
 import '../../core/clock.dart';
+import '../../core/config.dart';
 import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
@@ -55,32 +56,66 @@ class _ParentBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final intro = Text(pt(ParentCopy.intro), style: const TextStyle(color: AppColors.inkSoft));
+    // 和孩子、家人有關的放一邊，設定放另一邊。
+    final people = <Widget>[
+      _SharedLessonsSection(lessons: view.sharedLessons),
+      const _Section(
+        id: 'guide',
+        title: ParentGuideCopy.sectionTitle,
+        note: ParentGuideCopy.sectionNote,
+        children: [ParentGuideEntries()],
+      ),
+      _Section(
+        id: 'family',
+        title: FamilyCopy.sectionTitle,
+        note: FamilyCopy.sectionNote,
+        children: [FamilySection(today: view.familyToday, notes: view.familyNotes, letters: view.monthLetters)],
+      ),
+    ];
+    final settings = <Widget>[
+      _TaskTemplatesSection(templates: view.taskTemplates),
+      _CueTemplatesSection(templates: view.cueTemplates),
+      _SlotsSection(slots: view.settings.reminderSlots),
+      _ToneSection(tone: view.settings.tone),
+      _LlmSection(enabled: view.settings.llmEnabled),
+      const _DataSection(),
+    ];
+    if (Layout.isTwoPane(context)) {
+      // 平板橫放：兩欄（E12）。
+      Widget column(List<Widget> items) => Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: items),
+          );
+      return SingleChildScrollView(
+        key: const ValueKey('parent-list'),
+        padding: const EdgeInsets.all(LayoutConfig.stageInset),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: LayoutConfig.wideMaxWidth),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                intro,
+                const SizedBox(height: AppSpace.m),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [column(people), const SizedBox(width: AppSpace.l), column(settings)],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return AdaptiveFrame(
       child: ListView(
         key: const ValueKey('parent-list'),
         padding: const EdgeInsets.all(AppSpace.m),
         children: [
-          Text(pt(ParentCopy.intro), style: const TextStyle(color: AppColors.inkSoft)),
+          intro,
           const SizedBox(height: AppSpace.m),
-          _SharedLessonsSection(lessons: view.sharedLessons),
-          const _Section(
-            id: 'guide',
-            title: ParentGuideCopy.sectionTitle,
-            note: ParentGuideCopy.sectionNote,
-            children: [ParentGuideEntries()],
-          ),
-          _Section(
-            id: 'family',
-            title: FamilyCopy.sectionTitle,
-            note: FamilyCopy.sectionNote,
-            children: [FamilySection(today: view.familyToday, notes: view.familyNotes, letters: view.monthLetters)],
-          ),
-          _TaskTemplatesSection(templates: view.taskTemplates),
-          _CueTemplatesSection(templates: view.cueTemplates),
-          _SlotsSection(slots: view.settings.reminderSlots),
-          _ToneSection(tone: view.settings.tone),
-          _LlmSection(enabled: view.settings.llmEnabled),
-          const _DataSection(),
+          ...people,
+          ...settings,
         ],
       ),
     );

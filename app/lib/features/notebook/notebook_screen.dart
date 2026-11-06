@@ -142,6 +142,9 @@ class _LessonPage extends ConsumerWidget {
     final repo = ref.read(repositoryProvider);
     final small = Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.inkSoft);
     final heartLabel = (lesson.favorite ? NotebookCopy.favoriteOff : NotebookCopy.favoriteOn).of(tone);
+    final quote = lesson.sourceQuote?.trim() ?? '';
+    // 步步那句話已經引用了原話，就不再重複一次（README 已知問題 3）。
+    final showQuote = quote.isNotEmpty && !lesson.text.contains(quote);
     return NotePaper(
       key: ValueKey('lesson-${lesson.id}'),
       header: Row(
@@ -158,10 +161,10 @@ class _LessonPage extends ConsumerWidget {
       footer: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (lesson.sourceQuote != null && lesson.sourceQuote!.trim().isNotEmpty)
+          if (showQuote)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpace.s),
-              child: Text(NotebookCopy.quote.fill(tone, {'quote': lesson.sourceQuote!}), style: small),
+              child: Text(NotebookCopy.quote.fill(tone, {'quote': quote}), style: small),
             ),
           const Divider(height: 1, color: AppColors.line),
           Row(

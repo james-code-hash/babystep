@@ -428,7 +428,10 @@ class _IfThenStepState extends ConsumerState<IfThenStep> {
             padding: const EdgeInsets.all(AppSpace.m),
             child: Row(
               children: [
-                SizedBox(width: 64, child: Text(label, style: textTheme.titleMedium)),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 64),
+                  child: Text(label, style: textTheme.titleMedium, softWrap: false),
+                ),
                 Expanded(child: content),
               ],
             ),
