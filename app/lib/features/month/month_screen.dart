@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../bubu/bubu_view.dart';
+import '../../copy/common.dart';
 import '../../copy/month.dart';
 import '../../copy/path.dart';
 import '../../core/clock.dart';
@@ -194,6 +195,9 @@ class _LettersState extends ConsumerState<_Letters> {
   bool _editing = false;
   bool _busy = false;
 
+  /// 上一次存或拿掉沒成功（例如磁碟滿了）：說一聲，字留在框裡。
+  bool _failed = false;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -203,18 +207,42 @@ class _LettersState extends ConsumerState<_Letters> {
   Future<void> _save() async {
     final text = _controller.text.trim();
     if (text.isEmpty || _busy) return;
-    setState(() => _busy = true);
-    // 孩子的自由輸入：先過危機偵測，不過就不存（底線 9）。
-    final ok = await passesSafetyCheck(context, ref, text);
-    if (!mounted) return;
-    if (ok) await ref.read(repositoryProvider).saveMonthLetter(widget.month, LetterAuthor.child, text);
-    if (!mounted) return;
-    _controller.clear();
-    setState(() {
-      _busy = false;
+    await _guarded(() async {
+      // 孩子的自由輸入：先過危機偵測，不過就不存（底線 9）。
+      final ok = await passesSafetyCheck(context, ref, text);
+      if (!mounted) return;
+      if (ok) await ref.read(repositoryProvider).saveMonthLetter(widget.month, LetterAuthor.child, text);
+      if (!mounted) return;
+      _controller.clear();
       if (ok) _editing = false;
     });
   }
+
+  Future<void> _remove() =>
+      _guarded(() => ref.read(repositoryProvider).deleteMonthLetter(widget.month, LetterAuthor.child));
+
+  /// 存或拿掉時出錯（例如磁碟滿了）：錯誤照樣回報，按鈕回來、說一聲，字留在框裡可以再按一次。
+  Future<void> _guarded(Future<void> Function() action) async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _failed = false;
+    });
+    try {
+      await action();
+    } catch (e, st) {
+      FlutterError.reportError(FlutterErrorDetails(exception: e, stack: st, library: 'month letters'));
+      if (mounted) _failed = true;
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// 「改一下」之後反悔：回到原本那一句，什麼都不動。
+  void _cancelEdit() => setState(() {
+        _editing = false;
+        _controller.clear();
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -271,12 +299,17 @@ class _LettersState extends ConsumerState<_Letters> {
                   ),
                   TextButton(
                     key: const ValueKey('month-letter-remove'),
-                    onPressed: () =>
-                        ref.read(repositoryProvider).deleteMonthLetter(widget.month, LetterAuthor.child),
+                    onPressed: _busy ? null : _remove,
                     child: Text(MonthCopy.childRemove.of(tone)),
                   ),
                 ],
               ]),
+            if (_failed)
+              Text(
+                MonthCopy.childFailed.of(tone),
+                key: const ValueKey('month-letter-failed'),
+                style: text.bodyMedium?.copyWith(color: AppColors.inkSoft),
+              ),
             if (writing) ...[
               Text(MonthCopy.childHint.of(tone), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
               TextField(
@@ -286,13 +319,21 @@ class _LettersState extends ConsumerState<_Letters> {
                 decoration: InputDecoration(labelText: MonthCopy.childField.of(tone)),
                 onSubmitted: (_) => _save(),
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton(
-                  key: const ValueKey('month-letter-save'),
-                  onPressed: _busy ? null : _save,
-                  child: Text(MonthCopy.childSave.of(tone)),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (mine != null)
+                    TextButton(
+                      key: const ValueKey('month-letter-cancel'),
+                      onPressed: _busy ? null : _cancelEdit,
+                      child: Text(CommonCopy.cancel.of(tone)),
+                    ),
+                  FilledButton(
+                    key: const ValueKey('month-letter-save'),
+                    onPressed: _busy ? null : _save,
+                    child: Text(MonthCopy.childSave.of(tone)),
+                  ),
+                ],
               ),
             ],
           ],

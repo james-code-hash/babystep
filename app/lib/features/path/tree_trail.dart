@@ -30,7 +30,7 @@ class TreeTrail extends StatelessWidget {
         height: layout.height,
         child: Stack(
           children: [
-            Positioned.fill(child: CustomPaint(painter: _TreePainter(layout))),
+            Positioned.fill(child: CustomPaint(painter: _TreePainter(layout, (count: days.length, width: width)))),
             for (final (i, day) in days.indexed)
               Positioned(
                 left: layout.leaves[i].dx - TrailConfig.leafSize / 2,
@@ -74,8 +74,11 @@ class TreeTrail extends StatelessWidget {
 }
 
 class _TreePainter extends CustomPainter {
-  _TreePainter(this.layout);
+  _TreePainter(this.layout, this.input);
   final ({Offset crown, List<Offset> leaves, double height, double radiusY}) layout;
+
+  /// [layout] 只由這兩個數算出來（[TreeTrail.leafLayout]），比它們就知道要不要重畫。
+  final ({int count, double width}) input;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -126,7 +129,8 @@ class _TreePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_TreePainter old) => old.layout != layout;
+  // 不比 layout：record 的 == 對裡面的 List 只比是不是同一個物件，每次 build 都是新的。
+  bool shouldRepaint(_TreePainter old) => old.input != input;
 }
 
 /// 樹上的葉子或天上的星星。同一種樣子裡每一個都長得一樣：只有那天第一件事的圖示。
