@@ -130,6 +130,7 @@ void main() {
     final save = tester.widget<FilledButton>(find.byKey(const ValueKey('month-letter-save')));
     expect(save.onPressed, isNotNull);
     expect(find.text('謝謝你們陪我練琴'), findsOneWidget, reason: 'the words stay so the child can try again');
+    expect(find.byKey(const ValueKey('month-letter-failed')), findsOneWidget, reason: 'the child is told it did not go in');
     await finishTest(tester, env);
   });
 

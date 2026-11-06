@@ -24,6 +24,7 @@ abstract final class MonthCopy {
   static const childSave = Line('夾進這一頁', '放進去');
   static const childEdit = Line('改一下', '修改');
   static const childRemove = Line('拿掉', '拿掉');
+  static const childFailed = Line('剛剛沒有放進去，可以再按一次。', '剛剛沒存到，可以再按一次。');
   static const parentLabel = Line('家人寫給你的', '家人給你的一句話');
 }
 

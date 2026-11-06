@@ -9,15 +9,13 @@ import '../../providers.dart';
 
 /// 家長區唯一能讀的資料（底線 7）。
 ///
-/// `Repository.watchParentView()` 目前只在設定改變時重發，所以家長區每次寫入範本後
-/// 會 `ref.invalidate(parentViewProvider)` 重新讀一次（已列在 neededChanges）。
+/// `Repository.watchParentView()` 在範本、設定、筆記、家人的資料或信有變時重發。
 ///
-/// 也跟著 [todayKeyProvider]：家長區開著跨過午夜（或從背景回來已經是隔天），
-/// 「今天的我」換成新的一天，不留著昨天的。
-final parentViewProvider = StreamProvider.autoDispose<ParentView>((ref) {
-  ref.watch(todayKeyProvider);
-  return ref.watch(repositoryProvider).watchParentView();
-});
+/// 「今天的我」用的是 [todayKeyProvider]，和孩子那一端同一天：家長區開著跨過午夜
+/// （或從背景回來已經是隔天），就換成新的一天，不留著昨天的。
+final parentViewProvider = StreamProvider.autoDispose<ParentView>(
+  (ref) => ref.watch(repositoryProvider).watchParentView(day: ref.watch(todayKeyProvider)),
+);
 
 /// 把匯出檔交給系統分享面板。測試會 override，避免碰到平台。
 typedef ParentShare = Future<void> Function(String text, String subject);

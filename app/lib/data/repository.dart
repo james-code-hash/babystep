@@ -575,9 +575,9 @@ class Repository {
   // ---------------------------------------------------------------- 家長端
 
   /// 家長端唯一能讀的資料（底線 7）。
-  /// 範本、設定或筆記（分享狀態）有變就重新發一次。
-  Stream<ParentView> watchParentView() async* {
-    yield await parentView();
+  /// 下面列的資料表有變就重新發一次。[day] 是「今天的我」要看哪一天（預設是現在）。
+  Stream<ParentView> watchParentView({String? day}) async* {
+    yield await parentView(day: day);
     final updates = _db.tableUpdates(
       TableUpdateQuery.onAllTables(
         [
@@ -592,7 +592,7 @@ class Repository {
       ),
     );
     await for (final _ in updates) {
-      yield await parentView();
+      yield await parentView(day: day);
     }
   }
 
@@ -605,7 +605,7 @@ class Repository {
     return [for (final e in months.entries) MonthLettersView(month: e.key, child: e.value.$1, parent: e.value.$2)];
   }
 
-  Future<ParentView> parentView() async {
+  Future<ParentView> parentView({String? day}) async {
     final s = await settings();
     final parentOrigins = {TemplateOrigin.preset, TemplateOrigin.parent};
     final shared = await (_db.select(_db.lessons)
@@ -618,7 +618,7 @@ class Repository {
       settings: ParentSettingsView(tone: s.tone, llmEnabled: s.llmEnabled, reminderSlots: s.reminderSlots),
       sharedLessons: [for (final r in shared) SharedLesson(id: r.id, dayKey: r.dayKey, text: r.body)],
       familyToday: [
-        for (final f in await familyToday(dayKeyOf(_clock.now()))) FamilyTodayView(id: f.id, who: f.who, text: f.text),
+        for (final f in await familyToday(day ?? dayKeyOf(_clock.now()))) FamilyTodayView(id: f.id, who: f.who, text: f.text),
       ],
       familyNotes: [
         for (final n in (await familyNotes()).reversed)

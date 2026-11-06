@@ -195,6 +195,9 @@ class _LettersState extends ConsumerState<_Letters> {
   bool _editing = false;
   bool _busy = false;
 
+  /// 上一次存或拿掉沒成功（例如磁碟滿了）：說一聲，字留在框裡。
+  bool _failed = false;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -204,8 +207,7 @@ class _LettersState extends ConsumerState<_Letters> {
   Future<void> _save() async {
     final text = _controller.text.trim();
     if (text.isEmpty || _busy) return;
-    setState(() => _busy = true);
-    try {
+    await _guarded(() async {
       // 孩子的自由輸入：先過危機偵測，不過就不存（底線 9）。
       final ok = await passesSafetyCheck(context, ref, text);
       if (!mounted) return;
@@ -213,9 +215,24 @@ class _LettersState extends ConsumerState<_Letters> {
       if (!mounted) return;
       _controller.clear();
       if (ok) _editing = false;
+    });
+  }
+
+  Future<void> _remove() =>
+      _guarded(() => ref.read(repositoryProvider).deleteMonthLetter(widget.month, LetterAuthor.child));
+
+  /// 存或拿掉時出錯（例如磁碟滿了）：錯誤照樣回報，按鈕回來、說一聲，字留在框裡可以再按一次。
+  Future<void> _guarded(Future<void> Function() action) async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _failed = false;
+    });
+    try {
+      await action();
     } catch (e, st) {
-      // 存不進去（例如磁碟滿了）：字留在框裡，按鈕回來，可以再按一次。
       FlutterError.reportError(FlutterErrorDetails(exception: e, stack: st, library: 'month letters'));
+      if (mounted) _failed = true;
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -282,12 +299,17 @@ class _LettersState extends ConsumerState<_Letters> {
                   ),
                   TextButton(
                     key: const ValueKey('month-letter-remove'),
-                    onPressed: () =>
-                        ref.read(repositoryProvider).deleteMonthLetter(widget.month, LetterAuthor.child),
+                    onPressed: _busy ? null : _remove,
                     child: Text(MonthCopy.childRemove.of(tone)),
                   ),
                 ],
               ]),
+            if (_failed)
+              Text(
+                MonthCopy.childFailed.of(tone),
+                key: const ValueKey('month-letter-failed'),
+                style: text.bodyMedium?.copyWith(color: AppColors.inkSoft),
+              ),
             if (writing) ...[
               Text(MonthCopy.childHint.of(tone), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
               TextField(
