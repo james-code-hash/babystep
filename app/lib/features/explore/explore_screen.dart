@@ -258,7 +258,11 @@ class _DrawCardState extends ConsumerState<_DrawCard> {
         _thanks = null;
       });
 
-  void _extend(Offset p) => setState(() => _strokes.last.points.add(p));
+  void _extend(Offset p) {
+    // 畫到一半按了「擦乾淨」：這一筆已經不在了，等下一筆。
+    if (_strokes.isEmpty) return;
+    setState(() => _strokes.last.points.add(p));
+  }
 
   @override
   Widget build(BuildContext context) {

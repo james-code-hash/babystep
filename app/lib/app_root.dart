@@ -41,6 +41,10 @@ class _AppRootState extends State<AppRoot> {
     await WidgetsBinding.instance.endOfFrame;
     try {
       await store?.reset();
+    } catch (e, st) {
+      // 呼叫的家長區畫面已經拆掉了，錯誤不能往回丟；記下來，照樣從首頁重建
+      // （reset 一定會留下一個開著的資料庫，沒刪掉的資料看得到，可以再刪一次）。
+      FlutterError.reportError(FlutterErrorDetails(exception: e, stack: st, library: 'little_steps'));
     } finally {
       if (mounted) {
         setState(() {

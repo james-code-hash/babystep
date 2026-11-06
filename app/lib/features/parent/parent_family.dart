@@ -12,7 +12,7 @@ import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../domain/parent_view.dart';
 import '../../providers.dart';
-import 'parent_dialogs.dart' show pt;
+import 'parent_dialogs.dart' show pt, showParentDialog;
 
 /// 家長寫的字（「今天的我」、留言）要先過文案規則：L1、L2、幼稚詞全擋（和 LLM 輸出一樣嚴）。
 /// 回傳第一個被擋下來的詞；沒問題回傳 null。
@@ -147,7 +147,7 @@ class FamilySection extends ConsumerWidget {
 
 /// 寫一句給孩子（月回顧的信）。和留言一樣要過文案規則，不過就留在對話框裡說明被擋的詞。
 Future<String?> showLetterDialog(BuildContext context, {String initial = ''}) =>
-    showDialog<String>(context: context, builder: (_) => _LetterDialog(initial: initial));
+    showParentDialog<String>(context: context, builder: (_) => _LetterDialog(initial: initial));
 
 class _LetterDialog extends ConsumerStatefulWidget {
   const _LetterDialog({required this.initial});
@@ -224,7 +224,7 @@ class _LetterDialogState extends ConsumerState<_LetterDialog> {
 
 /// 寫「今天的我」或留言：誰＋一句話。文字過不了文案規則就留在對話框裡、說明被擋的詞。
 Future<(String, String)?> showFamilyDialog(BuildContext context, {required bool today}) =>
-    showDialog<(String, String)>(context: context, builder: (_) => _FamilyDialog(today: today));
+    showParentDialog<(String, String)>(context: context, builder: (_) => _FamilyDialog(today: today));
 
 class _FamilyDialog extends ConsumerStatefulWidget {
   const _FamilyDialog({required this.today});
