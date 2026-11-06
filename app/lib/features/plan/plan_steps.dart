@@ -312,11 +312,10 @@ class _ChooseStepState extends ConsumerState<ChooseStep> {
           runSpacing: AppSpace.s,
           children: [
             for (final t in ts)
-              FilterChip(
-                key: ValueKey('task-${t.id}'),
-                label: Text('${t.emoji} ${t.text}'),
+              _TaskChip(
+                template: t,
                 selected: flow.isSelected(t.id),
-                onSelected: (_) => controller.toggle(t),
+                onSelected: () => controller.toggle(t),
               ),
           ],
         );
@@ -382,6 +381,27 @@ class _ChooseStepState extends ConsumerState<ChooseStep> {
       actions: [
         _nextButton(context, tone, onPressed: flow.canLeaveChoose ? controller.next : null),
       ],
+    );
+  }
+}
+
+/// 一件可以選的事。家長建議的事還沒選時是另一個顏色；孩子選了，就和自己選的其他事一樣（I4）。
+class _TaskChip extends StatelessWidget {
+  const _TaskChip({required this.template, required this.selected, required this.onSelected});
+  final TaskTemplate template;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final suggested = template.origin == TemplateOrigin.parent && !selected;
+    return FilterChip(
+      key: ValueKey('task-${template.id}'),
+      label: Text('${template.emoji} ${template.text}'),
+      selected: selected,
+      onSelected: (_) => onSelected(),
+      backgroundColor: suggested ? AppColors.suggestSoft : null,
+      side: suggested ? const BorderSide(color: AppColors.suggestLine) : null,
     );
   }
 }

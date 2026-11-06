@@ -14,6 +14,11 @@ abstract final class AppColors {
   static const sky = Color(0xFF9CC3D5);
   static const line = Color(0xFFE8DCC8);
 
+  /// 家長建議、孩子還沒選的事：淡藍底＋藍邊。份量不比其他選項重（不更亮、不更大），
+  /// 孩子一選就換成和自己選的一樣的顏色（企劃書模組一，決策 I4）。
+  static const suggestSoft = Color(0xFFE6F0F4);
+  static const suggestLine = sky;
+
   /// 回顧三個狀態按鈕共用同一個底色（底線 4：不用紅綠）。
   static const outcomeButton = Color(0xFFF3EAD9);
 
