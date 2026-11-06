@@ -107,6 +107,10 @@ void familyGuideScenarios() {
     await app.tap('family-note-later');
     expect(app.has('home-family-note'), isFalse);
     expect((await app.read((r) => r.familyNotes())).where((n) => !n.childRead), hasLength(1));
+    // 「等一下」只算這一次：去別的地方再回到首頁，步步會再問一次。
+    await app.tap('nav-explore');
+    await app.back();
+    expect(app.has('home-family-note'), isTrue);
 
     // 孩子在自己的設定裡關掉轉達：留話不再出現（也沒有被標成已讀）。
     await app.tap('nav-settings');

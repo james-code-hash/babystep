@@ -16,14 +16,20 @@ command -v fvm >/dev/null 2>&1 && flutter=(fvm flutter)
 
 cd "$(dirname "$0")/.."
 failed=()
+ran=0
 for f in integration_test/e2e_*_test.dart; do
   [[ -n "$filter" && "$f" != *"$filter"* ]] && continue
+  ran=$((ran + 1))
   echo "==> $f"
   if ! "${flutter[@]}" test "$f" -d "$device"; then
     failed+=("$f")
   fi
 done
 
+if ((ran == 0)); then
+  echo "No E2E file matched '$filter'." >&2
+  exit 1
+fi
 if ((${#failed[@]})); then
   echo "FAILED: ${failed[*]}"
   exit 1

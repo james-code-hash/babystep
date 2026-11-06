@@ -207,8 +207,9 @@ void parentScenarios() {
     expect(await app.read((r) => r.taskTemplates()), isNotEmpty, reason: 'defaults are back');
     if (app.onDevice) {
       // 真的換了一個資料庫檔（刪檔重開），不只是清資料列。
-      expect(store, isA<DatabaseStore>());
       expect(identical(app.container.read(databaseProvider), oldDb), isFalse);
+      expect(identical(app.container.read(databaseProvider), store!.current), isTrue,
+          reason: 'the rebuilt app uses the database the store reopened');
     }
 
     // PIN 也沒了：家長區要重新設定。

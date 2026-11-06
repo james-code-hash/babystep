@@ -334,7 +334,7 @@
 ## K. 驗證
 
 ### K1 ✅ 各情境 E2E：一份情境、兩種跑法
-- **選擇**：`app/integration_test/scenarios/` 七組、25 個情境，全部從畫面點（資料庫只拿來檢查結果），跨日用「App 進背景 → 時間往前 → 回到前景」模擬（和真的隔天打開走同一條路：首頁 invalidate 今天、重抽問候、重新決定探頭）。共用驅動器 `integration_test/e2e/harness.dart` 依執行環境分流：在裝置／桌面上（`tool/e2e.sh <device>`）用 App 真正的啟動方式——磁碟資料庫、AppRoot 的刪檔重開，每個情境開始與結束都把裝置上的資料庫刪掉重開；在 `flutter test`（`test/e2e/`）換成 in-memory 資料庫，CI 每次都跑。分享面板換成記下內容的函式；亂數固定種子。
+- **選擇**：`app/integration_test/scenarios/` 七組、24 個情境，全部從畫面點（資料庫只拿來檢查結果），跨日用「App 進背景 → 時間往前 → 回到前景」模擬（和真的隔天打開走同一條路：首頁 invalidate 今天、重抽問候、重新決定探頭）。共用驅動器 `integration_test/e2e/harness.dart` 依執行環境分流：在裝置／桌面上（`tool/e2e.sh <device>`）用 App 真正的啟動方式——磁碟資料庫、AppRoot 的刪檔重開，每個情境開始與結束都把裝置上的資料庫刪掉重開；在 `flutter test`（`test/e2e/`）換成 in-memory 資料庫，CI 每次都跑。分享面板換成記下內容的函式；亂數固定種子。
 - **替代**：只在裝置上跑（CI 沒有裝置，情境很快就會壞掉沒人發現）；用 repository 直接塞資料再截圖（不是從孩子或家長的手走過一遍，H1 那種「回到首頁看到舊資料」的 bug 抓不到）；Patrol／Appium 之類的外部驅動（多一套工具與權限，Flutter 自己的 integration_test 已經夠用）。
 - **理由**：HANDOFF §4 的驗收是行為，不是單一畫面；2026-11-06 稽核的兩個 bug 都是跨畫面才出現。情境檔用人看得懂的步驟寫，裡面的檢查也順便鎖住底線（家長端看不到沒分享的內容、心情不存、危機內容不存、驚喜盒與探索角不寫資料、軌跡記號長得一樣）。
 - **沒驗到的**：真機（iOS／Android，雲端沒有裝置）、LLM 模式（Firebase 外掛不支援 Linux，也沒有部署）、平台分享面板、真的推播（App 本來就沒有推播）。這幾項要在本機用 `tool/e2e.sh <手機 id>` 與 README 的實機驗證步驟補。

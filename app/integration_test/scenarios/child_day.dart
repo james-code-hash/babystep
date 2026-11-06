@@ -268,7 +268,7 @@ void childDayScenarios() {
     expect(seen.where((s) => s), hasLength(AppConfig.maxPeeksPerDay));
     expect(seen.first, isTrue, reason: 'right after planning inside a slot');
 
-    // 超過時段（21:00）、或今天聊完了：不探頭。
+    // 超過時段（21:00）：不探頭。
     await app.resumeAt(DateTime(2026, 11, 5, 21, 0));
     await planOnePreset(app);
     expect(app.has('home-peek'), isFalse, reason: 'outside every slot');
