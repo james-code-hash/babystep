@@ -16,12 +16,17 @@ abstract final class AppColors {
 
   /// 回顧三個狀態按鈕共用同一個底色（底線 4：不用紅綠）。
   static const outcomeButton = Color(0xFFF3EAD9);
+
+  /// 平板上步步的「舞台」：比紙色深一點的暖色底，和一圈更淡的光。
+  static const stage = Color(0xFFF5E8D3);
+  static const stageGlow = Color(0xFFFBF1E2);
 }
 
 abstract final class AppRadius {
   static const card = 20.0;
   static const button = 16.0;
   static const chip = 14.0;
+  static const stage = 32.0;
 }
 
 abstract final class AppSpace {
@@ -32,13 +37,15 @@ abstract final class AppSpace {
   static const xl = 32.0;
 }
 
-ThemeData buildTheme() {
+/// [tablet]：平板上字、按鈕、選項都大一號（E12）。手機維持原本的大小。
+ThemeData buildTheme({bool tablet = false}) {
   final scheme = ColorScheme.fromSeed(
     seedColor: AppColors.accent,
     surface: AppColors.paper,
     primary: AppColors.accent,
     onSurface: AppColors.ink,
   );
+  double t(double size) => tablet ? size + 2 : size;
   const tap = Size(AppConfig.minTapTarget, AppConfig.minTapTarget);
   final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button));
   return ThemeData(
@@ -46,12 +53,12 @@ ThemeData buildTheme() {
     scaffoldBackgroundColor: AppColors.paper,
     // 不打包字型；用系統中文字型（iOS PingFang TC／Android Noto Sans CJK）。
     fontFamilyFallback: const ['PingFang TC', 'Noto Sans CJK TC', 'Noto Sans TC'],
-    textTheme: const TextTheme(
-      headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: AppColors.ink, height: 1.4),
-      titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.ink, height: 1.4),
-      bodyLarge: TextStyle(fontSize: 18, color: AppColors.ink, height: 1.5),
-      bodyMedium: TextStyle(fontSize: 16, color: AppColors.ink, height: 1.5),
-      labelLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+    textTheme: TextTheme(
+      headlineSmall: TextStyle(fontSize: t(24), fontWeight: FontWeight.w600, color: AppColors.ink, height: 1.4),
+      titleMedium: TextStyle(fontSize: t(18), fontWeight: FontWeight.w600, color: AppColors.ink, height: 1.4),
+      bodyLarge: TextStyle(fontSize: t(18), color: AppColors.ink, height: 1.5),
+      bodyMedium: TextStyle(fontSize: t(16), color: AppColors.ink, height: 1.5),
+      labelLarge: TextStyle(fontSize: t(17), fontWeight: FontWeight.w600),
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.paper,
@@ -69,7 +76,10 @@ ThemeData buildTheme() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        minimumSize: const Size(160, 56),
+        minimumSize: tablet
+            ? const Size(LayoutConfig.tabletButtonMinWidth, LayoutConfig.tabletButtonHeight)
+            : const Size(160, 56),
+        textStyle: TextStyle(fontSize: t(17), fontWeight: FontWeight.w600),
         shape: shape,
         backgroundColor: AppColors.accent,
         foregroundColor: Colors.white,
@@ -86,8 +96,10 @@ ThemeData buildTheme() {
       selectedColor: AppColors.accentSoft,
       side: const BorderSide(color: AppColors.line),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.chip)),
-      labelStyle: const TextStyle(fontSize: 17, color: AppColors.ink),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      labelStyle: TextStyle(fontSize: t(17), color: AppColors.ink),
+      padding: tablet
+          ? const EdgeInsets.symmetric(horizontal: 16, vertical: 14)
+          : const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     ),
     materialTapTargetSize: MaterialTapTargetSize.padded,
   );

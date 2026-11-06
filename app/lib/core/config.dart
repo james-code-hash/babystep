@@ -150,8 +150,33 @@ abstract final class LayoutConfig {
   static const double bubuEmptyPhone = 140;
   static const double bubuEmptyTablet = 196;
 
-  /// 步步在旁邊那一欄時的大小。
-  static const double bubuSidePane = 200;
+  /// 步步在旁邊那一欄（舞台）時的大小。
+  static const double bubuSidePane = 280;
+
+  /// 平板橫放的「舞台」：步步那一欄佔可用寬度的比例，以及上下限（E12）。
+  static const double stageFraction = 0.38;
+  static const double stageMinWidth = 340;
+  static const double stageMaxWidth = 460;
+
+  /// 平板橫放時，主要內容那一欄的最大寬度。
+  static const double stageMainMaxWidth = 600;
+
+  /// 平板上整個畫面四周留的邊（舞台不貼螢幕邊）。
+  static const double stageInset = 20;
+
+  /// 平板直放時，步步在上方那條舞台的最大高度比例（其餘留給內容）。
+  static const double bannerMaxHeightFraction = 0.4;
+
+  /// 平板的按鈕與選項（比手機大一號，給手指和小孩的手）。
+  static const double tabletButtonHeight = 64;
+  static const double tabletButtonMinWidth = 260;
+
+  /// 平板直放時，首頁上方舞台裡步步的大小。
+  static const double bubuBannerTablet = 168;
+
+  /// 平板首頁的入口卡片：一張至少這麼寬。
+  static const double navTileMinWidth = 200;
+
 
   /// 筆記本：平板上一頁至少要這麼寬，最多排幾欄。
   static const double notebookColumnMinWidth = 340;
@@ -165,6 +190,9 @@ abstract final class LayoutConfig {
 abstract final class ExploreConfig {
   /// 塗鴉牆畫布高度（dp）。
   static const double canvasHeight = 320;
+
+  /// 平板上的畫布高度（畫布在旁邊一欄，可以大一點）。
+  static const double canvasHeightTablet = 460;
 
   /// 筆畫粗細（dp）。
   static const double strokeWidth = 6;

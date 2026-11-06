@@ -34,23 +34,60 @@ class ExploreScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(ExploreCopy.title.of(tone))),
       body: SafeArea(
-        child: AdaptiveFrame(
-          child: ListView(
-            key: const ValueKey('explore-list'),
-            padding: const EdgeInsets.all(AppSpace.m),
-            children: [
-              Text(ExploreCopy.intro.of(tone), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
-              const SizedBox(height: AppSpace.m),
-              _CurioCard(tone: tone),
-              const SizedBox(height: AppSpace.m),
-              if (box) ...[
-                _SurpriseCard(tone: tone),
-                const SizedBox(height: AppSpace.m),
-              ],
-              _DrawCard(tone: tone),
-            ],
-          ),
-        ),
+        child: Layout.isTwoPane(context)
+            // 平板橫放：左邊小疑問和驚喜盒、右邊一張大畫布（E12）。
+            ? SingleChildScrollView(
+                key: const ValueKey('explore-list'),
+                padding: const EdgeInsets.all(LayoutConfig.stageInset),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: LayoutConfig.wideMaxWidth),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(ExploreCopy.intro.of(tone), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
+                        const SizedBox(height: AppSpace.m),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _CurioCard(tone: tone),
+                                  if (box) ...[
+                                    const SizedBox(height: AppSpace.m),
+                                    _SurpriseCard(tone: tone),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: LayoutConfig.paneGap),
+                            Expanded(child: _DrawCard(tone: tone)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            : AdaptiveFrame(
+                child: ListView(
+                  key: const ValueKey('explore-list'),
+                  padding: const EdgeInsets.all(AppSpace.m),
+                  children: [
+                    Text(ExploreCopy.intro.of(tone), style: text.bodyMedium?.copyWith(color: AppColors.inkSoft)),
+                    const SizedBox(height: AppSpace.m),
+                    _CurioCard(tone: tone),
+                    const SizedBox(height: AppSpace.m),
+                    if (box) ...[
+                      _SurpriseCard(tone: tone),
+                      const SizedBox(height: AppSpace.m),
+                    ],
+                    _DrawCard(tone: tone),
+                  ],
+                ),
+              ),
       ),
     );
   }
@@ -284,7 +321,7 @@ class _DrawCardState extends ConsumerState<_DrawCard> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadius.card),
                 child: Container(
-                  height: ExploreConfig.canvasHeight,
+                  height: Layout.isTablet(context) ? ExploreConfig.canvasHeightTablet : ExploreConfig.canvasHeight,
                   decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppColors.line)),
                   child: GestureDetector(
                     key: const ValueKey('draw-canvas'),
