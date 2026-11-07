@@ -137,6 +137,9 @@ abstract final class ParentConfig {
   /// 新增提醒時段時預設的起訖（一天中的分鐘數）。
   static const int newSlotStartMinute = 16 * 60;
   static const int newSlotEndMinute = 17 * 60;
+
+  /// 匯出帶照片時，JSON 也存成這個檔名一起送出（M1）。
+  static const String exportFileName = 'little-steps-export.json';
 }
 
 /// 平板版面（docs/decisions.md E11）。手機的數字維持原本的樣子。
@@ -280,6 +283,10 @@ abstract final class PocketConfig {
 
   /// 如果⋯我就⋯的兩半（跟計畫一樣短）。
   static const int maxIfThenChars = 20;
+
+  /// 記卡時的照片預覽、家長區分享卡的照片高度。
+  static const double previewHeight = 200;
+  static const double sharedPhotoHeight = 160;
 
   /// 照片長邊縮到幾 px、JPEG 品質。
   static const int photoMaxSide = 1600;

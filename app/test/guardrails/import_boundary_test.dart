@@ -51,6 +51,10 @@ final parentForbidden = <String, RegExp>{
   'watchDayRecord': RegExp(r'\bwatchDayRecord\b'),
   'Outcome': RegExp(r'\bOutcome\b'),
   'reflection': RegExp(r'\breflection\b'),
+  // 口袋（M1）：家長區只能看 ParentView 裡孩子分享的卡；匯出只拿照片檔名（匯出本來就是完整資料，D2）。
+  'pocketCards': RegExp(r'\b(watchP|p)ocketCards\b'),
+  'pocketCardsProvider': RegExp(r'\bpocketCardsProvider\b'),
+  'pocketCard(': RegExp(r'\bpocketCard\s*\('),
 };
 
 List<String> bubuImportViolations(String path, String source) {

@@ -96,7 +96,12 @@ class _PocketEditorScreenState extends ConsumerState<PocketEditorScreen> {
     final store = _store;
     if (store == null) return;
     final name = await store.take(source);
-    if (name == null || !mounted) return;
+    if (name == null) return;
+    if (!mounted) {
+      // 挑照片的時候畫面已經關了：這張不會被用到，不要留在裝置上。
+      await store.delete(name);
+      return;
+    }
     setState(() {
       _newPhotos.add(name);
       _photo = name;
@@ -130,10 +135,11 @@ class _PocketEditorScreenState extends ConsumerState<PocketEditorScreen> {
       return;
     }
     final repo = ref.read(repositoryProvider);
+    // 這張要用的照片先從「沒存的」拿掉：存的時候畫面被關掉，dispose 也不會把它刪掉。
+    _newPhotos.remove(_photo);
     await repo.savePocketCard(draft);
     final store = _store;
-    // 存好了：這張用的照片留著，其他這次拍過的、以及被換掉的舊照片刪掉。
-    _newPhotos.remove(_photo);
+    // 存好了：其他這次拍過的（dispose 會刪）、以及被換掉的舊照片刪掉。
     final old = _originalPhoto;
     if (store != null && old != null && old != _photo) await store.delete(old);
     if (mounted) context.pop();
@@ -226,7 +232,7 @@ class _PocketEditorScreenState extends ConsumerState<PocketEditorScreen> {
                     if (store != null) ...[
                       const SizedBox(height: AppSpace.s),
                       if (_photo != null) ...[
-                        PocketPhoto(name: _photo!, height: 200),
+                        PocketPhoto(name: _photo!, height: PocketConfig.previewHeight),
                         TextButton.icon(
                           key: const ValueKey('pocket-photo-remove'),
                           onPressed: () => setState(() => _photo = null),

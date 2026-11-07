@@ -19,7 +19,6 @@ abstract final class PocketCopy {
   // ---------------------------------------------------------------- 篩選
   static const filterAll = Line.same('全部');
   static const filterFiledAway = Line.same('收好的');
-  static const filterGroups = Line.same('一組一組看');
 
   // ---------------------------------------------------------------- 組
   static const groupTitle = Line('要放進哪一組？', '哪一組？');
@@ -114,7 +113,7 @@ abstract final class PocketCopy {
   static Line reply(PocketFeeling f) => switch (f) {
         PocketFeeling.clearer => const Line('哪個地方變清楚了呢？步步好想知道。', '哪裡變清楚了？'),
         PocketFeeling.stillStuck => const Line('是卡在哪一步呢？', '卡在哪一步？'),
-        PocketFeeling.later => const Line('好，步步先幫你收著。', '好，先收著。'),
+        PocketFeeling.later => const Line('好，先放著，想看的時候再翻。', '好，先放著。'),
       };
 }
 

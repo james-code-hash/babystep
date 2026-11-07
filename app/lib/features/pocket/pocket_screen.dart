@@ -69,6 +69,19 @@ class _Filter extends Notifier<PocketFilter> {
 
 final pocketFilterProvider = NotifierProvider.autoDispose<_Filter, PocketFilter>(_Filter.new);
 
+/// 選的篩選已經沒有對應的 chip 了（最後一張收好的拿回來、最後一張那科刪掉⋯），就回到「全部」，
+/// 不留一面空牆。條件和 [_FilterChips] 出現 chip 的條件一樣。
+PocketFilter _offered(PocketFilter f, List<PocketCard> cards) {
+  final ok = switch (f) {
+    AllCards() => true,
+    FiledAwayCards() => cards.any((c) => c.filedAway),
+    GroupCards(:final groupId) => cards.any((c) => c.groupId == groupId),
+    SubjectCards(:final subject) =>
+      cards.any((c) => c.subject == subject) && {for (final c in cards) c.subject}.length > 1,
+  };
+  return ok ? f : const AllCards();
+}
+
 /// 再看一次口袋（M1）：孩子放的卡，新的在前。不顯示張數、沒有進度、不排程。
 class PocketScreen extends ConsumerWidget {
   const PocketScreen({super.key});
@@ -79,7 +92,7 @@ class PocketScreen extends ConsumerWidget {
     final access = ref.watch(pocketAccessProvider);
     final cards = ref.watch(pocketCardsProvider).value ?? const <PocketCard>[];
     final groups = ref.watch(pocketGroupsProvider).value ?? const <PocketGroup>[];
-    final filter = ref.watch(pocketFilterProvider);
+    final filter = _offered(ref.watch(pocketFilterProvider), cards);
     final shown = cards.where(filter.shows).toList();
     final groupNames = {for (final g in groups) g.id: g.name};
     final canAdd = access == PocketAccess.full;

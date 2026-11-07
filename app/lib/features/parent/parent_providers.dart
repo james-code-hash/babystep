@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../app_root.dart';
 import '../../core/clock.dart';
+import '../../core/config.dart';
 import '../../data/database_store.dart';
 import '../../data/pocket_photos.dart';
 import '../../domain/parent_view.dart';
@@ -24,8 +27,19 @@ typedef ParentShare = Future<void> Function(String text, String subject, {List<S
 
 final parentShareProvider = Provider<ParentShare>(
   (ref) => (text, subject, {files = const []}) async {
+    // 有照片時，很多分享目標（存到檔案、雲端硬碟）只收檔案、把文字丟掉；
+    // 所以匯出的 JSON 也放成一個檔案跟照片一起送，資料才不會不見（底線 8）。
     await SharePlus.instance.share(
-      ShareParams(text: text, subject: subject, files: [for (final f in files) XFile(f)]),
+      ShareParams(
+        text: text,
+        subject: subject,
+        files: files.isEmpty
+            ? null
+            : [
+                XFile.fromData(utf8.encode(text), name: ParentConfig.exportFileName, mimeType: 'application/json'),
+                for (final f in files) XFile(f),
+              ],
+      ),
     );
   },
 );

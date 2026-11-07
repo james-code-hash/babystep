@@ -229,6 +229,29 @@ void main() {
     await finishTest(tester, env);
   });
 
+  testWidgets('when the chosen filter\'s chip goes away the wall falls back to all cards, not an empty wall',
+      (tester) async {
+    _tall(tester);
+    final env = TestEnv();
+    await env.seed();
+    await env.repo.setPocketIntroduced();
+    await env.repo.savePocketCard(const PocketCardDraft(prompt: '還在口袋'));
+    final filed = await env.repo.savePocketCard(const PocketCardDraft(prompt: '收好了'));
+    await env.repo.setPocketFiledAway(filed.id, true);
+    await _pump(tester, env, PocketAccess.full);
+    await _tap(tester, 'nav-pocket');
+    await _tap(tester, 'pocket-filter-filed');
+    await _tap(tester, 'pocket-tile-${filed.id}');
+    await _tap(tester, 'pocket-file-away'); // 拿回口袋
+    await tester.tap(find.byType(BackButton));
+    await settleAll(tester);
+    expect(find.byKey(const ValueKey('pocket-filter-filed')), findsNothing);
+    expect(tester.widget<ChoiceChip>(find.byKey(const ValueKey('pocket-filter-all'))).selected, isTrue);
+    expect(find.text('還在口袋'), findsOneWidget);
+    expect(find.text('收好了'), findsOneWidget);
+    await finishTest(tester, env);
+  });
+
   testWidgets('"draw one" opens one of the cards that are not filed away', (tester) async {
     _tall(tester);
     final env = TestEnv();

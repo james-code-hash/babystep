@@ -42,6 +42,14 @@ void main() {
     expect(await env.repo.pocketCards(), hasLength(1));
   });
 
+  test('saving an edit of a card that is gone stores it as a card instead of failing', () async {
+    final c = await env.repo.savePocketCard(const PocketCardDraft(prompt: '7×8'));
+    await env.repo.deletePocketCard(c.id);
+    final again = await env.repo.savePocketCard(PocketCardDraft(id: c.id, prompt: '7×8', knowNow: '是 56'));
+    expect(again.knowNow, '是 56');
+    expect(await env.repo.pocketCards(), hasLength(1));
+  });
+
   test('deleting a group keeps its cards, just without a group', () async {
     final g = await env.repo.addPocketGroup('11/7 數學小考');
     final c = await env.repo.savePocketCard(PocketCardDraft(groupId: g.id, prompt: '7×8'));

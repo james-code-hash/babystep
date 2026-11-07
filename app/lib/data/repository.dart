@@ -550,17 +550,13 @@ class Repository {
       });
 
   /// 所有卡：新的在前。不提供數量（畫面也不顯示，底線 1）。
-  Stream<List<PocketCard>> watchPocketCards() => (_db.select(_db.pocketCards)
-        ..orderBy([(c) => OrderingTerm(expression: c.createdAt, mode: OrderingMode.desc)]))
-      .watch()
-      .map((rows) => rows.map(_pocketCard).toList());
+  Stream<List<PocketCard>> watchPocketCards() => _pocketCardsQuery().watch();
 
-  Future<List<PocketCard>> pocketCards() async => [
-        for (final r in await (_db.select(_db.pocketCards)
-              ..orderBy([(c) => OrderingTerm(expression: c.createdAt, mode: OrderingMode.desc)]))
-            .get())
-          _pocketCard(r),
-      ];
+  Future<List<PocketCard>> pocketCards() => _pocketCardsQuery().get();
+
+  Selectable<PocketCard> _pocketCardsQuery() => (_db.select(_db.pocketCards)
+        ..orderBy([(c) => OrderingTerm(expression: c.createdAt, mode: OrderingMode.desc)]))
+      .map(_pocketCard);
 
   Future<PocketCard?> pocketCard(String id) async {
     final r = await (_db.select(_db.pocketCards)..where((c) => c.id.equals(id))).getSingleOrNull();
@@ -581,10 +577,10 @@ class Repository {
       ifCue: Value(_blank(d.ifCue)),
       thenAction: Value(_blank(d.thenAction)),
     );
-    if (d.id == null) {
+    final updated = d.id == null ? 0 : await (_db.update(_db.pocketCards)..where((c) => c.id.equals(id))).write(fields);
+    // 新的一張，或要改的那張已經不在了（例如刪除全部之後）：當成新的一張存起來。
+    if (updated == 0) {
       await _db.into(_db.pocketCards).insert(fields.copyWith(id: Value(id), createdAt: Value(_clock.now())));
-    } else {
-      await (_db.update(_db.pocketCards)..where((c) => c.id.equals(id))).write(fields);
     }
     return (await pocketCard(id))!;
   }

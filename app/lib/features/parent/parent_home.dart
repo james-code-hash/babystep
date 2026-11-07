@@ -234,7 +234,7 @@ class _SharedPocketSection extends StatelessWidget {
                 children: [
                   SubjectTag(subject: c.subject, tone: AgeTone.concise),
                   const SizedBox(height: AppSpace.xs),
-                  if (c.photo != null) ...[PocketPhoto(name: c.photo!, height: 160), const SizedBox(height: AppSpace.xs)],
+                  if (c.photo != null) ...[PocketPhoto(name: c.photo!, height: PocketConfig.sharedPhotoHeight), const SizedBox(height: AppSpace.xs)],
                   if (c.prompt != null) Text(c.prompt!, style: Theme.of(context).textTheme.bodyLarge),
                   for (final (label, value) in [
                     (PocketCopy.thoughtLabel, c.thought),

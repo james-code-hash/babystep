@@ -594,16 +594,21 @@ class _QuietNav extends StatelessWidget {
       icon: const Icon(Icons.lock_outline, size: 18),
       label: Text(HomeCopy.parent.of(tone)),
     );
-    // 平板：四張一樣大的入口卡片（E12）；手機：一排安靜的文字連結（和原本一樣）。
+    // 平板：一樣大的入口卡片（E12；有口袋時是五張），排成盡量平均的幾排；手機：一排安靜的文字連結（和原本一樣）。
     if (Layout.isTablet(context)) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           LayoutBuilder(
             builder: (context, constraints) {
-              final perRow = constraints.maxWidth >= 4 * LayoutConfig.navTileMinWidth + 3 * AppSpace.m ? 4 : 2;
+              final fit = ((constraints.maxWidth + AppSpace.m) / (LayoutConfig.navTileMinWidth + AppSpace.m))
+                  .floor()
+                  .clamp(2, entries.length);
+              final rows = (entries.length / fit).ceil();
+              final perRow = (entries.length / rows).ceil();
               final width = (constraints.maxWidth - (perRow - 1) * AppSpace.m) / perRow;
               return Wrap(
+                alignment: WrapAlignment.center,
                 spacing: AppSpace.m,
                 runSpacing: AppSpace.m,
                 children: [
