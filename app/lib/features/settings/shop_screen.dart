@@ -12,6 +12,7 @@ import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../providers.dart';
+import '../../purchase/packs.dart';
 
 /// 步步的小店（決策 L1）：逛、試穿、穿上。
 ///
@@ -33,6 +34,9 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
     final tone = ref.watch(toneProvider);
     final current = ref.watch(dressUpProvider).value ?? DressUp.initial;
     final now = ref.watch(clockProvider).now();
+    // 家長還沒買的包裡的東西整個不擺（沒有上鎖的格子、沒有價格，決策 L2）。
+    final hidden = AddOnPacks.notOwnedItems(ref.watch(ownedPacksProvider).value ?? const {});
+    List<ShopItem> shown(List<ShopItem> items) => [for (final i in items) if (!hidden.contains(i)) i];
     final text = Theme.of(context).textTheme;
     final trying = _trying;
     final previewLook = trying?.wornOn(current) ?? current;
@@ -96,10 +100,10 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
       key: const ValueKey('shop-list'),
       padding: const EdgeInsets.all(AppSpace.m),
       children: [
-        shelf(ShopCopy.seasonShelf, BubuShop.featured(now), hint: ShopCopy.seasonShelfHint, key: const ValueKey('shelf-season')),
-        shelf(ShopCopy.hats, BubuShop.shelf(AccessorySlot.hat, now), key: const ValueKey('shelf-hat')),
-        shelf(ShopCopy.necks, BubuShop.shelf(AccessorySlot.neck, now), key: const ValueKey('shelf-neck')),
-        shelf(ShopCopy.colors, BubuShop.shelf(AccessorySlot.color, now), key: const ValueKey('shelf-color')),
+        shelf(ShopCopy.seasonShelf, shown(BubuShop.featured(now)), hint: ShopCopy.seasonShelfHint, key: const ValueKey('shelf-season')),
+        shelf(ShopCopy.hats, shown(BubuShop.shelf(AccessorySlot.hat, now)), key: const ValueKey('shelf-hat')),
+        shelf(ShopCopy.necks, shown(BubuShop.shelf(AccessorySlot.neck, now)), key: const ValueKey('shelf-neck')),
+        shelf(ShopCopy.colors, shown(BubuShop.shelf(AccessorySlot.color, now)), key: const ValueKey('shelf-color')),
       ],
     );
 

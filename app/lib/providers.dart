@@ -38,6 +38,9 @@ final trailStyleProvider =
 
 final dressUpProvider = StreamProvider<DressUp>((ref) => ref.watch(repositoryProvider).watchDressUp());
 
+/// 家長買過的插件包 id（決策 L2）。孩子端只用來決定小店與裝扮畫面擺哪些東西。
+final ownedPacksProvider = StreamProvider<Set<String>>((ref) => ref.watch(repositoryProvider).watchOwnedPacks());
+
 final todayPlansProvider = StreamProvider<List<Plan>>(
   (ref) => ref.watch(repositoryProvider).watchPlans(ref.watch(todayKeyProvider)),
 );

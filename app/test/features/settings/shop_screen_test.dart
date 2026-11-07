@@ -6,6 +6,7 @@ import 'package:little_steps/bubu/shop.dart';
 import 'package:little_steps/copy/shop.dart';
 import 'package:little_steps/domain/models.dart';
 import 'package:little_steps/features/settings/shop_screen.dart';
+import 'package:little_steps/purchase/packs.dart';
 
 import '../../helpers/test_app.dart';
 
@@ -24,6 +25,7 @@ void main() {
   testWidgets('trying on only changes the preview; wearing saves it', (tester) async {
     useTallSurface(tester);
     final env = TestEnv(now: DateTime(2026, 11, 7, 10));
+    await tester.runAsync(() => env.repo.addOwnedPack(AddOnPacks.seasons.id));
     await pumpScreen(tester, env, const ShopScreen());
 
     // 十一月是秋天：秋天的架子在最前面。
@@ -47,6 +49,7 @@ void main() {
   testWidgets('putting it back leaves the outfit as it was', (tester) async {
     useTallSurface(tester);
     final env = TestEnv(now: DateTime(2026, 4, 2, 10));
+    await tester.runAsync(() => env.repo.addOwnedPack(AddOnPacks.seasons.id));
     await pumpScreen(tester, env, const ShopScreen());
     final item = BubuShop.seasonal[Season.spring]!.first;
     await tester.tap(find.byKey(ValueKey('shop-${item.slot.name}-${item.id}')));
@@ -61,6 +64,7 @@ void main() {
   testWidgets('every item in the catalog is on a shelf and can be tried (no locks, no prices)', (tester) async {
     useTallSurface(tester);
     final env = TestEnv(now: DateTime(2026, 7, 1, 10));
+    await tester.runAsync(() => env.repo.addOwnedPack(AddOnPacks.seasons.id));
     await pumpScreen(tester, env, const ShopScreen());
     for (final slot in AccessorySlot.values) {
       for (final a in BubuShop.itemsFor(slot).where((a) => a.id != 'none')) {
@@ -72,6 +76,22 @@ void main() {
     // 畫面上沒有任何數字（價格、數量、剩幾天都不該有）。
     final texts = tester.widgetList<Text>(find.byType(Text)).map((t) => t.data ?? '').join(' ');
     expect(RegExp(r'[0-9０-９]').hasMatch(texts), isFalse, reason: texts);
+    await finishTest(tester, env);
+  });
+
+  testWidgets('before a parent buys the pack, its items are not in the shop at all (no locked tiles)', (tester) async {
+    useTallSurface(tester);
+    final env = TestEnv(now: DateTime(2026, 11, 7, 10));
+    await pumpScreen(tester, env, const ShopScreen());
+    for (final item in AddOnPacks.seasons.items) {
+      expect(find.byKey(ValueKey('shop-${item.slot.name}-${item.id}')), findsNothing, reason: item.id);
+    }
+    // 季節架整個不出現，也沒有任何上鎖、價格、請爸媽買的字。
+    expect(find.text(ShopCopy.seasonShelf.fill(AgeTone.lively, {'season': '秋天'})), findsNothing);
+    expect(find.byIcon(Icons.lock), findsNothing);
+    expect(find.byIcon(Icons.lock_outline), findsNothing);
+    // 基本款照樣全部都在。
+    expect(find.byKey(const ValueKey('shop-hat-leaf')), findsOneWidget);
     await finishTest(tester, env);
   });
 }

@@ -519,6 +519,7 @@ class Repository {
   static const _kTrailStyle = 'trailStyle';
   static const _kPetName = 'petName';
   static const _kReadAloud = 'readAloud';
+  static const _kOwnedPacks = 'ownedPacks';
 
   Future<String?> _getSetting(String key) async =>
       (await (_db.select(_db.settings)..where((s) => s.key.equals(key))).getSingleOrNull())?.value;
@@ -588,6 +589,25 @@ class Repository {
 
   /// 只有孩子主動裝扮時呼叫（底線 2）。
   Future<void> setDressUp(DressUp d) => _setSetting(_kDressUp, jsonEncode(d.toJson()));
+
+  // ---------------------------------------------------------------- 家長買的插件包（決策 L2）
+
+  static Set<String> _ownedPacksFrom(Map<String, String> m) =>
+      m[_kOwnedPacks] == null ? const {} : {...(jsonDecode(m[_kOwnedPacks]!) as List).cast<String>()};
+
+  /// 已經買的插件包 id。孩子端只拿來決定小店要擺哪些東西，不顯示「買了什麼」。
+  Stream<Set<String>> watchOwnedPacks() => _watchSettingMap().map(_ownedPacksFrom).distinct(_sameSet);
+
+  Future<Set<String>> ownedPacks() async => _ownedPacksFrom(await _settingMap());
+
+  /// 商店確認購買或恢復購買時呼叫。只會加，不會拿走（底線 2：步步身上的東西不會因為大人的事消失）。
+  Future<void> addOwnedPack(String packId) async {
+    final owned = await ownedPacks();
+    if (owned.contains(packId)) return;
+    await _setSetting(_kOwnedPacks, jsonEncode(([...owned, packId])..sort()));
+  }
+
+  static bool _sameSet(Set<String> a, Set<String> b) => a.length == b.length && a.containsAll(b);
 
   // ---------------------------------------------------------------- 家長端
 
