@@ -3227,6 +3227,1032 @@ class MonthLettersCompanion extends UpdateCompanion<MonthLetterRow> {
   }
 }
 
+class $PocketGroupsTable extends PocketGroups
+    with TableInfo<$PocketGroupsTable, PocketGroupRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PocketGroupsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pocket_groups';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PocketGroupRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PocketGroupRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PocketGroupRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PocketGroupsTable createAlias(String alias) {
+    return $PocketGroupsTable(attachedDatabase, alias);
+  }
+}
+
+class PocketGroupRow extends DataClass implements Insertable<PocketGroupRow> {
+  final String id;
+  final String name;
+  final DateTime createdAt;
+  const PocketGroupRow({
+    required this.id,
+    required this.name,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PocketGroupsCompanion toCompanion(bool nullToAbsent) {
+    return PocketGroupsCompanion(
+      id: Value(id),
+      name: Value(name),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PocketGroupRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PocketGroupRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PocketGroupRow copyWith({String? id, String? name, DateTime? createdAt}) =>
+      PocketGroupRow(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  PocketGroupRow copyWithCompanion(PocketGroupsCompanion data) {
+    return PocketGroupRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PocketGroupRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PocketGroupRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.createdAt == this.createdAt);
+}
+
+class PocketGroupsCompanion extends UpdateCompanion<PocketGroupRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const PocketGroupsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PocketGroupsCompanion.insert({
+    required String id,
+    required String name,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       createdAt = Value(createdAt);
+  static Insertable<PocketGroupRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PocketGroupsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return PocketGroupsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PocketGroupsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PocketCardsTable extends PocketCards
+    with TableInfo<$PocketCardsTable, PocketCardRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PocketCardsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _groupIdMeta = const VerificationMeta(
+    'groupId',
+  );
+  @override
+  late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
+    'group_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _subjectMeta = const VerificationMeta(
+    'subject',
+  );
+  @override
+  late final GeneratedColumn<String> subject = GeneratedColumn<String>(
+    'subject',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _promptMeta = const VerificationMeta('prompt');
+  @override
+  late final GeneratedColumn<String> prompt = GeneratedColumn<String>(
+    'prompt',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _photoMeta = const VerificationMeta('photo');
+  @override
+  late final GeneratedColumn<String> photo = GeneratedColumn<String>(
+    'photo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _thoughtMeta = const VerificationMeta(
+    'thought',
+  );
+  @override
+  late final GeneratedColumn<String> thought = GeneratedColumn<String>(
+    'thought',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stuckMeta = const VerificationMeta('stuck');
+  @override
+  late final GeneratedColumn<String> stuck = GeneratedColumn<String>(
+    'stuck',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _knowNowMeta = const VerificationMeta(
+    'knowNow',
+  );
+  @override
+  late final GeneratedColumn<String> knowNow = GeneratedColumn<String>(
+    'know_now',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ifCueMeta = const VerificationMeta('ifCue');
+  @override
+  late final GeneratedColumn<String> ifCue = GeneratedColumn<String>(
+    'if_cue',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _thenActionMeta = const VerificationMeta(
+    'thenAction',
+  );
+  @override
+  late final GeneratedColumn<String> thenAction = GeneratedColumn<String>(
+    'then_action',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _filedAwayMeta = const VerificationMeta(
+    'filedAway',
+  );
+  @override
+  late final GeneratedColumn<bool> filedAway = GeneratedColumn<bool>(
+    'filed_away',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("filed_away" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _sharedWithParentMeta = const VerificationMeta(
+    'sharedWithParent',
+  );
+  @override
+  late final GeneratedColumn<bool> sharedWithParent = GeneratedColumn<bool>(
+    'shared_with_parent',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("shared_with_parent" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    groupId,
+    subject,
+    prompt,
+    photo,
+    thought,
+    stuck,
+    knowNow,
+    ifCue,
+    thenAction,
+    filedAway,
+    sharedWithParent,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pocket_cards';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PocketCardRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('group_id')) {
+      context.handle(
+        _groupIdMeta,
+        groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta),
+      );
+    }
+    if (data.containsKey('subject')) {
+      context.handle(
+        _subjectMeta,
+        subject.isAcceptableOrUnknown(data['subject']!, _subjectMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_subjectMeta);
+    }
+    if (data.containsKey('prompt')) {
+      context.handle(
+        _promptMeta,
+        prompt.isAcceptableOrUnknown(data['prompt']!, _promptMeta),
+      );
+    }
+    if (data.containsKey('photo')) {
+      context.handle(
+        _photoMeta,
+        photo.isAcceptableOrUnknown(data['photo']!, _photoMeta),
+      );
+    }
+    if (data.containsKey('thought')) {
+      context.handle(
+        _thoughtMeta,
+        thought.isAcceptableOrUnknown(data['thought']!, _thoughtMeta),
+      );
+    }
+    if (data.containsKey('stuck')) {
+      context.handle(
+        _stuckMeta,
+        stuck.isAcceptableOrUnknown(data['stuck']!, _stuckMeta),
+      );
+    }
+    if (data.containsKey('know_now')) {
+      context.handle(
+        _knowNowMeta,
+        knowNow.isAcceptableOrUnknown(data['know_now']!, _knowNowMeta),
+      );
+    }
+    if (data.containsKey('if_cue')) {
+      context.handle(
+        _ifCueMeta,
+        ifCue.isAcceptableOrUnknown(data['if_cue']!, _ifCueMeta),
+      );
+    }
+    if (data.containsKey('then_action')) {
+      context.handle(
+        _thenActionMeta,
+        thenAction.isAcceptableOrUnknown(data['then_action']!, _thenActionMeta),
+      );
+    }
+    if (data.containsKey('filed_away')) {
+      context.handle(
+        _filedAwayMeta,
+        filedAway.isAcceptableOrUnknown(data['filed_away']!, _filedAwayMeta),
+      );
+    }
+    if (data.containsKey('shared_with_parent')) {
+      context.handle(
+        _sharedWithParentMeta,
+        sharedWithParent.isAcceptableOrUnknown(
+          data['shared_with_parent']!,
+          _sharedWithParentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PocketCardRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PocketCardRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      groupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group_id'],
+      ),
+      subject: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subject'],
+      )!,
+      prompt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prompt'],
+      ),
+      photo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo'],
+      ),
+      thought: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}thought'],
+      ),
+      stuck: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stuck'],
+      ),
+      knowNow: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}know_now'],
+      ),
+      ifCue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}if_cue'],
+      ),
+      thenAction: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}then_action'],
+      ),
+      filedAway: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}filed_away'],
+      )!,
+      sharedWithParent: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}shared_with_parent'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PocketCardsTable createAlias(String alias) {
+    return $PocketCardsTable(attachedDatabase, alias);
+  }
+}
+
+class PocketCardRow extends DataClass implements Insertable<PocketCardRow> {
+  final String id;
+  final String? groupId;
+
+  /// PocketSubject 的 name。
+  final String subject;
+  final String? prompt;
+
+  /// 照片檔名（App 自己的資料夾裡），不是路徑。
+  final String? photo;
+  final String? thought;
+
+  /// PocketStuck 的 name。
+  final String? stuck;
+  final String? knowNow;
+  final String? ifCue;
+  final String? thenAction;
+  final bool filedAway;
+  final bool sharedWithParent;
+  final DateTime createdAt;
+  const PocketCardRow({
+    required this.id,
+    this.groupId,
+    required this.subject,
+    this.prompt,
+    this.photo,
+    this.thought,
+    this.stuck,
+    this.knowNow,
+    this.ifCue,
+    this.thenAction,
+    required this.filedAway,
+    required this.sharedWithParent,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    if (!nullToAbsent || groupId != null) {
+      map['group_id'] = Variable<String>(groupId);
+    }
+    map['subject'] = Variable<String>(subject);
+    if (!nullToAbsent || prompt != null) {
+      map['prompt'] = Variable<String>(prompt);
+    }
+    if (!nullToAbsent || photo != null) {
+      map['photo'] = Variable<String>(photo);
+    }
+    if (!nullToAbsent || thought != null) {
+      map['thought'] = Variable<String>(thought);
+    }
+    if (!nullToAbsent || stuck != null) {
+      map['stuck'] = Variable<String>(stuck);
+    }
+    if (!nullToAbsent || knowNow != null) {
+      map['know_now'] = Variable<String>(knowNow);
+    }
+    if (!nullToAbsent || ifCue != null) {
+      map['if_cue'] = Variable<String>(ifCue);
+    }
+    if (!nullToAbsent || thenAction != null) {
+      map['then_action'] = Variable<String>(thenAction);
+    }
+    map['filed_away'] = Variable<bool>(filedAway);
+    map['shared_with_parent'] = Variable<bool>(sharedWithParent);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PocketCardsCompanion toCompanion(bool nullToAbsent) {
+    return PocketCardsCompanion(
+      id: Value(id),
+      groupId: groupId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(groupId),
+      subject: Value(subject),
+      prompt: prompt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(prompt),
+      photo: photo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(photo),
+      thought: thought == null && nullToAbsent
+          ? const Value.absent()
+          : Value(thought),
+      stuck: stuck == null && nullToAbsent
+          ? const Value.absent()
+          : Value(stuck),
+      knowNow: knowNow == null && nullToAbsent
+          ? const Value.absent()
+          : Value(knowNow),
+      ifCue: ifCue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ifCue),
+      thenAction: thenAction == null && nullToAbsent
+          ? const Value.absent()
+          : Value(thenAction),
+      filedAway: Value(filedAway),
+      sharedWithParent: Value(sharedWithParent),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PocketCardRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PocketCardRow(
+      id: serializer.fromJson<String>(json['id']),
+      groupId: serializer.fromJson<String?>(json['groupId']),
+      subject: serializer.fromJson<String>(json['subject']),
+      prompt: serializer.fromJson<String?>(json['prompt']),
+      photo: serializer.fromJson<String?>(json['photo']),
+      thought: serializer.fromJson<String?>(json['thought']),
+      stuck: serializer.fromJson<String?>(json['stuck']),
+      knowNow: serializer.fromJson<String?>(json['knowNow']),
+      ifCue: serializer.fromJson<String?>(json['ifCue']),
+      thenAction: serializer.fromJson<String?>(json['thenAction']),
+      filedAway: serializer.fromJson<bool>(json['filedAway']),
+      sharedWithParent: serializer.fromJson<bool>(json['sharedWithParent']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'groupId': serializer.toJson<String?>(groupId),
+      'subject': serializer.toJson<String>(subject),
+      'prompt': serializer.toJson<String?>(prompt),
+      'photo': serializer.toJson<String?>(photo),
+      'thought': serializer.toJson<String?>(thought),
+      'stuck': serializer.toJson<String?>(stuck),
+      'knowNow': serializer.toJson<String?>(knowNow),
+      'ifCue': serializer.toJson<String?>(ifCue),
+      'thenAction': serializer.toJson<String?>(thenAction),
+      'filedAway': serializer.toJson<bool>(filedAway),
+      'sharedWithParent': serializer.toJson<bool>(sharedWithParent),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PocketCardRow copyWith({
+    String? id,
+    Value<String?> groupId = const Value.absent(),
+    String? subject,
+    Value<String?> prompt = const Value.absent(),
+    Value<String?> photo = const Value.absent(),
+    Value<String?> thought = const Value.absent(),
+    Value<String?> stuck = const Value.absent(),
+    Value<String?> knowNow = const Value.absent(),
+    Value<String?> ifCue = const Value.absent(),
+    Value<String?> thenAction = const Value.absent(),
+    bool? filedAway,
+    bool? sharedWithParent,
+    DateTime? createdAt,
+  }) => PocketCardRow(
+    id: id ?? this.id,
+    groupId: groupId.present ? groupId.value : this.groupId,
+    subject: subject ?? this.subject,
+    prompt: prompt.present ? prompt.value : this.prompt,
+    photo: photo.present ? photo.value : this.photo,
+    thought: thought.present ? thought.value : this.thought,
+    stuck: stuck.present ? stuck.value : this.stuck,
+    knowNow: knowNow.present ? knowNow.value : this.knowNow,
+    ifCue: ifCue.present ? ifCue.value : this.ifCue,
+    thenAction: thenAction.present ? thenAction.value : this.thenAction,
+    filedAway: filedAway ?? this.filedAway,
+    sharedWithParent: sharedWithParent ?? this.sharedWithParent,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PocketCardRow copyWithCompanion(PocketCardsCompanion data) {
+    return PocketCardRow(
+      id: data.id.present ? data.id.value : this.id,
+      groupId: data.groupId.present ? data.groupId.value : this.groupId,
+      subject: data.subject.present ? data.subject.value : this.subject,
+      prompt: data.prompt.present ? data.prompt.value : this.prompt,
+      photo: data.photo.present ? data.photo.value : this.photo,
+      thought: data.thought.present ? data.thought.value : this.thought,
+      stuck: data.stuck.present ? data.stuck.value : this.stuck,
+      knowNow: data.knowNow.present ? data.knowNow.value : this.knowNow,
+      ifCue: data.ifCue.present ? data.ifCue.value : this.ifCue,
+      thenAction: data.thenAction.present
+          ? data.thenAction.value
+          : this.thenAction,
+      filedAway: data.filedAway.present ? data.filedAway.value : this.filedAway,
+      sharedWithParent: data.sharedWithParent.present
+          ? data.sharedWithParent.value
+          : this.sharedWithParent,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PocketCardRow(')
+          ..write('id: $id, ')
+          ..write('groupId: $groupId, ')
+          ..write('subject: $subject, ')
+          ..write('prompt: $prompt, ')
+          ..write('photo: $photo, ')
+          ..write('thought: $thought, ')
+          ..write('stuck: $stuck, ')
+          ..write('knowNow: $knowNow, ')
+          ..write('ifCue: $ifCue, ')
+          ..write('thenAction: $thenAction, ')
+          ..write('filedAway: $filedAway, ')
+          ..write('sharedWithParent: $sharedWithParent, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    groupId,
+    subject,
+    prompt,
+    photo,
+    thought,
+    stuck,
+    knowNow,
+    ifCue,
+    thenAction,
+    filedAway,
+    sharedWithParent,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PocketCardRow &&
+          other.id == this.id &&
+          other.groupId == this.groupId &&
+          other.subject == this.subject &&
+          other.prompt == this.prompt &&
+          other.photo == this.photo &&
+          other.thought == this.thought &&
+          other.stuck == this.stuck &&
+          other.knowNow == this.knowNow &&
+          other.ifCue == this.ifCue &&
+          other.thenAction == this.thenAction &&
+          other.filedAway == this.filedAway &&
+          other.sharedWithParent == this.sharedWithParent &&
+          other.createdAt == this.createdAt);
+}
+
+class PocketCardsCompanion extends UpdateCompanion<PocketCardRow> {
+  final Value<String> id;
+  final Value<String?> groupId;
+  final Value<String> subject;
+  final Value<String?> prompt;
+  final Value<String?> photo;
+  final Value<String?> thought;
+  final Value<String?> stuck;
+  final Value<String?> knowNow;
+  final Value<String?> ifCue;
+  final Value<String?> thenAction;
+  final Value<bool> filedAway;
+  final Value<bool> sharedWithParent;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const PocketCardsCompanion({
+    this.id = const Value.absent(),
+    this.groupId = const Value.absent(),
+    this.subject = const Value.absent(),
+    this.prompt = const Value.absent(),
+    this.photo = const Value.absent(),
+    this.thought = const Value.absent(),
+    this.stuck = const Value.absent(),
+    this.knowNow = const Value.absent(),
+    this.ifCue = const Value.absent(),
+    this.thenAction = const Value.absent(),
+    this.filedAway = const Value.absent(),
+    this.sharedWithParent = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PocketCardsCompanion.insert({
+    required String id,
+    this.groupId = const Value.absent(),
+    required String subject,
+    this.prompt = const Value.absent(),
+    this.photo = const Value.absent(),
+    this.thought = const Value.absent(),
+    this.stuck = const Value.absent(),
+    this.knowNow = const Value.absent(),
+    this.ifCue = const Value.absent(),
+    this.thenAction = const Value.absent(),
+    this.filedAway = const Value.absent(),
+    this.sharedWithParent = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       subject = Value(subject),
+       createdAt = Value(createdAt);
+  static Insertable<PocketCardRow> custom({
+    Expression<String>? id,
+    Expression<String>? groupId,
+    Expression<String>? subject,
+    Expression<String>? prompt,
+    Expression<String>? photo,
+    Expression<String>? thought,
+    Expression<String>? stuck,
+    Expression<String>? knowNow,
+    Expression<String>? ifCue,
+    Expression<String>? thenAction,
+    Expression<bool>? filedAway,
+    Expression<bool>? sharedWithParent,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (groupId != null) 'group_id': groupId,
+      if (subject != null) 'subject': subject,
+      if (prompt != null) 'prompt': prompt,
+      if (photo != null) 'photo': photo,
+      if (thought != null) 'thought': thought,
+      if (stuck != null) 'stuck': stuck,
+      if (knowNow != null) 'know_now': knowNow,
+      if (ifCue != null) 'if_cue': ifCue,
+      if (thenAction != null) 'then_action': thenAction,
+      if (filedAway != null) 'filed_away': filedAway,
+      if (sharedWithParent != null) 'shared_with_parent': sharedWithParent,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PocketCardsCompanion copyWith({
+    Value<String>? id,
+    Value<String?>? groupId,
+    Value<String>? subject,
+    Value<String?>? prompt,
+    Value<String?>? photo,
+    Value<String?>? thought,
+    Value<String?>? stuck,
+    Value<String?>? knowNow,
+    Value<String?>? ifCue,
+    Value<String?>? thenAction,
+    Value<bool>? filedAway,
+    Value<bool>? sharedWithParent,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return PocketCardsCompanion(
+      id: id ?? this.id,
+      groupId: groupId ?? this.groupId,
+      subject: subject ?? this.subject,
+      prompt: prompt ?? this.prompt,
+      photo: photo ?? this.photo,
+      thought: thought ?? this.thought,
+      stuck: stuck ?? this.stuck,
+      knowNow: knowNow ?? this.knowNow,
+      ifCue: ifCue ?? this.ifCue,
+      thenAction: thenAction ?? this.thenAction,
+      filedAway: filedAway ?? this.filedAway,
+      sharedWithParent: sharedWithParent ?? this.sharedWithParent,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (groupId.present) {
+      map['group_id'] = Variable<String>(groupId.value);
+    }
+    if (subject.present) {
+      map['subject'] = Variable<String>(subject.value);
+    }
+    if (prompt.present) {
+      map['prompt'] = Variable<String>(prompt.value);
+    }
+    if (photo.present) {
+      map['photo'] = Variable<String>(photo.value);
+    }
+    if (thought.present) {
+      map['thought'] = Variable<String>(thought.value);
+    }
+    if (stuck.present) {
+      map['stuck'] = Variable<String>(stuck.value);
+    }
+    if (knowNow.present) {
+      map['know_now'] = Variable<String>(knowNow.value);
+    }
+    if (ifCue.present) {
+      map['if_cue'] = Variable<String>(ifCue.value);
+    }
+    if (thenAction.present) {
+      map['then_action'] = Variable<String>(thenAction.value);
+    }
+    if (filedAway.present) {
+      map['filed_away'] = Variable<bool>(filedAway.value);
+    }
+    if (sharedWithParent.present) {
+      map['shared_with_parent'] = Variable<bool>(sharedWithParent.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PocketCardsCompanion(')
+          ..write('id: $id, ')
+          ..write('groupId: $groupId, ')
+          ..write('subject: $subject, ')
+          ..write('prompt: $prompt, ')
+          ..write('photo: $photo, ')
+          ..write('thought: $thought, ')
+          ..write('stuck: $stuck, ')
+          ..write('knowNow: $knowNow, ')
+          ..write('ifCue: $ifCue, ')
+          ..write('thenAction: $thenAction, ')
+          ..write('filedAway: $filedAway, ')
+          ..write('sharedWithParent: $sharedWithParent, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3240,6 +4266,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $FamilyTodayEntriesTable(this);
   late final $FamilyNotesTable familyNotes = $FamilyNotesTable(this);
   late final $MonthLettersTable monthLetters = $MonthLettersTable(this);
+  late final $PocketGroupsTable pocketGroups = $PocketGroupsTable(this);
+  late final $PocketCardsTable pocketCards = $PocketCardsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3254,6 +4282,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     familyTodayEntries,
     familyNotes,
     monthLetters,
+    pocketGroups,
+    pocketCards,
   ];
 }
 
@@ -5119,6 +6149,542 @@ typedef $$MonthLettersTableProcessedTableManager =
       MonthLetterRow,
       PrefetchHooks Function()
     >;
+typedef $$PocketGroupsTableCreateCompanionBuilder =
+    PocketGroupsCompanion Function({
+      required String id,
+      required String name,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$PocketGroupsTableUpdateCompanionBuilder =
+    PocketGroupsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$PocketGroupsTableFilterComposer
+    extends Composer<_$AppDatabase, $PocketGroupsTable> {
+  $$PocketGroupsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PocketGroupsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PocketGroupsTable> {
+  $$PocketGroupsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PocketGroupsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PocketGroupsTable> {
+  $$PocketGroupsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$PocketGroupsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PocketGroupsTable,
+          PocketGroupRow,
+          $$PocketGroupsTableFilterComposer,
+          $$PocketGroupsTableOrderingComposer,
+          $$PocketGroupsTableAnnotationComposer,
+          $$PocketGroupsTableCreateCompanionBuilder,
+          $$PocketGroupsTableUpdateCompanionBuilder,
+          (
+            PocketGroupRow,
+            BaseReferences<_$AppDatabase, $PocketGroupsTable, PocketGroupRow>,
+          ),
+          PocketGroupRow,
+          PrefetchHooks Function()
+        > {
+  $$PocketGroupsTableTableManager(_$AppDatabase db, $PocketGroupsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PocketGroupsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PocketGroupsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PocketGroupsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PocketGroupsCompanion(
+                id: id,
+                name: name,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => PocketGroupsCompanion.insert(
+                id: id,
+                name: name,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PocketGroupsTable, PocketGroupRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PocketGroupsTable,
+                    PocketGroupRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PocketGroupsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PocketGroupsTable,
+      PocketGroupRow,
+      $$PocketGroupsTableFilterComposer,
+      $$PocketGroupsTableOrderingComposer,
+      $$PocketGroupsTableAnnotationComposer,
+      $$PocketGroupsTableCreateCompanionBuilder,
+      $$PocketGroupsTableUpdateCompanionBuilder,
+      (
+        PocketGroupRow,
+        BaseReferences<_$AppDatabase, $PocketGroupsTable, PocketGroupRow>,
+      ),
+      PocketGroupRow,
+      PrefetchHooks Function()
+    >;
+typedef $$PocketCardsTableCreateCompanionBuilder =
+    PocketCardsCompanion Function({
+      required String id,
+      Value<String?> groupId,
+      required String subject,
+      Value<String?> prompt,
+      Value<String?> photo,
+      Value<String?> thought,
+      Value<String?> stuck,
+      Value<String?> knowNow,
+      Value<String?> ifCue,
+      Value<String?> thenAction,
+      Value<bool> filedAway,
+      Value<bool> sharedWithParent,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$PocketCardsTableUpdateCompanionBuilder =
+    PocketCardsCompanion Function({
+      Value<String> id,
+      Value<String?> groupId,
+      Value<String> subject,
+      Value<String?> prompt,
+      Value<String?> photo,
+      Value<String?> thought,
+      Value<String?> stuck,
+      Value<String?> knowNow,
+      Value<String?> ifCue,
+      Value<String?> thenAction,
+      Value<bool> filedAway,
+      Value<bool> sharedWithParent,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$PocketCardsTableFilterComposer
+    extends Composer<_$AppDatabase, $PocketCardsTable> {
+  $$PocketCardsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get subject => $composableBuilder(
+    column: $table.subject,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prompt => $composableBuilder(
+    column: $table.prompt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photo => $composableBuilder(
+    column: $table.photo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get thought => $composableBuilder(
+    column: $table.thought,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stuck => $composableBuilder(
+    column: $table.stuck,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get knowNow => $composableBuilder(
+    column: $table.knowNow,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ifCue => $composableBuilder(
+    column: $table.ifCue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get thenAction => $composableBuilder(
+    column: $table.thenAction,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get filedAway => $composableBuilder(
+    column: $table.filedAway,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get sharedWithParent => $composableBuilder(
+    column: $table.sharedWithParent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PocketCardsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PocketCardsTable> {
+  $$PocketCardsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get subject => $composableBuilder(
+    column: $table.subject,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get prompt => $composableBuilder(
+    column: $table.prompt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get photo => $composableBuilder(
+    column: $table.photo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get thought => $composableBuilder(
+    column: $table.thought,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stuck => $composableBuilder(
+    column: $table.stuck,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get knowNow => $composableBuilder(
+    column: $table.knowNow,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ifCue => $composableBuilder(
+    column: $table.ifCue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get thenAction => $composableBuilder(
+    column: $table.thenAction,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get filedAway => $composableBuilder(
+    column: $table.filedAway,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get sharedWithParent => $composableBuilder(
+    column: $table.sharedWithParent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PocketCardsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PocketCardsTable> {
+  $$PocketCardsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get groupId =>
+      $composableBuilder(column: $table.groupId, builder: (column) => column);
+
+  GeneratedColumn<String> get subject =>
+      $composableBuilder(column: $table.subject, builder: (column) => column);
+
+  GeneratedColumn<String> get prompt =>
+      $composableBuilder(column: $table.prompt, builder: (column) => column);
+
+  GeneratedColumn<String> get photo =>
+      $composableBuilder(column: $table.photo, builder: (column) => column);
+
+  GeneratedColumn<String> get thought =>
+      $composableBuilder(column: $table.thought, builder: (column) => column);
+
+  GeneratedColumn<String> get stuck =>
+      $composableBuilder(column: $table.stuck, builder: (column) => column);
+
+  GeneratedColumn<String> get knowNow =>
+      $composableBuilder(column: $table.knowNow, builder: (column) => column);
+
+  GeneratedColumn<String> get ifCue =>
+      $composableBuilder(column: $table.ifCue, builder: (column) => column);
+
+  GeneratedColumn<String> get thenAction => $composableBuilder(
+    column: $table.thenAction,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get filedAway =>
+      $composableBuilder(column: $table.filedAway, builder: (column) => column);
+
+  GeneratedColumn<bool> get sharedWithParent => $composableBuilder(
+    column: $table.sharedWithParent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$PocketCardsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PocketCardsTable,
+          PocketCardRow,
+          $$PocketCardsTableFilterComposer,
+          $$PocketCardsTableOrderingComposer,
+          $$PocketCardsTableAnnotationComposer,
+          $$PocketCardsTableCreateCompanionBuilder,
+          $$PocketCardsTableUpdateCompanionBuilder,
+          (
+            PocketCardRow,
+            BaseReferences<_$AppDatabase, $PocketCardsTable, PocketCardRow>,
+          ),
+          PocketCardRow,
+          PrefetchHooks Function()
+        > {
+  $$PocketCardsTableTableManager(_$AppDatabase db, $PocketCardsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PocketCardsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PocketCardsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PocketCardsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String?> groupId = const Value.absent(),
+                Value<String> subject = const Value.absent(),
+                Value<String?> prompt = const Value.absent(),
+                Value<String?> photo = const Value.absent(),
+                Value<String?> thought = const Value.absent(),
+                Value<String?> stuck = const Value.absent(),
+                Value<String?> knowNow = const Value.absent(),
+                Value<String?> ifCue = const Value.absent(),
+                Value<String?> thenAction = const Value.absent(),
+                Value<bool> filedAway = const Value.absent(),
+                Value<bool> sharedWithParent = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PocketCardsCompanion(
+                id: id,
+                groupId: groupId,
+                subject: subject,
+                prompt: prompt,
+                photo: photo,
+                thought: thought,
+                stuck: stuck,
+                knowNow: knowNow,
+                ifCue: ifCue,
+                thenAction: thenAction,
+                filedAway: filedAway,
+                sharedWithParent: sharedWithParent,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String?> groupId = const Value.absent(),
+                required String subject,
+                Value<String?> prompt = const Value.absent(),
+                Value<String?> photo = const Value.absent(),
+                Value<String?> thought = const Value.absent(),
+                Value<String?> stuck = const Value.absent(),
+                Value<String?> knowNow = const Value.absent(),
+                Value<String?> ifCue = const Value.absent(),
+                Value<String?> thenAction = const Value.absent(),
+                Value<bool> filedAway = const Value.absent(),
+                Value<bool> sharedWithParent = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => PocketCardsCompanion.insert(
+                id: id,
+                groupId: groupId,
+                subject: subject,
+                prompt: prompt,
+                photo: photo,
+                thought: thought,
+                stuck: stuck,
+                knowNow: knowNow,
+                ifCue: ifCue,
+                thenAction: thenAction,
+                filedAway: filedAway,
+                sharedWithParent: sharedWithParent,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PocketCardsTable, PocketCardRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PocketCardsTable,
+                    PocketCardRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PocketCardsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PocketCardsTable,
+      PocketCardRow,
+      $$PocketCardsTableFilterComposer,
+      $$PocketCardsTableOrderingComposer,
+      $$PocketCardsTableAnnotationComposer,
+      $$PocketCardsTableCreateCompanionBuilder,
+      $$PocketCardsTableUpdateCompanionBuilder,
+      (
+        PocketCardRow,
+        BaseReferences<_$AppDatabase, $PocketCardsTable, PocketCardRow>,
+      ),
+      PocketCardRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5141,4 +6707,8 @@ class $AppDatabaseManager {
       $$FamilyNotesTableTableManager(_db, _db.familyNotes);
   $$MonthLettersTableTableManager get monthLetters =>
       $$MonthLettersTableTableManager(_db, _db.monthLetters);
+  $$PocketGroupsTableTableManager get pocketGroups =>
+      $$PocketGroupsTableTableManager(_db, _db.pocketGroups);
+  $$PocketCardsTableTableManager get pocketCards =>
+      $$PocketCardsTableTableManager(_db, _db.pocketCards);
 }

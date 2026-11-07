@@ -11,4 +11,10 @@ abstract final class Routes {
   static const dressUp = '/settings/dress-up';
   static const petName = '/settings/name';
   static const parent = '/parent';
+  static const pocket = '/pocket';
+  static const pocketNew = '/pocket/new';
+
+  /// 翻一張：`/pocket/card/<id>`；改一張：`/pocket/edit/<id>`。
+  static String pocketCard(String id) => '/pocket/card/$id';
+  static String pocketEdit(String id) => '/pocket/edit/$id';
 }

@@ -8,6 +8,7 @@ import 'features/notebook/notebook_routes.dart';
 import 'features/parent/parent_routes.dart';
 import 'features/path/path_routes.dart';
 import 'features/plan/plan_routes.dart';
+import 'features/pocket/pocket_routes.dart';
 import 'features/review/review_routes.dart';
 import 'features/settings/settings_routes.dart';
 
@@ -22,6 +23,7 @@ GoRouter buildRouter() => GoRouter(
         ...exploreRoutes,
         ...monthRoutes,
         ...settingsRoutes,
+        ...pocketRoutes,
         ...parentRoutes,
       ],
     );

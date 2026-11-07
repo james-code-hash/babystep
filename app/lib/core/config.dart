@@ -137,6 +137,9 @@ abstract final class ParentConfig {
   /// 新增提醒時段時預設的起訖（一天中的分鐘數）。
   static const int newSlotStartMinute = 16 * 60;
   static const int newSlotEndMinute = 17 * 60;
+
+  /// 匯出帶照片時，JSON 也存成這個檔名一起送出（M1）。
+  static const String exportFileName = 'little-steps-export.json';
 }
 
 /// 平板版面（docs/decisions.md E11）。手機的數字維持原本的樣子。
@@ -267,4 +270,28 @@ abstract final class TrailConfig {
   static const double mapHillHalfWidth = 14;
   static const double mapHillHeight = 12;
   static const double mapTreeRadius = 5;
+}
+
+/// 再看一次口袋（M1）。
+abstract final class PocketConfig {
+  /// 題目文字、「那時候怎麼想」「現在知道的」的字數上限。
+  static const int maxPromptChars = 80;
+  static const int maxNoteChars = 80;
+
+  /// 一組的名字（例如「11/7 數學小考」）。
+  static const int maxGroupNameChars = 12;
+
+  /// 如果⋯我就⋯的兩半（跟計畫一樣短）。
+  static const int maxIfThenChars = 20;
+
+  /// 記卡時的照片預覽、家長區分享卡的照片高度。
+  static const double previewHeight = 200;
+  static const double sharedPhotoHeight = 160;
+
+  /// 照片長邊縮到幾 px、JPEG 品質。
+  static const int photoMaxSide = 1600;
+  static const int photoQuality = 82;
+
+  /// 卡片牆的縮圖高度（dp）。
+  static const double thumbHeight = 120;
 }

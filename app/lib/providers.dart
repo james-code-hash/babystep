@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/clock.dart';
@@ -10,6 +11,7 @@ import 'domain/lesson/llm_lesson_service.dart';
 import 'domain/lesson/template_lesson_service.dart';
 import 'domain/lesson_service.dart';
 import 'domain/models.dart';
+import 'domain/pocket.dart';
 import 'safety/crisis_detector.dart';
 
 /// 資料庫。`main.dart` 與測試會 override（測試用 in-memory）。
@@ -96,3 +98,29 @@ final monthLettersProvider =
 final familyMonthProvider = StreamProvider.family<List<FamilyToday>, String>(
   (ref, monthKey) => ref.watch(repositoryProvider).watchFamilyTodayInMonth(monthKey),
 );
+
+// ---------------------------------------------------------------- 再看一次口袋（M1）
+
+/// 孩子能不能用口袋。
+///
+/// 第 1 段還沒接商店：只有 debug 版帶 `--dart-define=POCKET_OWNED=true` 才是 [PocketAccess.full]，
+/// 正式版永遠是 [PocketAccess.none]（孩子完全看不到口袋）。第 2 段改成由購買與試用狀態算出來。
+final pocketAccessProvider = Provider<PocketAccess>(
+  (ref) => kDebugMode && const bool.fromEnvironment('POCKET_OWNED') ? PocketAccess.full : PocketAccess.none,
+);
+
+final pocketCardsProvider = StreamProvider<List<PocketCard>>((ref) => ref.watch(repositoryProvider).watchPocketCards());
+
+final pocketGroupsProvider =
+    StreamProvider<List<PocketGroup>>((ref) => ref.watch(repositoryProvider).watchPocketGroups());
+
+/// 孩子那邊要不要出現口袋的入口。
+///
+/// 沒有權限 → 不出現；孩子自己藏起來 → 不出現；只能看（試用到期、退款）→ 有卡才出現。
+final pocketVisibleProvider = Provider<bool>((ref) {
+  final access = ref.watch(pocketAccessProvider);
+  if (access == PocketAccess.none) return false;
+  if (ref.watch(settingsProvider).value?.pocketHidden ?? false) return false;
+  if (access == PocketAccess.full) return true;
+  return (ref.watch(pocketCardsProvider).value ?? const []).isNotEmpty;
+});

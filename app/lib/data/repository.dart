@@ -9,6 +9,7 @@ import '../core/config.dart';
 import '../domain/lesson_service.dart';
 import '../domain/models.dart';
 import '../domain/parent_view.dart';
+import '../domain/pocket.dart';
 import 'db.dart';
 
 /// 成長小路上的一天：只有「有計畫的日子」才會出現（C5）。刻意不帶 outcome。
@@ -506,6 +507,104 @@ class Repository {
         ..where((l) => l.monthKey.equals(monthKey) & l.author.equals(author.name)))
       .go();
 
+  // ---------------------------------------------------------------- 再看一次口袋（M1）
+
+  static String? _blank(String? s) => (s == null || s.trim().isEmpty) ? null : s.trim();
+
+  PocketGroup _pocketGroup(PocketGroupRow r) => PocketGroup(id: r.id, name: r.name, createdAt: r.createdAt);
+
+  PocketCard _pocketCard(PocketCardRow r) => PocketCard(
+        id: r.id,
+        groupId: r.groupId,
+        subject: enumByName(PocketSubject.values, r.subject, PocketSubject.other),
+        prompt: r.prompt,
+        photo: r.photo,
+        thought: r.thought,
+        stuck: r.stuck == null ? null : enumByName(PocketStuck.values, r.stuck!, PocketStuck.unsure),
+        knowNow: r.knowNow,
+        ifCue: r.ifCue,
+        thenAction: r.thenAction,
+        filedAway: r.filedAway,
+        sharedWithParent: r.sharedWithParent,
+        createdAt: r.createdAt,
+      );
+
+  /// 組：新的在前。
+  Stream<List<PocketGroup>> watchPocketGroups() => (_db.select(_db.pocketGroups)
+        ..orderBy([(g) => OrderingTerm(expression: g.createdAt, mode: OrderingMode.desc)]))
+      .watch()
+      .map((rows) => rows.map(_pocketGroup).toList());
+
+  /// 孩子開一組新的（名字是孩子取的）。
+  Future<PocketGroup> addPocketGroup(String name) async {
+    final g = PocketGroup(id: _id(), name: name.trim(), createdAt: _clock.now());
+    await _db.into(_db.pocketGroups).insert(PocketGroupsCompanion.insert(id: g.id, name: g.name, createdAt: g.createdAt));
+    return g;
+  }
+
+  /// 刪一組：組裡的卡不刪，回到「沒有分組」。
+  Future<void> deletePocketGroup(String id) => _db.transaction(() async {
+        await (_db.update(_db.pocketCards)..where((c) => c.groupId.equals(id)))
+            .write(const PocketCardsCompanion(groupId: Value(null)));
+        await (_db.delete(_db.pocketGroups)..where((g) => g.id.equals(id))).go();
+      });
+
+  /// 所有卡：新的在前。不提供數量（畫面也不顯示，底線 1）。
+  Stream<List<PocketCard>> watchPocketCards() => _pocketCardsQuery().watch();
+
+  Future<List<PocketCard>> pocketCards() => _pocketCardsQuery().get();
+
+  Selectable<PocketCard> _pocketCardsQuery() => (_db.select(_db.pocketCards)
+        ..orderBy([(c) => OrderingTerm(expression: c.createdAt, mode: OrderingMode.desc)]))
+      .map(_pocketCard);
+
+  Future<PocketCard?> pocketCard(String id) async {
+    final r = await (_db.select(_db.pocketCards)..where((c) => c.id.equals(id))).getSingleOrNull();
+    return r == null ? null : _pocketCard(r);
+  }
+
+  /// 新的一張（[PocketCardDraft.id] 是 null）或改寫一張。改寫不動「收好」「分享」。
+  Future<PocketCard> savePocketCard(PocketCardDraft d) async {
+    final id = d.id ?? _id();
+    final fields = PocketCardsCompanion(
+      groupId: Value(d.groupId),
+      subject: Value(d.subject.name),
+      prompt: Value(_blank(d.prompt)),
+      photo: Value(d.photo),
+      thought: Value(_blank(d.thought)),
+      stuck: Value(d.stuck?.name),
+      knowNow: Value(_blank(d.knowNow)),
+      ifCue: Value(_blank(d.ifCue)),
+      thenAction: Value(_blank(d.thenAction)),
+    );
+    final updated = d.id == null ? 0 : await (_db.update(_db.pocketCards)..where((c) => c.id.equals(id))).write(fields);
+    // 新的一張，或要改的那張已經不在了（例如刪除全部之後）：當成新的一張存起來。
+    if (updated == 0) {
+      await _db.into(_db.pocketCards).insert(fields.copyWith(id: Value(id), createdAt: Value(_clock.now())));
+    }
+    return (await pocketCard(id))!;
+  }
+
+  Future<void> setPocketFiledAway(String id, bool filedAway) => (_db.update(_db.pocketCards)
+        ..where((c) => c.id.equals(id)))
+      .write(PocketCardsCompanion(filedAway: Value(filedAway)));
+
+  /// 分享給家長是孩子主動做的動作，預設不分享（底線 7）。
+  Future<void> setPocketShared(String id, bool shared) => (_db.update(_db.pocketCards)
+        ..where((c) => c.id.equals(id)))
+      .write(PocketCardsCompanion(sharedWithParent: Value(shared)));
+
+  /// 孩子讓一張卡離開口袋。回傳照片檔名，呼叫端要把照片也刪掉。
+  Future<String?> deletePocketCard(String id) async {
+    final card = await pocketCard(id);
+    await (_db.delete(_db.pocketCards)..where((c) => c.id.equals(id))).go();
+    return card?.photo;
+  }
+
+  /// 還在用的照片檔名（刪除時對照，避免留下沒人用的照片）。
+  Future<Set<String>> pocketPhotoNames() async =>
+      {for (final c in await pocketCards()) if (c.photo != null) c.photo!};
+
   // ---------------------------------------------------------------- 設定
 
   static const _kTone = 'tone';
@@ -519,6 +618,8 @@ class Repository {
   static const _kTrailStyle = 'trailStyle';
   static const _kPetName = 'petName';
   static const _kReadAloud = 'readAloud';
+  static const _kPocketHidden = 'pocketHidden';
+  static const _kPocketIntroduced = 'pocketIntroduced';
 
   Future<String?> _getSetting(String key) async =>
       (await (_db.select(_db.settings)..where((s) => s.key.equals(key))).getSingleOrNull())?.value;
@@ -541,6 +642,8 @@ class Repository {
         trailStyle: enumByName(TrailStyle.values, m[_kTrailStyle] ?? '', TrailStyle.path),
         petName: m[_kPetName],
         readAloud: m[_kReadAloud] == 'true',
+        pocketHidden: m[_kPocketHidden] == 'true',
+        pocketIntroduced: m[_kPocketIntroduced] == 'true',
       );
 
   Stream<Map<String, String>> _watchSettingMap() =>
@@ -576,6 +679,12 @@ class Repository {
   /// 朗讀按鈕（孩子在自己的設定裡開，I6）。
   Future<void> setReadAloud(bool on) => _setSetting(_kReadAloud, '$on');
 
+  /// 孩子把口袋藏起來或拿出來（只在孩子自己的設定裡，M1）。
+  Future<void> setPocketHidden(bool hidden) => _setSetting(_kPocketHidden, '$hidden');
+
+  /// 步步介紹過口袋了（只介紹一次）。
+  Future<void> setPocketIntroduced() => _setSetting(_kPocketIntroduced, 'true');
+
   /// 成長軌跡的樣子（孩子在小路頁上換）。
   Future<void> setTrailStyle(TrailStyle style) => _setSetting(_kTrailStyle, style.name);
 
@@ -605,6 +714,7 @@ class Repository {
           _db.familyTodayEntries,
           _db.familyNotes,
           _db.monthLetters,
+          _db.pocketCards,
         ],
       ),
     );
@@ -642,6 +752,10 @@ class Repository {
           FamilyNoteView(id: n.id, dayKey: n.dayKey, who: n.who, text: n.text),
       ],
       monthLetters: _lettersByMonth(await monthLetters()),
+      sharedPocketCards: [
+        for (final c in await pocketCards())
+          if (c.sharedWithParent) SharedPocketCard.of(c),
+      ],
     );
   }
 
@@ -662,6 +776,7 @@ class Repository {
         'trailStyle': s.trailStyle.name,
         'petName': s.petName,
         'readAloud': s.readAloud,
+        'pocketHidden': s.pocketHidden,
       },
       'taskTemplates': [for (final t in await taskTemplates()) t.toJson()],
       'cueTemplates': [for (final c in await cueTemplates()) c.toJson()],
@@ -671,6 +786,9 @@ class Repository {
       'familyToday': [for (final r in await _db.select(_db.familyTodayEntries).get()) _familyToday(r).toJson()],
       'familyNotes': [for (final r in await _db.select(_db.familyNotes).get()) _familyNote(r).toJson()],
       'monthLetters': [for (final l in await monthLetters()) l.toJson()],
+      // 再看一次口袋（M1）。照片檔由家長區跟著這個檔案一起分享出去（photo 是檔名）。
+      'pocketGroups': [for (final r in await _db.select(_db.pocketGroups).get()) _pocketGroup(r).toJson()],
+      'pocketCards': [for (final c in await pocketCards()) c.toJson()],
     };
     return const JsonEncoder.withIndent('  ').convert(data);
   }

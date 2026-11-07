@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../bubu/bubu_view.dart';
 import '../../copy/family.dart';
+import '../../copy/pocket.dart';
 import '../../copy/settings.dart';
 import '../../core/routes.dart';
 import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
+import '../../domain/pocket.dart';
 import '../../providers.dart';
 import '../read_aloud/read_aloud.dart';
 
@@ -45,6 +47,20 @@ class ChildSettingsScreen extends ConsumerWidget {
                   onChanged: (v) => ref.read(repositoryProvider).setFamilyNotesOn(v),
                 ),
               ),
+              // 口袋（家長有買才出現這個開關，M1）：藏起來不會刪掉任何卡。
+              if (ref.watch(pocketAccessProvider) != PocketAccess.none) ...[
+                const SizedBox(height: AppSpace.m),
+                Card(
+                  child: SwitchListTile(
+                    key: const ValueKey('pocket-visible-switch'),
+                    secondary: const Icon(Icons.style_outlined),
+                    title: Text(PocketCopy.settingTitle.of(tone), style: text.titleMedium),
+                    subtitle: Text(PocketCopy.settingHint.of(tone)),
+                    value: !(ref.watch(settingsProvider).value?.pocketHidden ?? false),
+                    onChanged: (v) => ref.read(repositoryProvider).setPocketHidden(!v),
+                  ),
+                ),
+              ],
               if (ref.watch(speakerProvider).available) ...[
                 const SizedBox(height: AppSpace.m),
                 Card(
