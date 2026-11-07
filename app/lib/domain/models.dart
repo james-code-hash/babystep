@@ -267,6 +267,8 @@ class AppSettings {
     this.trailStyle = TrailStyle.path,
     this.petName,
     this.readAloud = false,
+    this.pocketHidden = false,
+    this.pocketIntroduced = false,
   });
 
   final AgeTone tone;
@@ -289,6 +291,12 @@ class AppSettings {
   /// 步步的對話泡泡旁邊要不要有「唸出來」（孩子在自己的設定裡開，I6）。
   final bool readAloud;
 
+  /// 孩子在自己的設定裡把「再看一次口袋」藏起來（M1）。
+  final bool pocketHidden;
+
+  /// 步步已經介紹過口袋一次（家長買了之後，只介紹一次）。
+  final bool pocketIntroduced;
+
   AppSettings copyWith({
     AgeTone? tone,
     bool? llmEnabled,
@@ -299,6 +307,8 @@ class AppSettings {
     TrailStyle? trailStyle,
     String? petName,
     bool? readAloud,
+    bool? pocketHidden,
+    bool? pocketIntroduced,
   }) =>
       AppSettings(
         tone: tone ?? this.tone,
@@ -310,6 +320,8 @@ class AppSettings {
         trailStyle: trailStyle ?? this.trailStyle,
         petName: petName ?? this.petName,
         readAloud: readAloud ?? this.readAloud,
+        pocketHidden: pocketHidden ?? this.pocketHidden,
+        pocketIntroduced: pocketIntroduced ?? this.pocketIntroduced,
       );
 }
 

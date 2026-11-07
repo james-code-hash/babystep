@@ -7,13 +7,16 @@ import '../../copy/family.dart';
 import '../../copy/line.dart';
 import '../../copy/parent.dart';
 import '../../copy/parent_guide.dart';
+import '../../copy/pocket.dart';
 import '../../core/clock.dart';
 import '../../core/config.dart';
 import '../../core/layout.dart';
 import '../../core/theme.dart';
+import '../../data/pocket_photos.dart';
 import '../../domain/models.dart';
 import '../../domain/parent_view.dart';
 import '../../providers.dart';
+import '../pocket/pocket_widgets.dart';
 import 'parent_dialogs.dart';
 import 'parent_family.dart';
 import 'parent_guide.dart';
@@ -60,6 +63,8 @@ class _ParentBody extends ConsumerWidget {
     // 和孩子、家人有關的放一邊，設定放另一邊。
     final people = <Widget>[
       _SharedLessonsSection(lessons: view.sharedLessons),
+      // 孩子分享的口袋卡（M1）：有分享才出現這一段。
+      if (view.sharedPocketCards.isNotEmpty) _SharedPocketSection(cards: view.sharedPocketCards),
       const _Section(
         id: 'guide',
         title: ParentGuideCopy.sectionTitle,
@@ -206,6 +211,52 @@ class _SharedLessonsSection extends StatelessWidget {
     final d = dateOfDayKey(dayKey);
     return ParentCopy.sharedDate.fill(AgeTone.concise, {'m': '${d.month}', 'd': '${d.day}'});
   }
+}
+
+// ------------------------------------------------------------------ 孩子分享的口袋卡
+
+class _SharedPocketSection extends StatelessWidget {
+  const _SharedPocketSection({required this.cards});
+  final List<SharedPocketCard> cards;
+
+  @override
+  Widget build(BuildContext context) => _Section(
+        id: 'shared-pocket',
+        title: PocketParentCopy.sharedTitle,
+        note: PocketParentCopy.sharedNote,
+        children: [
+          for (final c in cards)
+            Padding(
+              key: ValueKey('shared-pocket-${c.id}'),
+              padding: const EdgeInsets.only(bottom: AppSpace.m),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SubjectTag(subject: c.subject, tone: AgeTone.concise),
+                  const SizedBox(height: AppSpace.xs),
+                  if (c.photo != null) ...[PocketPhoto(name: c.photo!, height: 160), const SizedBox(height: AppSpace.xs)],
+                  if (c.prompt != null) Text(c.prompt!, style: Theme.of(context).textTheme.bodyLarge),
+                  for (final (label, value) in [
+                    (PocketCopy.thoughtLabel, c.thought),
+                    (PocketCopy.stuckLabel, c.stuck == null ? null : PocketCopy.stuck(c.stuck!).of(AgeTone.concise)),
+                    (PocketCopy.knowNowLabel, c.knowNow),
+                    (
+                      PocketCopy.ifThenLabel,
+                      c.ifCue == null || c.thenAction == null
+                          ? null
+                          : PocketCopy.ifThenSentence.fill(AgeTone.concise, {'cue': c.ifCue!, 'action': c.thenAction!}),
+                    ),
+                  ])
+                    if (value != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpace.xs),
+                        child: Text('${pt(label)}：$value', style: const TextStyle(color: AppColors.inkSoft)),
+                      ),
+                ],
+              ),
+            ),
+        ],
+      );
 }
 
 // ------------------------------------------------------------------ 事情範本
@@ -443,7 +494,15 @@ class _DataSection extends ConsumerWidget {
 
     Future<void> export() async {
       final json = await repo.exportJson();
-      await ref.read(parentShareProvider)(json, pt(ParentCopy.exportSubject));
+      // 口袋的題目照片（M1）跟著匯出檔一起送出去（底線 8：可完整匯出）。
+      final photos = ref.read(pocketPhotoStoreProvider);
+      final files = photos == null
+          ? const <String>[]
+          : [
+              for (final n in await repo.pocketPhotoNames())
+                if (photos.fileOf(n).existsSync()) photos.fileOf(n).path,
+            ];
+      await ref.read(parentShareProvider)(json, pt(ParentCopy.exportSubject), files: files);
     }
 
     Future<void> deleteAll() async {

@@ -67,7 +67,7 @@ Future<List<String>> openParent(WidgetTester tester, TestEnv env) async {
     tester,
     env,
     const ParentGateScreen(),
-    extra: [parentShareProvider.overrideWithValue((text, subject) async => shared.add(text))],
+    extra: [parentShareProvider.overrideWithValue((text, subject, {files = const []}) async => shared.add(text))],
   );
   await enterPin(tester, '2468');
   expect(find.byType(ParentHome), findsOneWidget);

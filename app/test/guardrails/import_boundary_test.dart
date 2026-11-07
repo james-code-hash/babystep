@@ -13,6 +13,9 @@ bool bubuForbiddenTarget(String target) =>
     target.startsWith('lib/data/') ||
     target.startsWith('lib/features/') ||
     target.startsWith('lib/domain/lesson') ||
+    // 口袋的卡片與照片（M1）：步步的樣子不能跟孩子放了什麼、放了多少有關（底線 2）。
+    target.startsWith('lib/domain/pocket') ||
+    target.startsWith('lib/copy/pocket') ||
     target.startsWith('lib/safety/');
 
 /// bubu_inputs.dart 本身可以 import providers.dart，但仍不得碰 data/、features/、lesson、safety/。
@@ -30,7 +33,7 @@ const bubuInputsAllowedProviders = {
 /// greeting.dart 也不得 import 任何跟計畫／回顧／筆記有關的 copy 或 domain。
 bool greetingForbiddenTarget(String target) =>
     bubuForbiddenTarget(target) ||
-    RegExp(r'(plan|review|lesson|notebook|path|parent|repository)', caseSensitive: false).hasMatch(target);
+    RegExp(r'(plan|review|lesson|notebook|path|parent|repository|pocket)', caseSensitive: false).hasMatch(target);
 
 /// `lib/features/parent/**` 不得引用的識別字（家長端只能讀 ParentView）。
 final parentForbidden = <String, RegExp>{
