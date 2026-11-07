@@ -11,21 +11,25 @@ import '../../purchase/store.dart';
 import 'parent_dialogs.dart';
 
 /// 商店查到的價格。查不到（沒網路、桌面版）就是空的。
-final _storeProductsProvider = FutureProvider.autoDispose<Map<String, StoreProduct>>((ref) async {
+final _storeProductsProvider =
+    FutureProvider.autoDispose.family<Map<String, StoreProduct>, List<AddOnPack>>((ref, packs) async {
   final store = ref.watch(purchaseStoreProvider);
   if (!await store.isAvailable()) return const {};
-  final products = await store.products({for (final p in AddOnPacks.all) p.productId});
+  final products = await store.products({for (final p in packs) p.productId});
   return {for (final p in products) p.id: p};
 });
 
 /// 家長端「加購插件包」（決策 L2）。整個購買流程只在這裡，家長 PIN 後面。
 class AddOnsSectionBody extends ConsumerWidget {
-  const AddOnsSectionBody({super.key});
+  const AddOnsSectionBody({super.key, this.packs = AddOnPacks.all});
+
+  /// 要列出的包（測試可以換）。
+  final List<AddOnPack> packs;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final owned = ref.watch(ownedPacksProvider).value ?? const <String>{};
-    final products = ref.watch(_storeProductsProvider);
+    final products = ref.watch(_storeProductsProvider(packs));
     final last = ref.watch(lastStoreEventProvider);
     final store = ref.read(purchaseStoreProvider);
     final text = Theme.of(context).textTheme;
@@ -34,7 +38,7 @@ class AddOnsSectionBody extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final pack in AddOnPacks.all)
+        for (final pack in packs)
           Padding(
             key: ValueKey('add-on-${pack.id}'),
             padding: const EdgeInsets.only(bottom: AppSpace.s),

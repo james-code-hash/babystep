@@ -5,11 +5,8 @@ import 'line.dart';
 abstract final class ParentAddOnsCopy {
   static const sectionTitle = Line.same('加購插件包');
   static const sectionNote = Line.same(
-    '一次買斷，買了就一直有。孩子那邊不會看到價格、沒買的東西，也不會有請你買的按鈕；買好之後，東西會直接出現在孩子的小店裡。',
+    '給家裡用的小工具，一次買斷，買了就一直有。步步的裝扮全部免費，不在這裡賣。孩子那邊不會看到價格、沒買的工具，也不會有請你買的按鈕。',
   );
-
-  static const seasonsName = Line.same('四季配件包');
-  static const seasonsDescription = Line.same('春夏秋冬各兩件配件。小店最前面的架子會跟著季節換。');
 
   static const buy = Line.same('購買 {price}');
   static const owned = Line.same('已擁有');

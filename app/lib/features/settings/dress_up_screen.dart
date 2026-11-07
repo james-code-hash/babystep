@@ -10,8 +10,6 @@ import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
 import '../../providers.dart';
-import '../../bubu/shop.dart';
-import '../../purchase/packs.dart';
 
 /// 幫步步換裝扮。目錄裡的每一樣一開始就全部能選：沒有條件、沒有價格（底線 1、2）。
 /// 這裡只依目錄內容通用地列出，不假設有哪些配件。
@@ -23,13 +21,6 @@ class DressUpScreen extends ConsumerWidget {
     final tone = ref.watch(toneProvider);
     final current = ref.watch(dressUpProvider).value ?? DressUp.initial;
     final text = Theme.of(context).textTheme;
-
-    // 家長還沒買的包裡的東西不出現（決策 L2）；正穿著的那一件一定留著。
-    final hidden = AddOnPacks.notOwnedItems(ref.watch(ownedPacksProvider).value ?? const {});
-    List<Accessory> shown(AccessorySlot slot, List<Accessory> items, String wearing) => [
-          for (final a in items)
-            if (a.id == wearing || !hidden.contains(ShopItem(slot, a.id))) a,
-        ];
 
     void choose(DressUp next) => ref.read(repositoryProvider).setDressUp(next);
 
@@ -45,7 +36,7 @@ class DressUpScreen extends ConsumerWidget {
         _AccessoryGroup(
           slot: 'hat',
           title: SettingsCopy.hats,
-          items: shown(AccessorySlot.hat, BubuCatalog.hats, current.hat),
+          items: BubuCatalog.hats,
           selectedId: current.hat,
           tone: tone,
           onPick: (id) => choose(current.copyWith(hat: id)),
@@ -53,7 +44,7 @@ class DressUpScreen extends ConsumerWidget {
         _AccessoryGroup(
           slot: 'neck',
           title: SettingsCopy.necks,
-          items: shown(AccessorySlot.neck, BubuCatalog.necks, current.neck),
+          items: BubuCatalog.necks,
           selectedId: current.neck,
           tone: tone,
           onPick: (id) => choose(current.copyWith(neck: id)),
@@ -61,7 +52,7 @@ class DressUpScreen extends ConsumerWidget {
         _AccessoryGroup(
           slot: 'color',
           title: SettingsCopy.colors,
-          items: shown(AccessorySlot.color, BubuCatalog.colors, current.color),
+          items: BubuCatalog.colors,
           selectedId: current.color,
           tone: tone,
           onPick: (id) => choose(current.copyWith(color: id)),

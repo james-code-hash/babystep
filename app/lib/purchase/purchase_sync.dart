@@ -23,8 +23,11 @@ class LastStoreEvent extends Notifier<StoreEvent?> {
 /// 掛在 App 最上層，從頭到尾聽商店的事件（買到一半關掉 App，下次開啟時商店會再送一次）。
 /// 買到或恢復了就記到本機；不通知孩子、不跳任何畫面。
 class PurchaseSync extends ConsumerStatefulWidget {
-  const PurchaseSync({super.key, required this.child});
+  const PurchaseSync({super.key, required this.child, this.packs = AddOnPacks.all});
   final Widget child;
+
+  /// 認得的包（測試可以換）。
+  final List<AddOnPack> packs;
 
   @override
   ConsumerState<PurchaseSync> createState() => _PurchaseSyncState();
@@ -40,7 +43,7 @@ class _PurchaseSyncState extends ConsumerState<PurchaseSync> {
   }
 
   Future<void> _onEvent(StoreEvent e) async {
-    final pack = AddOnPacks.byProductId(e.productId);
+    final pack = AddOnPacks.byProductId(e.productId, widget.packs);
     if (e.kind == StoreEventKind.delivered && pack != null) {
       await ref.read(repositoryProvider).addOwnedPack(pack.id);
     }

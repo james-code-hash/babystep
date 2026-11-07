@@ -1,19 +1,17 @@
-import '../bubu/shop.dart';
 import '../copy/line.dart';
-import '../copy/parent_add_ons.dart';
 
-/// 家長在家長端買的一個插件包（決策 L2）。
+/// 家長在家長端買的一個插件包（決策 L2、L3）。
 ///
-/// - 只有家長端看得到包、價格、購買按鈕；孩子端只會看到「已經有的東西」（底線 8 改寫後的版本）。
-/// - 包裡只有樣子或玩法，不放核心循環、安全功能，也不跟孩子做了什麼有關（底線 1、2）。
-/// - 一次買斷、永久擁有：不會因為過期把步步身上的東西拿走（底線 2）。
+/// - 只有家長端看得到包、價格、購買按鈕；孩子端看不到錢，也看不到沒買的東西（底線 8）。
+/// - **只賣家庭用的工具**（例如錯題的「再看一次口袋」），永遠不賣步步的衣服、外觀、驚喜盒內容，
+///   也不賣孩子會想要、會去跟家長討的東西（決策 L3，有護欄測試）。所以這裡刻意沒有任何裝扮欄位。
+/// - 一次買斷、永久擁有。
 class AddOnPack {
   const AddOnPack({
     required this.id,
     required this.productId,
     required this.name,
     required this.description,
-    required this.items,
   });
 
   /// 本機紀錄用的 id。
@@ -23,41 +21,16 @@ class AddOnPack {
   final String productId;
   final Line name;
   final Line description;
-
-  /// 這個包帶來的裝扮。
-  final List<ShopItem> items;
 }
 
 abstract final class AddOnPacks {
-  static const seasons = AddOnPack(
-    id: 'seasons',
-    productId: 'little_steps.pack.seasons',
-    name: ParentAddOnsCopy.seasonsName,
-    description: ParentAddOnsCopy.seasonsDescription,
-    items: [
-      ShopItem.hat('sakura'),
-      ShopItem.neck('daisy'),
-      ShopItem.hat('melon'),
-      ShopItem.neck('shell'),
-      ShopItem.hat('mushroom'),
-      ShopItem.neck('acorn'),
-      ShopItem.hat('earmuffs'),
-      ShopItem.neck('snowpin'),
-    ],
-  );
+  /// 目前上架的插件。第一個工具（再看一次口袋）在另一個 PR 加進來。
+  static const all = <AddOnPack>[];
 
-  static const all = <AddOnPack>[seasons];
-
-  static AddOnPack? byProductId(String productId) {
-    for (final p in all) {
+  static AddOnPack? byProductId(String productId, [List<AddOnPack> packs = all]) {
+    for (final p in packs) {
       if (p.productId == productId) return p;
     }
     return null;
   }
-
-  /// 還沒買的包裡的東西：孩子端整個不顯示（不出現上鎖的格子，避免孩子去纏家長）。
-  static Set<ShopItem> notOwnedItems(Set<String> ownedPackIds) => {
-        for (final p in all)
-          if (!ownedPackIds.contains(p.id)) ...p.items,
-      };
 }

@@ -10,7 +10,6 @@ import 'package:little_steps/domain/models.dart';
 import 'package:little_steps/features/settings/dress_up_screen.dart';
 import 'package:little_steps/features/settings/settings_routes.dart';
 import 'package:little_steps/features/settings/settings_screen.dart';
-import 'package:little_steps/purchase/packs.dart';
 
 import '../../helpers/test_app.dart';
 
@@ -71,7 +70,6 @@ void main() {
   testWidgets('every catalog item is selectable and the choice persists', (tester) async {
     useTallSurface(tester);
     final env = TestEnv();
-    await tester.runAsync(() => env.repo.addOwnedPack(AddOnPacks.seasons.id));
     await pumpScreen(tester, env, const DressUpScreen());
 
     final groups = <String, List<Accessory>>{
@@ -104,19 +102,6 @@ void main() {
       color: BubuCatalog.colors.first.id,
     );
     expect(await read(tester, env.repo.dressUp), last);
-    await unmount(tester);
-    await tester.runAsync(env.dispose);
-  });
-
-  testWidgets('dress-up leaves out items from packs nobody bought, but keeps what Bubu is wearing', (tester) async {
-    useTallSurface(tester);
-    final env = TestEnv();
-    await tester.runAsync(() => env.repo.setDressUp(const DressUp(hat: 'melon')));
-    await pumpScreen(tester, env, const DressUpScreen());
-    for (final item in AddOnPacks.seasons.items) {
-      final finder = find.byKey(ValueKey('${item.slot.name}-${item.id}'));
-      expect(finder, item.id == 'melon' ? findsOneWidget : findsNothing, reason: item.id);
-    }
     await unmount(tester);
     await tester.runAsync(env.dispose);
   });
