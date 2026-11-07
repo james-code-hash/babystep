@@ -75,12 +75,20 @@ abstract final class BubuCopy {
   static const hatBeanie = Line.same('毛線帽');
   static const hatStraw = Line.same('草帽');
   static const hatBucket = Line.same('漁夫帽');
+  static const hatSakura = Line.same('櫻花髮夾');
+  static const hatMelon = Line.same('西瓜帽');
+  static const hatMushroom = Line.same('蘑菇帽');
+  static const hatEarmuffs = Line.same('毛毛耳罩');
 
   static const neckNone = Line.same('脖子空空');
   static const neckScarf = Line.same('圍巾');
   static const neckBow = Line.same('蝴蝶結');
   static const neckBell = Line('小鈴鐺', '鈴鐺');
   static const neckBandana = Line.same('領巾');
+  static const neckDaisy = Line.same('小雛菊項圈');
+  static const neckShell = Line.same('貝殼項鍊');
+  static const neckAcorn = Line.same('橡實項鍊');
+  static const neckSnowpin = Line.same('雪花別針');
 
   static const colorCream = Line.same('奶油色');
   static const colorPeach = Line.same('蜜桃色');

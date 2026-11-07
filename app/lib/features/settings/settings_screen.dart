@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../bubu/bubu_view.dart';
 import '../../copy/family.dart';
 import '../../copy/settings.dart';
+import '../../copy/shop.dart';
 import '../../core/routes.dart';
 import '../../core/layout.dart';
 import '../../core/theme.dart';
@@ -80,6 +81,18 @@ class ChildSettingsScreen extends ConsumerWidget {
                   subtitle: Text(SettingsCopy.dressUpEntryHint.of(tone)),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push(Routes.dressUp),
+                ),
+              ),
+              const SizedBox(height: AppSpace.m),
+              Card(
+                child: ListTile(
+                  key: const ValueKey('open-shop'),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpace.m, vertical: AppSpace.s),
+                  leading: const Icon(Icons.storefront_outlined),
+                  title: Text(ShopCopy.entry.of(tone), style: text.titleMedium),
+                  subtitle: Text(ShopCopy.entryHint.of(tone)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(Routes.shop),
                 ),
               ),
             ],
