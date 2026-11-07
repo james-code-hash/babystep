@@ -18,6 +18,9 @@ import 'parent_dialogs.dart';
 import 'parent_family.dart';
 import 'parent_guide.dart';
 import 'parent_providers.dart';
+import '../../copy/parent_add_ons.dart';
+import '../../purchase/packs.dart';
+import 'parent_add_ons.dart';
 
 /// 家長區本體。資料只讀 [parentViewProvider]（底線 7）。
 ///
@@ -79,6 +82,14 @@ class _ParentBody extends ConsumerWidget {
       _SlotsSection(slots: view.settings.reminderSlots),
       _ToneSection(tone: view.settings.tone),
       _LlmSection(enabled: view.settings.llmEnabled),
+      // 還沒有任何上架的插件時，整段不出現。
+      if (AddOnPacks.all.isNotEmpty)
+        const _Section(
+          id: 'add-ons',
+          title: ParentAddOnsCopy.sectionTitle,
+          note: ParentAddOnsCopy.sectionNote,
+          children: [AddOnsSectionBody()],
+        ),
       const _DataSection(),
     ];
     if (Layout.isTwoPane(context)) {

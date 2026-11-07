@@ -268,3 +268,10 @@ abstract final class TrailConfig {
   static const double mapHillHeight = 12;
   static const double mapTreeRadius = 5;
 }
+
+/// 步步的小店（決策 L1）。這裡只有版面數字，沒有價格。
+abstract final class ShopConfig {
+  /// 架子上每一格的寬度與格子裡小步步的大小。
+  static const double tileWidth = 112;
+  static const double tileBubu = 76;
+}

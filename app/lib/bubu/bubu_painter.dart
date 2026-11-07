@@ -252,6 +252,56 @@ class BubuPainter extends CustomPainter {
           ..close();
         canvas.drawPath(top, _fill(cloth));
         canvas.drawPath(top, _stroke(clothDark, 2.5));
+      case 'sakura':
+        // 左耳邊的小髮夾，上面兩朵櫻花。
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(const Rect.fromLTWH(60, 58, 26, 6), const Radius.circular(3)),
+          _fill(const Color(0xFFE57A9A)),
+        );
+        for (final (c, r) in const [(Offset(66, 50), 5.5), (Offset(82, 46), 4.5)]) {
+          final petal = _fill(const Color(0xFFF9C9D6));
+          for (var i = 0; i < 5; i++) {
+            final a = i * 2 * math.pi / 5 - math.pi / 2;
+            canvas.drawCircle(c + Offset(math.cos(a) * r, math.sin(a) * r), r * 0.85, petal);
+          }
+          canvas.drawCircle(c, r * 0.45, _fill(const Color(0xFFE57A9A)));
+        }
+      case 'melon':
+        // 半顆西瓜：紅色果肉、綠色瓜皮當帽緣、幾顆籽。
+        final flesh = Path()
+          ..moveTo(50, 66)
+          ..cubicTo(50, 22, 150, 22, 150, 66)
+          ..close();
+        canvas.drawPath(flesh, _fill(const Color(0xFFF08080)));
+        final rind = RRect.fromRectAndRadius(const Rect.fromLTWH(44, 62, 112, 14), const Radius.circular(7));
+        canvas.drawRRect(rind, _fill(const Color(0xFF6FAE6A)));
+        canvas.drawLine(const Offset(52, 66), const Offset(148, 66), _stroke(const Color(0xFFBFE3B4), 2.5));
+        final seed = _fill(const Color(0xFF4A3B34));
+        for (final o in const [Offset(80, 46), Offset(100, 38), Offset(120, 46), Offset(92, 56), Offset(110, 56)]) {
+          canvas.drawOval(Rect.fromCenter(center: o, width: 3.5, height: 5.5), seed);
+        }
+      case 'mushroom':
+        // 紅色蘑菇傘、白點點，下面一圈米色的傘褶。
+        final cap = Path()
+          ..moveTo(44, 70)
+          ..cubicTo(44, 14, 156, 14, 156, 70)
+          ..quadraticBezierTo(100, 78, 44, 70)
+          ..close();
+        canvas.drawPath(cap, _fill(const Color(0xFFE07A6A)));
+        canvas.drawPath(cap, _stroke(const Color(0xFFB85A4C), 2.5));
+        final dot = _fill(const Color(0xFFFFF8EA));
+        for (final (o, r) in const [(Offset(76, 48), 7.0), (Offset(104, 34), 8.0), (Offset(130, 52), 6.5), (Offset(98, 60), 4.5)]) {
+          canvas.drawCircle(o, r, dot);
+        }
+      case 'earmuffs':
+        // 頭頂一條帶子，兩邊各一團毛毛。
+        canvas.drawPath(Path()
+          ..moveTo(48, 70)
+          ..cubicTo(48, 18, 152, 18, 152, 70), _stroke(const Color(0xFF9F8BBE), 6));
+        for (final o in const [Offset(46, 76), Offset(154, 76)]) {
+          canvas.drawCircle(o, 14, _fill(const Color(0xFFF5E6F0)));
+          canvas.drawCircle(o, 14, _stroke(const Color(0xFFD3C4E6), 2.5));
+        }
       default:
         break; // 'none'
     }
@@ -309,6 +359,54 @@ class BubuPainter extends CustomPainter {
         for (final o in const [Offset(86, 134), Offset(114, 134), Offset(100, 146)]) {
           canvas.drawCircle(o, 2.5, dot);
         }
+      case 'daisy':
+        // 一圈小雛菊。
+        for (final c in const [Offset(62, 124), Offset(81, 130), Offset(100, 132), Offset(119, 130), Offset(138, 124)]) {
+          final petal = _fill(const Color(0xFFFFFDF7));
+          for (var i = 0; i < 6; i++) {
+            final a = i * math.pi / 3;
+            final p = c + Offset(math.cos(a) * 4.5, math.sin(a) * 4.5);
+            canvas.drawCircle(p, 3.2, petal);
+            canvas.drawCircle(p, 3.2, _stroke(const Color(0xFFD9C9A8), 1));
+          }
+          canvas.drawCircle(c, 3, _fill(const Color(0xFFF7D774)));
+        }
+      case 'shell':
+        canvas.drawPath(Path()
+          ..moveTo(54, 122)
+          ..quadraticBezierTo(100, 136, 146, 122), _stroke(const Color(0xFFC9A55A), 2.5));
+        // 扇形貝殼，幾條放射紋。
+        final fan = Path()
+          ..moveTo(100, 148)
+          ..lineTo(88, 136)
+          ..quadraticBezierTo(100, 124, 112, 136)
+          ..close();
+        canvas.drawPath(fan, _fill(const Color(0xFFF7D9C4)));
+        canvas.drawPath(fan, _stroke(const Color(0xFFD9A88A), 2));
+        final ridge = _stroke(const Color(0xFFD9A88A), 1.2);
+        for (final x in const [94.0, 100.0, 106.0]) {
+          canvas.drawLine(const Offset(100, 147), Offset(x, 131), ridge);
+        }
+      case 'acorn':
+        canvas.drawPath(Path()
+          ..moveTo(54, 122)
+          ..quadraticBezierTo(100, 136, 146, 122), _stroke(const Color(0xFF8E6546), 2.5));
+        canvas.drawOval(Rect.fromCenter(center: const Offset(100, 143), width: 14, height: 16), _fill(const Color(0xFFD8A878)));
+        canvas.drawOval(Rect.fromCenter(center: const Offset(100, 135), width: 18, height: 8), _fill(const Color(0xFF8E6546)));
+        canvas.drawLine(const Offset(100, 131), const Offset(101, 127), _stroke(const Color(0xFF8E6546), 2));
+      case 'snowpin':
+        canvas.drawPath(Path()
+          ..moveTo(52, 122)
+          ..quadraticBezierTo(100, 136, 148, 122), _stroke(const Color(0xFF9CC3D5), 5));
+        // 六個角的雪花。
+        const c = Offset(100, 140);
+        final arm = _stroke(const Color(0xFF6F9DB3), 3);
+        for (var i = 0; i < 3; i++) {
+          final a = i * math.pi / 3 + math.pi / 2;
+          final d = Offset(math.cos(a) * 11, math.sin(a) * 11);
+          canvas.drawLine(c - d, c + d, arm);
+        }
+        canvas.drawCircle(c, 2.5, _fill(const Color(0xFFFFFFFF)));
       default:
         break; // 'none'
     }

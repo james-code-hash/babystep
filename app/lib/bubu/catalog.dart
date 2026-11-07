@@ -18,6 +18,11 @@ abstract final class BubuCatalog {
     Accessory('beanie', BubuCopy.hatBeanie),
     Accessory('straw', BubuCopy.hatStraw),
     Accessory('bucket', BubuCopy.hatBucket),
+    // 小店的季節架（[BubuShop]）。和上面一樣，一開始就全部能選。
+    Accessory('sakura', BubuCopy.hatSakura),
+    Accessory('melon', BubuCopy.hatMelon),
+    Accessory('mushroom', BubuCopy.hatMushroom),
+    Accessory('earmuffs', BubuCopy.hatEarmuffs),
   ];
 
   static const necks = <Accessory>[
@@ -26,6 +31,10 @@ abstract final class BubuCatalog {
     Accessory('bow', BubuCopy.neckBow),
     Accessory('bell', BubuCopy.neckBell),
     Accessory('bandana', BubuCopy.neckBandana),
+    Accessory('daisy', BubuCopy.neckDaisy),
+    Accessory('shell', BubuCopy.neckShell),
+    Accessory('acorn', BubuCopy.neckAcorn),
+    Accessory('snowpin', BubuCopy.neckSnowpin),
   ];
 
   static const colors = <Accessory>[
