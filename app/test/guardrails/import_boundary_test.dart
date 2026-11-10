@@ -13,6 +13,9 @@ bool bubuForbiddenTarget(String target) =>
     target.startsWith('lib/data/') ||
     target.startsWith('lib/features/') ||
     target.startsWith('lib/domain/lesson') ||
+    // 口袋的卡片與照片（M1）：步步的樣子不能跟孩子放了什麼、放了多少有關（底線 2）。
+    target.startsWith('lib/domain/pocket') ||
+    target.startsWith('lib/copy/pocket') ||
     target.startsWith('lib/safety/');
 
 /// bubu_inputs.dart 本身可以 import providers.dart，但仍不得碰 data/、features/、lesson、safety/。
@@ -30,7 +33,7 @@ const bubuInputsAllowedProviders = {
 /// greeting.dart 也不得 import 任何跟計畫／回顧／筆記有關的 copy 或 domain。
 bool greetingForbiddenTarget(String target) =>
     bubuForbiddenTarget(target) ||
-    RegExp(r'(plan|review|lesson|notebook|path|parent|repository)', caseSensitive: false).hasMatch(target);
+    RegExp(r'(plan|review|lesson|notebook|path|parent|repository|pocket)', caseSensitive: false).hasMatch(target);
 
 /// `lib/features/parent/**` 不得引用的識別字（家長端只能讀 ParentView）。
 final parentForbidden = <String, RegExp>{
@@ -48,6 +51,10 @@ final parentForbidden = <String, RegExp>{
   'watchDayRecord': RegExp(r'\bwatchDayRecord\b'),
   'Outcome': RegExp(r'\bOutcome\b'),
   'reflection': RegExp(r'\breflection\b'),
+  // 口袋（M1）：家長區只能看 ParentView 裡孩子分享的卡；匯出只拿照片檔名（匯出本來就是完整資料，D2）。
+  'pocketCards': RegExp(r'\b(watchP|p)ocketCards\b'),
+  'pocketCardsProvider': RegExp(r'\bpocketCardsProvider\b'),
+  'pocketCard(': RegExp(r'\bpocketCard\s*\('),
 };
 
 List<String> bubuImportViolations(String path, String source) {

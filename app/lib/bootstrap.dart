@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'core/copy_rules.dart';
 import 'data/database_store.dart';
 import 'data/db.dart';
+import 'data/pocket_photos.dart';
 import 'data/repository.dart';
 import 'domain/lesson/firebase_llm_client.dart';
 import 'providers.dart';
@@ -31,5 +32,7 @@ Future<List<Override>> bootstrapOverrides({AppDatabase? database}) async {
     copyRulesProvider.overrideWithValue(rules),
     crisisDetectorProvider.overrideWithValue(crisis),
     lessonLlmClientProvider.overrideWithValue(llmClient),
+    // 口袋的題目照片（M1）：只有裝置上的 App 有，跟資料庫放在同一層。
+    if (store != null) pocketPhotoStoreProvider.overrideWithValue(await DevicePocketPhotoStore.onDevice()),
   ];
 }

@@ -8,6 +8,7 @@ import '../../bubu/bubu_view.dart';
 import '../../bubu/greeting.dart';
 import '../../copy/family.dart';
 import '../../copy/home.dart';
+import '../../copy/pocket.dart';
 import '../../copy/line.dart';
 import '../../copy/plan.dart';
 import '../../copy/surprise.dart';
@@ -17,6 +18,7 @@ import '../../core/layout.dart';
 import '../../core/routes.dart';
 import '../../core/theme.dart';
 import '../../domain/models.dart';
+import '../../domain/pocket.dart';
 import '../../providers.dart';
 import '../onboarding/first_meeting_screen.dart';
 import 'peek_counter.dart';
@@ -322,6 +324,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       }
     }
 
+    // 家長買了口袋之後，步步介紹一次（M1）。只講一次，語氣中性，不催。
+    final introducePocket = loaded &&
+        ref.watch(pocketAccessProvider) == PocketAccess.full &&
+        ref.watch(pocketVisibleProvider) &&
+        !settings.value!.pocketIntroduced;
+    if (introducePocket) {
+      children.insertAll(0, [
+        _PocketIntro(
+          tone: tone,
+          onOpen: () {
+            ref.read(repositoryProvider).setPocketIntroduced();
+            _open(Routes.pocket);
+          },
+          onLater: () => ref.read(repositoryProvider).setPocketIntroduced(),
+        ),
+        const SizedBox(height: AppSpace.m),
+      ]);
+    }
+
     final family = ref.watch(familyTodayProvider).value ?? const <FamilyToday>[];
     if (loaded && family.isNotEmpty) {
       children.addAll([
@@ -332,7 +353,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
     children.addAll([
       const SizedBox(height: AppSpace.xl),
-      _QuietNav(tone: tone, onOpen: _open),
+      _QuietNav(tone: tone, onOpen: _open, pocket: ref.watch(pocketVisibleProvider)),
     ]);
 
     return Scaffold(
@@ -550,9 +571,12 @@ class _FamilyTodayCard extends StatelessWidget {
 
 /// 安靜的次要導覽：沒有數字、沒有小紅點。
 class _QuietNav extends StatelessWidget {
-  const _QuietNav({required this.tone, required this.onOpen});
+  const _QuietNav({required this.tone, required this.onOpen, this.pocket = false});
   final AgeTone tone;
   final ValueChanged<String> onOpen;
+
+  /// 再看一次口袋的入口（家長有買、孩子沒藏起來才有，M1）。
+  final bool pocket;
 
   @override
   Widget build(BuildContext context) {
@@ -560,6 +584,7 @@ class _QuietNav extends StatelessWidget {
       (Icons.menu_book_outlined, HomeCopy.notebook.of(tone), Routes.notebook, 'nav-notebook'),
       (Icons.route_outlined, HomeCopy.path.of(tone), Routes.path, 'nav-path'),
       (Icons.explore_outlined, HomeCopy.explore.of(tone), Routes.explore, 'nav-explore'),
+      if (pocket) (Icons.style_outlined, PocketCopy.nav.of(tone), Routes.pocket, 'nav-pocket'),
       (Icons.tune, HomeCopy.settings.of(tone), Routes.settings, 'nav-settings'),
     ];
     final parent = TextButton.icon(
@@ -569,16 +594,21 @@ class _QuietNav extends StatelessWidget {
       icon: const Icon(Icons.lock_outline, size: 18),
       label: Text(HomeCopy.parent.of(tone)),
     );
-    // 平板：四張一樣大的入口卡片（E12）；手機：一排安靜的文字連結（和原本一樣）。
+    // 平板：一樣大的入口卡片（E12；有口袋時是五張），排成盡量平均的幾排；手機：一排安靜的文字連結（和原本一樣）。
     if (Layout.isTablet(context)) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           LayoutBuilder(
             builder: (context, constraints) {
-              final perRow = constraints.maxWidth >= 4 * LayoutConfig.navTileMinWidth + 3 * AppSpace.m ? 4 : 2;
+              final fit = ((constraints.maxWidth + AppSpace.m) / (LayoutConfig.navTileMinWidth + AppSpace.m))
+                  .floor()
+                  .clamp(2, entries.length);
+              final rows = (entries.length / fit).ceil();
+              final perRow = (entries.length / rows).ceil();
               final width = (constraints.maxWidth - (perRow - 1) * AppSpace.m) / perRow;
               return Wrap(
+                alignment: WrapAlignment.center,
                 spacing: AppSpace.m,
                 runSpacing: AppSpace.m,
                 children: [
@@ -644,6 +674,48 @@ class _NavTile extends StatelessWidget {
                 Expanded(child: Text(label, style: Theme.of(context).textTheme.titleMedium)),
               ],
             ),
+          ),
+        ),
+      );
+}
+
+/// 步步介紹口袋（只出現一次）。兩個鈕一樣大：去看看／知道了。
+class _PocketIntro extends StatelessWidget {
+  const _PocketIntro({required this.tone, required this.onOpen, required this.onLater});
+  final AgeTone tone;
+  final VoidCallback onOpen;
+  final VoidCallback onLater;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        key: const ValueKey('home-pocket-intro'),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpace.m),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(PocketCopy.introBubu.of(tone), style: Theme.of(context).textTheme.bodyLarge),
+              const SizedBox(height: AppSpace.m),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.tonal(
+                      key: const ValueKey('pocket-intro-open'),
+                      onPressed: onOpen,
+                      child: Text(PocketCopy.introOpen.of(tone)),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpace.s),
+                  Expanded(
+                    child: FilledButton.tonal(
+                      key: const ValueKey('pocket-intro-later'),
+                      onPressed: onLater,
+                      child: Text(PocketCopy.introLater.of(tone)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       );

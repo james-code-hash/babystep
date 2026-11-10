@@ -67,7 +67,7 @@ class E2EApp {
       ...overrides,
       clockProvider.overrideWithValue(app.clock),
       randomProvider.overrideWithValue(Random(seed)),
-      parentShareProvider.overrideWithValue((text, subject) async => app.shared.add(text)),
+      parentShareProvider.overrideWithValue((text, subject, {files = const []}) async => app.shared.add(text)),
     ]));
     await app.settle();
     expect(find.byType(HomeScreen), findsOneWidget);

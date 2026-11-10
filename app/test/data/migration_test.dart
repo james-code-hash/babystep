@@ -1,4 +1,4 @@
-// PR #1 的裝置上是 v1 的資料庫檔；升到 v4（全家一起、卡住的時候、月回顧的信）時，
+// PR #1 的裝置上是 v1 的資料庫檔；升到 v5（全家一起、卡住的時候、月回顧的信、再看一次口袋）時，
 // 舊資料要留著，新的表和欄位要能用。
 import 'dart:io';
 
@@ -7,6 +7,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:little_steps/data/db.dart';
 import 'package:little_steps/data/repository.dart';
+import 'package:little_steps/domain/pocket.dart';
 
 /// PR #1（schemaVersion 1）時 drift 建出來的表，原樣抄下來。
 const _v1 = [
@@ -44,7 +45,7 @@ void main() {
     // SQLite 會把不存在的 "欄位" 當成字串，所以直接看表的欄位，不靠查詢失敗。
     final cols = [for (final r in await db.customSelect('PRAGMA table_info(plans)').get()) r.data['name']];
     expect(cols, contains('stuck_plan'));
-    for (final table in ['family_today_entries', 'family_notes', 'month_letters']) {
+    for (final table in ['family_today_entries', 'family_notes', 'month_letters', 'pocket_groups', 'pocket_cards']) {
       final found = await db
           .customSelect(
             "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
@@ -62,6 +63,9 @@ void main() {
     // 新的表真的能寫。
     await repo.addFamilyNote(who: '阿嬤', text: '週末一起去公園');
     expect(await repo.familyNotes(), hasLength(1));
+    // v5：再看一次口袋（M1）。
+    await repo.savePocketCard(const PocketCardDraft(prompt: '7×8'));
+    expect(await repo.pocketCards(), hasLength(1));
     final version = await db.customSelect('PRAGMA user_version').getSingle();
     expect(version.data.values.single, db.schemaVersion);
     await db.close();

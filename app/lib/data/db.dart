@@ -122,6 +122,45 @@ class MonthLetters extends Table {
   Set<Column> get primaryKey => {monthKey, author};
 }
 
+/// 再看一次口袋的一組卡（M1），例如「11/7 數學小考」。名字是孩子取的。
+@DataClassName('PocketGroupRow')
+class PocketGroups extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// 再看一次口袋的一張卡（M1）。刻意沒有：分數、對錯、複習次數、上次翻開的時間、翻完按了哪個鈕（底線 1、3、5）。
+@DataClassName('PocketCardRow')
+class PocketCards extends Table {
+  TextColumn get id => text()();
+  TextColumn get groupId => text().nullable()();
+
+  /// PocketSubject 的 name。
+  TextColumn get subject => text()();
+  TextColumn get prompt => text().nullable()();
+
+  /// 照片檔名（App 自己的資料夾裡），不是路徑。
+  TextColumn get photo => text().nullable()();
+  TextColumn get thought => text().nullable()();
+
+  /// PocketStuck 的 name。
+  TextColumn get stuck => text().nullable()();
+  TextColumn get knowNow => text().nullable()();
+  TextColumn get ifCue => text().nullable()();
+  TextColumn get thenAction => text().nullable()();
+
+  BoolColumn get filedAway => boolean().withDefault(const Constant(false))();
+  BoolColumn get sharedWithParent => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// 簡單的 key-value 設定（tone、llmEnabled、reminderSlots、parentPin、dressUp、onboarded）。
 @DataClassName('SettingRow')
 class Settings extends Table {
@@ -132,12 +171,24 @@ class Settings extends Table {
   Set<Column> get primaryKey => {key};
 }
 
-@DriftDatabase(tables: [TaskTemplates, CueTemplates, Plans, DayRecords, Lessons, Settings, FamilyTodayEntries, FamilyNotes, MonthLetters])
+@DriftDatabase(tables: [
+  TaskTemplates,
+  CueTemplates,
+  Plans,
+  DayRecords,
+  Lessons,
+  Settings,
+  FamilyTodayEntries,
+  FamilyNotes,
+  MonthLetters,
+  PocketGroups,
+  PocketCards,
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -152,6 +203,11 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) await m.addColumn(plans, plans.stuckPlan);
           // v4：月回顧的信（J4）。
           if (from < 4) await m.createTable(monthLetters);
+          // v5：再看一次口袋（M1）。
+          if (from < 5) {
+            await m.createTable(pocketGroups);
+            await m.createTable(pocketCards);
+          }
         },
         // 刪掉的資料列要真的被覆寫成 0，不能只標成空閒頁面還留在檔案裡（底線 8）。
         beforeOpen: (_) => customStatement('PRAGMA secure_delete = ON'),

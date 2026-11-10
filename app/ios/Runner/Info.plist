@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>孩子想把卡住的題目拍下來放進「再看一次口袋」時才會用到相機。照片只存在這台裝置上。</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>孩子想從相簿挑一張題目照片放進「再看一次口袋」時才會打開相簿。照片只存在這台裝置上。</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
