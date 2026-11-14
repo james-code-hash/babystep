@@ -21,7 +21,7 @@
 - **選擇**：Cloud Function 以服務帳號呼叫 Vertex AI Gemini（小模型，型號用環境參數設定）。供應商層做成可插拔（`functions/src/providers/`），測試用 `fake` provider。
 - **替代**：Gemini Developer API 免費層（**會被用於改善模型，違反 §2.8，排除**）；Anthropic／OpenAI 直連（多一個第三方資料處理者與合約）；Claude on Vertex（可行的第二選項，介面已預留）。
 - **理由**：Vertex AI 依 Google Cloud 條款不拿客戶資料訓練，資料不離開本專案的 GCP 邊界，不必再簽第三方。
-- **待決**：`little-steps-dev` 目前沒有啟用帳單；Cloud Functions 與 Vertex 都需要 Blaze（付費）。依 §6「串接需要付費的外部服務」要先問人。在那之前 LLM 模式只在 Firebase Emulator ＋ fake provider 上跑，App 預設走範本模式，核心循環完全不受影響。另外「供應商端不保留」需要在 GCP 端確認 Vertex 的資料保留／濫用監控設定，屬合規判斷，一併列給人決定。
+- **待決**：`babystep-app-1114` 目前沒有啟用帳單；Cloud Functions 與 Vertex 都需要 Blaze（付費）。依 §6「串接需要付費的外部服務」要先問人。在那之前 LLM 模式只在 Firebase Emulator ＋ fake provider 上跑，App 預設走範本模式，核心循環完全不受影響。另外「供應商端不保留」需要在 GCP 端確認 Vertex 的資料保留／濫用監控設定，屬合規判斷，一併列給人決定。
 
 ### A4 ✅ 本地資料庫：drift（SQLite）
 - **選擇**：drift，含 schema migration；測試用 in-memory 資料庫。
@@ -104,3 +104,8 @@
 ### C10 ✅ 視覺語言
 - 不沿用原型的借來設計系統。暖色紙感底色、圓角、大觸控目標（≥ 48dp）、系統中文字型（iOS PingFang TC／Android Noto Sans CJK），不打包字型以控制體積。步步用 CustomPainter 畫，表情只有：開心、好奇、關心、平靜、驚訝、放鬆（沒有難過／生病／虛弱）。
 - 「做到了／一部分／沒做」三個按鈕同尺寸、同字重、同底色，只用圖示（🌟🌗🌙）區分，不用紅綠。
+
+### A5 ✅ Firebase 專案：`babystep-app-1114`（顯示名稱 BabyStep）
+- **選擇**：2026-11-14 用 Firebase CLI 新建 `babystep-app-1114`，以 `flutterfire configure` 註冊 Android `tw.littlesteps.little_steps` 與 iOS `tw.littlesteps.littleSteps`，產生 `app/lib/firebase_options.dart`；根目錄 `.firebaserc` 預設指向它。
+- **替代**：沿用舊的 `little-steps-dev`（空專案）或 `little-steps-dev-a1b2`（bundle ID 是舊的 `dev.littlesteps.*`）。`babystep`、`babystep-app` 兩個 ID 已被別人占用。
+- **理由**：產品方要求開新專案；兩個舊專案已依產品方要求關閉（30 天內可用 `gcloud projects undelete` 復原）。帳單仍未啟用，A3 的待決不變。
