@@ -2,7 +2,12 @@
     <application
         android:label="little_steps"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
+        <!-- 孩子的資料只留在這台裝置（底線 8、decisions.md G4）：
+             不做 Google 雲端備份，Android 12+ 的裝置轉移也全部排除。 -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -40,6 +45,10 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- 朗讀（決策 I6）：Android 11 以上要宣告才看得到裝置內建的語音引擎。 -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE"/>
         </intent>
     </queries>
 </manifest>

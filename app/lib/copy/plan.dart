@@ -1,0 +1,169 @@
+import 'line.dart';
+
+/// 早上排計畫的句子（文案庫 §4.3–4.5、§4.9）。步步只提問、給選項，不代寫（底線 6）。
+abstract final class PlanCopy {
+  static const title = Line('今天想做什麼', '排今天');
+
+  // ------------------------------------------------------------ 如果⋯我就⋯
+
+  /// `{cue}` 以「我」開頭（「我吃完晚飯」）。
+  static const ifThen = Line.same('如果{cue}，我就{task}');
+  static const ifSlot = Line.same('如果⋯');
+  static const thenSlot = Line.same('我就⋯');
+
+  static const _i = '我';
+
+  /// 「我吃完晚飯」→「吃完晚飯」，給「你說吃完晚飯要⋯」這類句子用。
+  static String cueBody(String cue) {
+    final t = cue.trim();
+    return t.startsWith(_i) ? t.substring(_i.length) : t;
+  }
+
+  /// 時間點裡有這些字，就看得出大概是一天的哪一段（探頭用，不顯示給孩子）。
+  /// 看不出來的（「我喝完水」、孩子自己寫的）就當作隨時都可能。
+  static const cueHintsMorning = ['早餐', '早飯', '起床', '早上'];
+  static const cueHintsNoon = ['午餐', '午飯', '中午'];
+  static const cueHintsDinner = ['晚飯', '晚餐'];
+  static const cueHintsNight = ['澡', '睡前', '睡覺', '晚上'];
+  static const cueHintsAfterSchool = ['放學', '下課', '回到家', '回家'];
+
+  // ------------------------------------------------------------ 1. 心情暖身（C2：不存）
+
+  static const moodAsk = Line('早安！今天心情怎麼樣？', '今天心情怎麼樣？');
+  static const moodHappy = Line.same('開心');
+  static const moodOkay = Line.same('普通');
+  static const moodTired = Line.same('累累的');
+  static const moodLow = Line.same('不太好');
+  static const moodSkip = Line.same('先不說');
+
+  static const moodHappyReply = Line('開心的早上！來看看今天想做什麼。', '開心的早上。來看看今天想做什麼。');
+  static const moodOkayReply = Line('普普通通的一天也可以呀。', '普通的一天也可以。');
+  static const moodTiredReply = Line('有點累了呀。今天要不要就先不排事情？', '有點累。今天要不要就先不排事情？');
+  static const moodLowReply = Line('聽起來今天不太好過。今天要不要就先不排事情？', '聽起來今天不太好過。今天要不要先不排事情？');
+  static const moodSkipReply = Line('好，那我們直接來看看今天。', '好，直接來看今天。');
+
+  /// 心情低時的兩個選項，份量相同。
+  static const restToday = Line('今天先不排', '先不排');
+  static const planAnyway = Line('想排一下', '還是排一下');
+
+  // ------------------------------------------------------------ 2. 選 1–3 件事（§4.3）
+
+  /// `{max}` 是每天最多幾件。
+  static const chooseAsk = Line('今天你想做哪幾件事？一兩件就很夠了，最多 {max} 件。', '今天想做哪幾件事？最多 {max} 件。');
+  static const sectionMine = Line('你自己寫過的', '自己寫過的');
+  static const sectionPreset = Line('常見的事', '常見的事');
+  static const sectionParent = Line('家長的建議，可以不選', '家長的建議，可以不選');
+  static const chooseOne = Line('一件也可以，這樣比較不會趕。', '一件也可以，這樣比較不會趕。');
+
+  /// 活潑模式（6–8 歲）選到建議的件數時：軟性的提示，還是可以再加（I3）。
+  static const chooseEnough = Line('兩件就很夠了喔。想再加一件也可以。', '兩件就夠了，想加也可以。');
+  static const chooseFull = Line('今天先排 {max} 件就好。想換的話，先取消一件。', '最多 {max} 件。想換的話，先取消一件。');
+
+  static const customTaskHint = Line('你想做什麼？', '想做什麼？');
+  static const customEmojiAsk = Line('幫它挑一個圖案', '挑一個圖案');
+  static const addIt = Line.same('加進去');
+
+  // ------------------------------------------------------------ 3. 如果⋯我就⋯（§4.4）
+
+  static const cueAsk = LinePool([
+    Line('那你打算什麼時候做呢？可以是「吃完晚飯」「洗完澡」這種。', '打算什麼時候做？講個具體的時間點。'),
+    Line('有沒有一個每天都會發生的事，可以當作開始的信號？', '有沒有每天都會發生的事，可以當開始的信號？'),
+  ]);
+  static const customCueHint = Line('什麼時候？例如：我放學回到家', '什麼時候？例如：我放學回到家');
+  static const useThis = Line.same('用這個');
+  static const editTask = Line('想換個說法', '換個說法');
+  static const editTaskHint = Line('我就⋯', '我就⋯');
+  // ------------------------------------------------------------ 計畫品質提示（MCII，決策 I5）
+  // 只問、不代寫：孩子可以改，也可以「這樣就好」，不擋下一步。
+
+  /// 事情裡有這些字，就問「做到什麼樣子算做完」。
+  static const vagueTaskWords = ['認真', '努力', '好好', '用功', '盡量', '多一點', '少一點', '專心', '進步', '變好', '更好'];
+
+  /// 事情是「不要⋯」，就問「那時候想改做什麼」。
+  static const negativeTaskWords = ['不要', '不再', '不准', '不可以', '別再'];
+
+  /// 時間點裡有這些字，就問「是哪件事做完的時候」。
+  static const vagueCueWords = ['有空', '有時間', '等一下', '待會', '晚一點', '想到', '有心情', '找時間', '哪天', '隨時'];
+
+  static const hintTaskVague = Line('這件事做到什麼樣子，就算做完了呢？', '這件事做到什麼樣子算做完？');
+  static const hintTaskNegative = Line('不做那件事的時候，你想改做什麼呢？', '不做那件事的時候，想改做什麼？');
+  static const hintCueVague = Line('那大概是什麼時候呀？是哪件事做完的時候呢？', '那是什麼時候？哪件事做完之後？');
+  static const hintEdit = Line.same('改一下');
+  static const hintKeep = Line.same('這樣就好');
+
+  static const cueChosen = Line('這個時間點是你自己選的，等一下就靠它提醒你。', '時間點是你自己選的，到時候就靠它提醒你。');
+
+  // ------------------------------------------------------------ 4. 為什麼（§4.5，可跳過）
+
+  /// `{task}` 是這件事。
+  static const whyAsk = Line('「{task}」，你自己覺得為什麼想做？不想說也可以。', '「{task}」，你為什麼想做？不想說也可以。');
+  static const whyTry = Line.same('我想試試看');
+  static const whyMine = Line.same('我自己想做');
+  static const whyEasier = Line.same('做完會比較輕鬆');
+  static const whyFamily = Line.same('家人希望我做，我也覺得可以');
+  static const whyDontKnow = Line.same('不知道');
+  static const whyCustomHint = Line('用自己的話說說看', '用自己的話說');
+  static const whyDontKnowReply = Line('有時候就是還沒想到。先做做看，說不定做完就知道了。', '還沒想到也可以。做完說不定就知道了。');
+  static const whyHeard = Line('嗯，步步記住你的想法了。', '嗯，知道了。');
+
+  // ------------------------------------------------------------ 4b. 卡住的時候（簡潔模式的 MCII，可跳過；I3）
+
+  /// `{task}` 是這件事。
+  static const stuckAsk = Line(
+    '「{task}」做到一半卡住的話，你想怎麼辦？先想一個備著，不想也可以。',
+    '「{task}」如果做到一半卡住，你打算怎麼辦？先想好一個，不想也可以跳過。',
+  );
+  static const stuckSlot = Line.same('卡住的話，我就⋯');
+  static const stuckOneMinute = Line.same('先做一分鐘看看');
+  static const stuckBreathe = Line.same('先深呼吸三次');
+  static const stuckEasyFirst = Line.same('換個順序，先做簡單的');
+  static const stuckBreak = Line.same('先休息五分鐘再回來');
+  static const stuckAsk2 = Line.same('找人問一下');
+  static const stuckHint = Line('卡住的話，我就⋯', '卡住的話，我就⋯');
+  static const stuckHeard = Line('嗯，有備案了。', '有備案了。');
+
+  /// 確認頁、首頁計畫卡上的第二行。
+  static const stuckLine = Line.same('卡住的話，我就{stuck}');
+
+  // ------------------------------------------------------------ 5. 確認（§4.4 完成時）
+
+  static const confirmTitle = Line('好，寫下來了。這是你自己排的喔。', '好，寫下來了。這是你自己排的。');
+  static const confirmSave = Line('就這樣排', '就這樣');
+  static const confirmEdit = Line('回去改一下', '回去改');
+
+  // ------------------------------------------------------------ 圖像提示（活潑模式，I3）
+
+  /// 時間點的小圖示：依關鍵字猜，猜不到就不放。只是視覺提示，不改變文字。
+  static const _cueIcons = <(String, String)>[
+    ('起床', '🌅'),
+    ('早餐', '🍳'),
+    ('午餐', '🍱'),
+    ('晚飯', '🍚'),
+    ('晚餐', '🍚'),
+    ('吃完', '🍚'),
+    ('放學', '🎒'),
+    ('回到家', '🏠'),
+    ('洗完澡', '🛁'),
+    ('洗澡', '🛁'),
+    ('刷牙', '🪥'),
+    ('睡', '🌙'),
+    ('喝', '💧'),
+    ('衣服', '👕'),
+    ('功課', '📒'),
+    ('作業', '📒'),
+    ('卡通', '📺'),
+    ('電視', '📺'),
+  ];
+
+  static String? cueIcon(String cue) {
+    for (final (word, icon) in _cueIcons) {
+      if (cue.contains(word)) return icon;
+    }
+    return null;
+  }
+
+  // ------------------------------------------------------------ 今天已經聊完
+
+  static const dayEnded = Line('今天聊完了，計畫就留給下一天吧。', '今天聊完了。');
+  static const backHome = Line('回到首頁', '回首頁');
+}

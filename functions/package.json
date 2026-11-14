@@ -1,0 +1,26 @@
+{
+  "name": "little-steps-functions",
+  "private": true,
+  "description": "小步 Little Steps：LLM 代理（callable bubuLearn）。不存任何孩子資料。",
+  "type": "commonjs",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.test.json && vitest run",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "serve": "npm run build && npx firebase-tools emulators:start --only functions,auth"
+  },
+  "dependencies": {
+    "@google/genai": "2.31.0",
+    "firebase-admin": "14.5.0",
+    "firebase-functions": "7.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}
