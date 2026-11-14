@@ -179,7 +179,7 @@ cd app && fvm flutter test test/e2e     # 沒有裝置時：同一份情境，�
 
 ## 待決事項（需要人決定，HANDOFF §6）
 
-1. 要不要把 `little-steps-dev` 開成 Blaze 付費方案，才能部署 Functions 和 Vertex AI。
+1. 要不要把 `babystep-app-1114` 開成 Blaze 付費方案，才能部署 Functions 和 Vertex AI。
 2. Vertex AI 的資料保留與濫用監控設定，是否符合底線 8「供應商端不保留」（合規判斷）。
 3. 危機字表與安全回應要請兒童心理專業審核；文案庫寫的「通知家長」和底線 7 有衝突，MVP 目前選擇不自動通知。
 
