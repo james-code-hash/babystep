@@ -1,4 +1,5 @@
 // 底線 8：沒有第三方追蹤／廣告／內購 SDK。
+// 例外（決策 L2）：Flutter 官方的 in_app_purchase 系列，只接 Apple／Google 原生商店，給家長端買插件包用。
 import 'dart:convert';
 import 'dart:io';
 
@@ -9,7 +10,6 @@ const _substrings = [
   'analytics',
   'crashlytics',
   'admob',
-  'in_app_purchase',
   'purchases',
   'tracking',
   'sentry',
@@ -22,8 +22,12 @@ const _substrings = [
 /// 短字：要是名稱裡獨立的一段（`google_mobile_ads`、`@adjust/sdk`），避免 `threads`、`uploads` 誤判。
 const _tokens = ['ads', 'adjust'];
 
+/// Flutter 官方（flutter.dev）的商店內購套件與它的平台實作。不送分析、不追蹤；只有家長端用得到（見 purchase_boundary_test）。
+final _officialStoreBilling = RegExp(r'^in_app_purchase(_android|_storekit|_platform_interface)?$');
+
 bool isForbiddenPackage(String name) {
   final n = name.toLowerCase();
+  if (_officialStoreBilling.hasMatch(n)) return false;
   if (_substrings.any(n.contains)) return true;
   final parts = n.split(RegExp(r'[_\-/@.]+'));
   return parts.any(_tokens.contains);
@@ -58,8 +62,8 @@ void main() {
         'firebase_analytics',
         'firebase_crashlytics',
         'google_mobile_ads',
-        'in_app_purchase',
         'purchases_flutter',
+        'purchases_ui_flutter',
         'sentry_flutter',
         'mixpanel_flutter',
         'amplitude_flutter',
@@ -72,7 +76,17 @@ void main() {
       ]) {
         expect(isForbiddenPackage(n), isTrue, reason: n);
       }
-      for (final n in ['threads', 'uploads', 'flutter_riverpod', 'firebase_core', 'cloud_functions', 'drift']) {
+      for (final n in [
+        'threads',
+        'uploads',
+        'flutter_riverpod',
+        'firebase_core',
+        'cloud_functions',
+        'drift',
+        'in_app_purchase',
+        'in_app_purchase_android',
+        'in_app_purchase_storekit',
+      ]) {
         expect(isForbiddenPackage(n), isFalse, reason: n);
       }
     });

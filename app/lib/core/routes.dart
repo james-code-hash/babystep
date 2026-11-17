@@ -10,6 +10,7 @@ abstract final class Routes {
   static const settings = '/settings';
   static const dressUp = '/settings/dress-up';
   static const petName = '/settings/name';
+  static const shop = '/settings/shop';
   static const parent = '/parent';
   static const pocket = '/pocket';
   static const pocketNew = '/pocket/new';

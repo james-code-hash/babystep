@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../copy/bubu.dart';
 import '../copy/line.dart';
 import '../core/config.dart';
+import '../domain/models.dart' show DressUp;
 import 'bubu_expression.dart';
 import 'bubu_inputs.dart';
 import 'bubu_painter.dart';
@@ -25,6 +26,7 @@ class BubuView extends ConsumerWidget {
     this.size = 160,
     this.thinking = false,
     this.breathe = false,
+    this.dressUp,
   });
 
   final BubuExpression expression;
@@ -36,12 +38,15 @@ class BubuView extends ConsumerWidget {
   /// 輕輕的呼吸動畫（無限循環，預設關）。
   final bool breathe;
 
+  /// 試穿用：給了就畫這一套，而不是孩子現在穿的（小店的預覽）。仍然只有裝扮這一種輸入（底線 2）。
+  final DressUp? dressUp;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dressUp = ref.watch(bubuDressUpProvider);
+    final DressUp outfit = dressUp ?? ref.watch(bubuDressUpProvider);
     final now = ref.watch(clockProvider).now();
     final tone = ref.watch(toneProvider);
-    final bubuLook = look(dressUp, now);
+    final bubuLook = look(outfit, now);
     final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
     Widget body = CustomPaint(

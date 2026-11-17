@@ -22,6 +22,7 @@ dependencies:
   go_router: ^18.1.1
   image: ^4.12.0
   image_picker: ^1.2.4
+  in_app_purchase: ^3.3.1
   intl: ^0.20.3
   path: ^1.9.1
   path_provider: ^2.1.6
